@@ -51,8 +51,12 @@ at all. Every flow that crosses the UI/API boundary gets a row:
 
 | Flow | Screen | Control | Calls | Post-condition |
 |---|---|---|---|---|
-| Create quote | Quotes list | "New quote" | `POST /api/quotes` | lands on `/quotes/:id` |
-| Add line | Quote builder | "Add line to quote" | `POST /api/quotes/:id/lines` | line appears, totals change |
+| Create `<entity>` | `<entity>` list | "New `<entity>`" | `POST /api/<entities>` | lands on `/<entities>/:id` |
+| Add child to `<entity>` | `<entity>` detail | "Add `<child>`" | `POST /api/<entities>/:id/<children>` | child appears, derived totals change |
+| Change state | `<entity>` detail | "`<verb>`" | `PATCH /api/<entities>/:id` | badge changes, prior state refused |
+
+Placeholders on purpose — a worked example in one domain gets pattern-matched into the next build's
+thinking. Substitute this build's own nouns.
 
 **Why this is mandatory.** In build 1 the contract listed the flow in §1 and the route in §3. The
 Designer drew the button, the Engineer built the route and the screen, and QA generated tests from
