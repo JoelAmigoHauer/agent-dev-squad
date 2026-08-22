@@ -47,6 +47,7 @@ no dependency manifest here — the code lives in the repos generated *from* thi
 | `README.md` | Human-facing overview of the template | Never by an agent |
 | `BLUEPRINT.md` | The original design document. History, not instruction | **Never.** By design |
 | `LEARNINGS.md` | Build 1's defect list, ranked, with the fix for each | Before changing any rule; written by Stage 7 |
+| `PRIOR-ART.md` | External projects worth mining, what to take from each and what not to | **Never by a stage.** Mode 2 only |
 | `agents/preflight.md` | 0.5 · tooling and plan-tier probe | Stage 0.5 only |
 | `agents/architect.md` | 1 · the binding contract | Stage 1 only |
 | `agents/designer.md` | 2 · fidelity modes, 21st.dev, Figma | Stage 2 only |
@@ -348,6 +349,9 @@ Mode 2 work. These are conventions for the prose, since prose is all there is.
   so in the commit; do not delete silently.
 - **Never edit `BLUEPRINT.md`.** It is the unedited record of the original design. Divergences are
   recorded in this file's Precedence section, not by amending the blueprint.
+- **A rule adapted from outside carries its provenance.** Cite the source and the date in the stage
+  file, and log it in [PRIOR-ART.md](PRIOR-ART.md). A rule imported because a popular repo has it
+  has no evidence behind it here, and nobody will be able to argue it back out later.
 - **Every agent file must read cold.** Assume the agent has that one file, the contract and the
   state file, and nothing else. A rule that only makes sense if you have also read `CLAUDE.md` will
   be missed.
