@@ -330,6 +330,7 @@ is deliberately repeated for a stage that reads cold, one copy binds:
 | Loop cap numbers | This file | Stage files, as reminders |
 | Status vocabulary | `state/tasks.md` | — |
 | Escalation triggers, current narrowed form | `skills/stack-decision.md` | `agents/architect.md` |
+| What a contract must contain | `agents/architect.md` | `builds/_template/contract.md`, as a scaffold |
 | Vercel platform notes | `agents/devops.md` | `agents/engineer.md`, for the build side |
 | Deploy record template | `agents/devops.md` | `skills/deploy-sequence.md` points at it |
 | Default stack | `skills/stack-decision.md` | `agents/architect.md`, `README.md` |
@@ -371,13 +372,6 @@ Mode 2 work. These are conventions for the prose, since prose is all there is.
 Audited against `LEARNINGS.md`. Recorded so a stage does not trust a template that is behind its
 own brief. Each is a v0.2 rule that exists in the agent file but has not reached the artefact the
 build actually copies.
-
-**`builds/_template/contract.md` is behind `agents/architect.md`.** It has `FIDELITY` but lacks
-three v0.2-mandatory items: the **flow binding table** (LEARNINGS 1, the critical one), the **FIRST
-USER** field (LEARNINGS 5), and the **plan tier** block in §4 (LEARNINGS 6). The Architect's brief
-mandates all three, so a contract written from `agents/architect.md` is correct and a contract
-written from the template alone is incomplete. Until the template catches up, validate Stage 1
-output against the agent file, not the template.
 
 **`builds/_template/` has no `preflight.md`** for Stage 0.5 to write into, and its `README.md`
 table does not list the file. Preflight creates it.
