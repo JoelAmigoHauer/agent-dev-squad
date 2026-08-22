@@ -369,12 +369,8 @@ Mode 2 work. These are conventions for the prose, since prose is all there is.
 
 ## Known gaps as at 2026-08-22
 
-Audited against `LEARNINGS.md`. Recorded so a stage does not trust a template that is behind its
-own brief. Each is a v0.2 rule that exists in the agent file but has not reached the artefact the
-build actually copies.
-
-**`builds/_template/` has no `preflight.md`** for Stage 0.5 to write into, and its `README.md`
-table does not list the file. Preflight creates it.
+Audited against `LEARNINGS.md`. Recorded so a stage does not trust this repo to be level with its
+own learnings.
 
 **Three LEARNINGS items are not yet in any stage file.** LEARNINGS 9 (build-class targets, so a
 non-trivial build does not read as a 30-minute underperformance), LEARNINGS 11's second half
