@@ -29,15 +29,13 @@ stage-7-retro:       idle
 escalations:         none
 ```
 
-**Stage 1 validation pass:** stack matches the decision tree, no deviation claimed, so there is
-nothing for the substantive-reason check to reject. Passed first attempt, 0 of 2 redos used.
+Nothing below the block above until a build starts. Notes, validation results and loop detail are
+added during a run and removed when it ends — a note left behind from the previous build reads as
+current on the next one.
 
-**Environment blockers — not escalations, but Stage 2 and 4 cannot start until cleared:**
-```
-21st.dev tier    Mode B requires a paid tier. Designer must confirm via get_usage.
-Docker daemon    Not running. QA's local Supabase stack needs it.
-gitleaks         Not installed. Security's second pass runs 2 of 3 scanners without it.
-```
+**Tooling blockers do not live here.** Preflight records them at Stage 0.5 in
+`/builds/<app-name>/preflight.md`, as `BLOCKING` or `DEGRADED`, and durable machine facts go to
+`/ERRORS.md`. Do not keep a second list in this file for them to disagree with.
 
 ---
 
@@ -68,19 +66,22 @@ so the numbers cannot disagree with themselves.
 ```
 build: invoice-chaser
 started: 2026-08-15T14:02
-stage-1-architect:   done    (contract at /builds/invoice-chaser/contract.md)
-stage-2-designer:    done    (mode B, 21st.dev components logged)
-stage-3-engineer:    done
+stage-0.5-preflight: done    (/builds/invoice-chaser/preflight.md — Figma degraded, Stage 2 carries it)
+stage-1-architect:   done    (/builds/invoice-chaser/contract.md — class B, escalation no)
+stage-2-designer:    done    (mode B, tokens derived, 21st.dev components logged)
+stage-3-engineer:    done    (/builds/invoice-chaser/build-notes.md)
 stage-4-qa:          loop 2/3 (2 failing tests, detail below)
-stage-5-security:    done    (advisors clean)
+stage-5a-security:   done    (local checks clean — advisors are hosted-only, deferred to 5b)
 stage-6-deploy:      pending
+stage-5b-security:   pending
+stage-7-retro:       pending
 escalations:         none
 ```
 
 Failing detail, when a loop is active, goes below the block:
 
 ```
-QA loop 2/3 — failing:
+QA loop 2/3 (cause: code) — failing:
   GAP 1  POST /api/invoices returns 500 on missing dueDate, contract says 400
          test: /builds/invoice-chaser/tests/api/invoices.spec.ts:44
          class: bug
