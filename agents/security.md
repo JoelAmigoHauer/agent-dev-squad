@@ -189,6 +189,19 @@ Same shape as QA's. Kick the finding back to the Engineer with the specific fix 
 attempt usually signals a design problem, and design problems belong with Joel at the Architect
 level, not with the Engineer patching symptoms.
 
+**The cap counts code defects only.** Every iteration records a diagnosis line:
+
+```
+cause: code | environment
+```
+
+An iteration whose root cause was environmental — a stale build, a scanner run against the wrong
+tree, a tool that was not installed — is logged but **does not consume the cap**. This matters more
+here than at QA, not less: with only two iterations, a single stale re-scan would burn half the
+budget and escalate a finding that was already fixed.
+
+Before recording a re-review as a failure, confirm the tree you scanned contains the fix.
+
 On cap: halt, escalate with the finding and both attempted fixes.
 
 ---

@@ -8,12 +8,13 @@ conversation exports.
 
 | File | Written by | Stage |
 |---|---|---|
+| `preflight.md` | Preflight | 0.5 |
 | `contract.md` | Architect | 1 |
 | `design.md` | Designer | 2 |
 | `build-notes.md` | Engineer | 3 |
 | `test-results.md` | QA | 4 |
 | `tests/` | QA | 4 |
-| `security-review.md` | Security | 5 |
+| `security-review.md` | Security | 5a, updated at 5b |
 | `deploy-record.md` | DevOps | 6 |
 | `run-record.md` | Orchestrator | on completion — copy of the final `/state/tasks.md` block |
 
