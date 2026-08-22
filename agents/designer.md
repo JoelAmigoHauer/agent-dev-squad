@@ -64,6 +64,21 @@ the Orchestrator raise it with Joel as an operational issue rather than a build 
 
 ---
 
+## Shared elements are components, not clones
+
+**Any element appearing on more than one screen is one component with variants.** In Figma and in
+code — the two must agree, because the Engineer builds from what you drew.
+
+Build 1's nav rail was cloned across four screens. Changing it means changing it four times, and
+the fourth is the one that gets missed. Nothing catches that: four slightly different nav rails
+render fine, pass every test, and look like a build quality problem months later rather than a
+decision made in ten seconds here.
+
+This is nearly free while you are still drawing and expensive to unpick once the Engineer has built
+from it. Name every shared component in your screen inventory so it gets built once.
+
+---
+
 ## Output
 
 Write to `/builds/<app-name>/design.md`:
@@ -73,8 +88,10 @@ Write to `/builds/<app-name>/design.md`:
    list.
 3. **Component provenance** — for Mode B: which components came from 21st.dev (with identifiers),
    which were hand-built and why.
-4. **Design tokens** — colour, spacing, type scale, radius. From Figma where available, marked as
-   such; otherwise your own, marked as derived.
+4. **Design tokens** — colour, spacing, type scale, radius. Every token carries a required status:
+   `extracted` (pulled from Figma as data) or `derived` (your own, from the sketch). This is not a
+   footnote — the Engineer is bound by one and free to adjust the other, so a token whose status is
+   missing is treated as `derived` and may be changed underneath you.
 5. **States** — empty, loading, error and success for every screen that fetches or submits. A
    screen without its empty and error states is not designed, and QA will find it.
 

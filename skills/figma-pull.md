@@ -63,6 +63,15 @@ Three calls, not thirty. Exploring the file node by node is what exhausts the ca
 - Type: family, size, weight, line-height, letter-spacing per style.
 - Radius and shadow values.
 
+**Variables must carry WEB code syntax.** Set it on the variable collection in Figma *before* you
+extract. When build 1's did, `get_variable_defs` returned values already keyed by CSS custom
+property and the handoff was a copy rather than a translation. Without it you are renaming every
+token by hand on the way into the codebase, which is where transcription errors enter — and they
+enter silently, because a wrong-but-plausible token still renders.
+
+If the collection has no code syntax set, fixing it is one pass in Figma and cheaper than every
+downstream rename. Do that before spending a call on extraction.
+
 ### Structure (per screen in the contract)
 
 - Layout: auto-layout direction, gap, padding, alignment.

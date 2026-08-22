@@ -24,6 +24,17 @@ was more convenient at the form layer.
 Run [../skills/figma-pull.md](../skills/figma-pull.md) when `design.md` records a Figma source. Use
 the real spacing, colour tokens and asset exports. Do not eyeball values that exist as data.
 
+`design.md` marks every token `extracted` or `derived`, and the two bind differently:
+
+- **`extracted`** — pulled from Figma as data. **Binding.** Ship the value as written. If the
+  spacing is 14, do not ship 16 because it looked close.
+- **`derived`** — the Designer's own, read off the sketch. **Adjustable.** Use it as given, but you
+  may correct it where implementation shows it wrong. Record any change in `build-notes.md` so the
+  Designer is not surprised by their own tokens.
+
+A token with no status is `derived`. Never promote one to `extracted` yourself — that status means
+a value came out of Figma, and only the pull can say so.
+
 ### 3. Use 21st.dev components in production mode
 
 Where `design.md` records Mode B and names a 21st.dev component, use that component. Consistency is
