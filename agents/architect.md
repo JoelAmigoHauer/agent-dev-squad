@@ -35,7 +35,27 @@ prototype; anything with a named user other than Joel is production. When the in
 not say, call it `production`: rebuilding a prototype to production standard costs less than
 shipping a prototype by accident.
 
-Then:
+### Build class — mandatory, v0.2
+
+Then classify the build. The class sets what "done on time" means; without it every build is
+measured against the 30-minute figure that was written for the simplest one, and anything real
+reads as an underperformance.
+
+| Class | What it is | Target |
+|---|---|---|
+| **A** | Single-purpose app — CRUD plus auth, standard UI patterns | ~30 minutes |
+| **B** | Domain logic with derived values — a pricing or calculation engine, derived or snapshotted fields, multi-tenant RLS | ~2 hours |
+| **C** | Anything that fires an escalation trigger | No target. The win is flagging at Stage 1, before Design and Engineering effort is sunk |
+
+Class B's figure is measured, not estimated: `print-estimator`, the first end-to-end run, took 1.5–2
+hours on 2026-08-15 — a rate-card configurator with a pricing engine, multi-tenant RLS and a
+snapshot rule. That is one data point. Re-baseline it as more builds land; do not treat it as fixed.
+
+State the class in the contract and name the trait that puts it there. **A build landing between
+two classes takes the higher one** — an underestimated class reads as a failed build, which is the
+exact failure this table exists to prevent.
+
+The spec then covers:
 
 - Every screen, named.
 - User flows, start to finish, including the failure paths.

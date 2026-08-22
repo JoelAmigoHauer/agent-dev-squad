@@ -15,11 +15,16 @@ not against this file.
 ## 1. Written spec
 
 ```
-FIDELITY: prototype | production
+FIDELITY:    prototype | production
+BUILD CLASS: A | B | C — <the trait that puts it there>
 ```
 
-Sets the Designer's mode and the Engineer's tolerance for rough edges. When the intake does not
-say, this is `production`.
+**Fidelity** sets the Designer's mode and the Engineer's tolerance for rough edges. When the intake
+does not say, this is `production`.
+
+**Build class** sets what "done on time" means for this build. `A` is CRUD plus auth (~30 minutes),
+`B` is domain logic with derived values (~2 hours), `C` fires an escalation trigger (no target).
+A build landing between two classes takes the higher one.
 
 ### Screens
 

@@ -372,11 +372,7 @@ Mode 2 work. These are conventions for the prose, since prose is all there is.
 Audited against `LEARNINGS.md`. Recorded so a stage does not trust this repo to be level with its
 own learnings.
 
-**Three LEARNINGS items are not yet in any stage file.** LEARNINGS 9 (build-class targets, so a
-non-trivial build does not read as a 30-minute underperformance), LEARNINGS 11's second half
-(Figma variables must carry **WEB code syntax**, which is what made build 1's handoff a copy rather
-than a translation), and LEARNINGS 12 (an element on more than one screen is a component, not a
-clone — in Figma and in code).
+**None open.** Every item in `LEARNINGS.md` has reached the stage file or template it names.
 
-When one of these is closed, delete its paragraph here rather than marking it done. This section is
-a list of open items, not a changelog.
+Add a paragraph per gap as one appears, and delete it when it closes rather than marking it done.
+This section is a list of open items, not a changelog.
