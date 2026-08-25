@@ -18,9 +18,9 @@ file to the idle template below.
 build:               thelma
 started:             2026-08-24T13:57
 stage-0.5-preflight: done    (/builds/thelma/preflight.md — 3 degraded, 0 blocking)
-stage-1-architect:   halted  (/builds/thelma/contract.md — class C, escalation YES, triggers 4 + 5)
-stage-2-designer:    pending (blocked by stage-1 escalation)
-stage-3-engineer:    pending (blocked by stage-1 escalation)
+stage-1-architect:   done    (/builds/thelma/contract.md — class C, escalation resolved, A1–A3)
+stage-2-designer:    done    (/builds/thelma/design.md — mode B, tokens derived, 12 from 21st.dev, 6 hand-built)
+stage-3-engineer:    running
 stage-4-qa:          pending
 stage-5a-security:   pending
 stage-6-deploy:      pending
@@ -30,6 +30,9 @@ escalations:         2026-08-24T14:20 stage-1-architect halt-trigger-1 — stack
                      triggers 4 (custodian APIs gated on firm credentials; order routing may need
                      static egress/mTLS that Vercel Pro lacks) and 5 (real-time streaming vs polled
                      snapshot market data). Contract complete and validated. Sent to Joel.
+                     2026-08-24T14:35 stage-1-architect resolved — Joel answered: aggregator
+                     (ByAllAccounts) for ingestion, polled snapshot prices, TypeScript agent graph.
+                     Contract amended A1–A3. Stack unchanged. Stages 2 and 3 released.
 ```
 
 Preflight degradations, and the stage each is charged to:
@@ -42,6 +45,10 @@ DEGRADED 2  gitleaks unavailable — GitHub releases 403 via proxy, container ro
             carried by: stage-5a-security. Must state in security-review.md that it did not run.
 DEGRADED 3  gh CLI absent.
             carried by: stage-6-deploy. GitHub MCP is the route. No capability lost.
+DEGRADED 4  API_KEY_21ST not set — the 21st.dev `npx shadcn add` install route fails.
+            FOUND AT STAGE 2, not at preflight. Tier probe passed; install path was never probed.
+            carried by: stage-3-engineer. Components are retrieved via MCP get_component and
+            vendored into components/ui/. Appended to /ERRORS.md. Stage 7 to fold into LEARNINGS.
 ```
 
 Stage 1 validation pass: PASSED on first attempt, 0 of 2 redos used. Stack matches the decision
@@ -98,6 +105,9 @@ escalations:         2026-08-24T14:20 stage-1-architect halt-trigger-1 — stack
                      triggers 4 (custodian APIs gated on firm credentials; order routing may need
                      static egress/mTLS that Vercel Pro lacks) and 5 (real-time streaming vs polled
                      snapshot market data). Contract complete and validated. Sent to Joel.
+                     2026-08-24T14:35 stage-1-architect resolved — Joel answered: aggregator
+                     (ByAllAccounts) for ingestion, polled snapshot prices, TypeScript agent graph.
+                     Contract amended A1–A3. Stack unchanged. Stages 2 and 3 released.
 ```
 
 Failing detail, when a loop is active, goes below the block:

@@ -85,3 +85,24 @@ postinstall will not re-fetch them.
 **Do not run `playwright install`.** If a project pins a different `@playwright/test` version than
 the pre-installed browser build, launch with `executablePath: '/opt/pw-browsers/chromium'` rather
 than downloading.
+
+### `API_KEY_21ST` is not set — as at 2026-08-24
+
+The 21st.dev account is on a **paid, unmetered** tier and the MCP tools work, so `get_usage`
+reports healthy and a Preflight that stops there passes it.
+
+But every `installCommand` the catalogue returns looks like:
+
+```
+npx shadcn@latest add "https://21st.dev/r/<author>/<component>?api_key=$API_KEY_21ST"
+```
+
+and that variable is **not in the environment**. The command resolves to an empty key and fails.
+
+**Working route:** retrieve through the MCP `get_component` tool, which returns the code directly,
+and vendor it into the project's `components/ui/`. Same code, no CLI, no key.
+
+**Preflight probe gap this exposes:** tier and install path are two different failures. A tier probe
+answers "may I retrieve?" and says nothing about "can this machine install?". The 21st.dev row needs
+both cells. Found at Stage 2 of the `thelma` build, which is one stage later than it should have
+been.

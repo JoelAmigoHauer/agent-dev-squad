@@ -1014,7 +1014,7 @@ exists rather than a direct integration. Recorded here so Stage 6 does not disco
 ## 5. Escalation flag
 
 ```
-escalation: yes
+escalation: RESOLVED 2026-08-24 — see amendment A1–A3 below. Was: yes.
 reason:     Triggers 4 and 5.
 
             Trigger 4 — the brief names Schwab Advisor Center, Fidelity and Pershing for holdings,
@@ -1033,6 +1033,10 @@ reason:     Triggers 4 and 5.
             Stages 2 and 3 do not start until both are answered. Everything else in this contract
             — schema, guardrail engine, ledger, review workflow — is unaffected by either answer
             and is ready to build the moment they land.
+
+            ANSWERED 2026-08-24 by Joel. Amendments A1, A2 and A3 below carry the answers and are
+            binding. The stack is unchanged: Next.js / Vercel / Supabase / 21st.dev. Stages 2 and 3
+            are released.
 ```
 
 ---
@@ -1046,3 +1050,145 @@ Clause affected: <section>
 Change: <the new binding text>
 Downstream impact: <does QA need to regenerate tests? does the schema change?>
 -->
+
+## 2026-08-24 — A1: custodian ingestion runs through a data aggregator, not direct custodian APIs
+
+Raised by: Orchestrator, relaying Joel's answer to the Stage 1 escalation.
+Clause affected: §1 (deferred table), §2 (new table), §3 (`CustodianAdapter`, import route), §4.
+
+**Change.** v1.0 ingests holdings, transactions and tax lots from a **third-party aggregator**
+rather than direct Schwab/Fidelity/Pershing APIs. The `CustodianAdapter` port is unchanged and
+still carries the eventual direct adapters; the aggregator is simply another implementation of it.
+
+**Which aggregator, and why it is not a free choice.** The target production adapter is
+**ByAllAccounts (Morningstar)**. The two consumer-grade alternatives fail this product on specifics,
+and Stage 3 must not silently substitute one:
+
+| Vendor | Disqualifier for Thelma |
+|---|---|
+| Plaid | Consent is an end-user Link flow — the *account holder* authenticates, not the advisor. The brief puts a client-facing interface explicitly out of scope for v1, so there is no surface on which a client could complete it. Holdings carry position-level cost basis, not lot-level |
+| Yodlee | Same consent shape, same lot-level gap |
+| **ByAllAccounts** | Advisor/firm-level credentialed data gathering, and lot-level cost basis. Fits both the consent model and `tax_lots` |
+
+Lot-level data is the load-bearing difference. `tax_lots` exists in v1.0 precisely so v1.1 harvesting
+needs no migration, and an aggregator that cannot populate it defeats that.
+
+**What Stage 3 actually builds, stated plainly.** No ByAllAccounts credential exists in this
+environment, and obtaining one is a Morningstar sales motion. Stage 3 therefore ships:
+
+- `ByAllAccountsAdapter` — written against the documented API shape, **unexercised against a live
+  vendor**. It must be marked as such in `build-notes.md`. It is not to be described as working.
+- `csv` and `simulated` — the adapters QA actually drives, and the ones the pilot runs on until a
+  vendor credential lands.
+
+This is the same reasoning that produced the port in the first place: the seam absorbs a commercial
+dependency the build does not control. Choosing an aggregator moves *which* vendor is on the far
+side of the seam; it does not remove the seam or the credential problem.
+
+**Schema change — QA must regenerate affected tests.** One new table. Nothing existing changes.
+
+```sql
+create type aggregator_status as enum ('pending','connected','error','revoked');
+
+create table aggregator_connections (
+  id             uuid primary key default gen_random_uuid(),
+  firm_id        uuid not null references firms(id) on delete cascade,
+  vendor         text not null check (vendor in ('byallaccounts','csv','simulated')),
+  external_id    text,
+  status         aggregator_status not null default 'pending',
+  last_sync_at   timestamptz,
+  last_error     text,
+  created_at     timestamptz not null default now()
+);
+create unique index aggregator_connections_vendor_idx on aggregator_connections (firm_id, vendor);
+-- RLS: firm-scoped select for all roles; insert/update principal only.
+-- Vendor secrets are NOT stored here. They live in Supabase Vault, referenced by external_id.
+-- A credential column on a firm-scoped table readable by three roles is the finding this
+-- avoids: `readonly` is a compliance seat and must never be able to read a custodian credential.
+```
+
+`accounts.custodian` needs no migration — it was specified as `text`, not an enum, for exactly this.
+Its accepted values become `'csv' | 'simulated' | 'byallaccounts' | 'schwab' | 'fidelity' |
+'pershing'`.
+
+**API change.** File upload and vendor pull are different shapes and do not belong on one route.
+
+```
+POST /api/custodian/import          -- unchanged. File-based: csv.
+POST /api/custodian/sync            -- new. Pull-based: byallaccounts, simulated.
+  body: { householdId: string; vendor: 'byallaccounts' | 'simulated' }
+  202:  { syncId: string; status: 'running' }
+  409:  { error: 'not_connected', detail: { vendor, status } }
+  409:  { error: 'sync_in_progress' }
+  502:  { error: 'vendor_unavailable', detail: { vendor, upstreamStatus } }
+
+GET  /api/custodian/connections     -- new.
+  200: { connections: { vendor, status, lastSyncAt, lastError }[] }
+```
+
+`CustodianAdapter.capabilities` gains `lotLevelBasis: boolean`. The tax agent reads it and must
+degrade to position-level basis rather than fabricate lots when it is `false`.
+
+**Flow bindings — two rows added to §1:**
+
+| Flow | Screen | Control | Calls | Post-condition |
+|---|---|---|---|---|
+| Sync from aggregator | Settings | "Sync now" | `POST /api/custodian/sync` | sync starts, `last_sync_at` updates, positions/lots/transactions upserted, ledger entry appended |
+| Refuse sync when unconnected | Settings | "Sync now" | `POST /api/custodian/sync` | `409 not_connected`, nothing written, connection status shown |
+
+**Downstream impact.** Schema: one new table, one new enum, no changes to existing tables. QA
+regenerates ingestion tests to cover both routes and adds the two flow rows above. Design adds a
+connections panel to Settings. The guardrail engine, ledger and review workflow are untouched.
+
+---
+
+## 2026-08-24 — A2: market data is polled snapshots. Trigger 2 does not fire
+
+Raised by: Orchestrator, relaying Joel's answer.
+Clause affected: §3, §4.
+
+**Change.** Prices are fetched on a schedule and at run start. There is no streaming subscription,
+no resident connection, and therefore no second deployment target. Escalation trigger 2 is
+confirmed **not** fired, and the assumption §4 flagged is now a decision.
+
+`security_prices` is unchanged — it was already written for dated snapshots with a `source` column
+per row.
+
+```ts
+interface MarketDataAdapter {
+  readonly id: string;
+  fetchPrices(symbols: string[], asOf?: Date): Promise<{ symbol, closePrice, priceDate, source }[]>;
+}
+```
+
+A run reads `mandates.price_staleness_hours` and marks every recommendation `stale_data = true`
+when the newest price is older than that. That column already exists and was already read by F3;
+this amendment only confirms it is the whole staleness story, with no live feed behind it.
+
+**Downstream impact.** None to schema or existing API. QA's staleness test is unchanged.
+
+---
+
+## 2026-08-24 — A3: the agent runtime is a TypeScript graph on Vercel, not LangGraph
+
+Raised by: Orchestrator, relaying Joel's answer.
+Clause affected: §4.
+
+**Change.** The multi-agent architecture — monitor, risk/compliance, tax, proposal, guardrail — is
+implemented as a TypeScript agent graph running inside Vercel Functions, with Vercel Queues for
+fan-out across households. Not LangGraph, not a Python service, no second deployment target.
+
+Each household's cycle decomposes well under the 300s function ceiling. Traces land in `agent_runs`
+and `agent_steps`, which is the observability requirement satisfied in the same Postgres as
+everything else rather than in a separate vendor.
+
+The stack line in §4 is unchanged and remains binding:
+
+```
+Frontend:                Next.js (App Router, TypeScript)
+Hosting:                 Vercel
+Database, auth, storage: Supabase (Postgres 17, Auth, RLS)
+UI components:           21st.dev MCP
+```
+
+**Downstream impact.** None to schema or API. Stage 3 builds the graph in TypeScript.
