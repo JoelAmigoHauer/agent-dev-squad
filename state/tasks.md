@@ -25,7 +25,7 @@ stage-4-qa:          done    (/builds/thelma/test-results.md — 113 passed, 3 s
 stage-5a-security:   done    (/builds/thelma/security-review.md — pass, 0 blocking, gitleaks NOT run)
 stage-6-deploy:      halted  (/builds/thelma/deploy-record.md — SUPABASE_SERVICE_ROLE_KEY unobtainable; 0 of 2 attempts used)
 stage-5b-security:   pending (blocked by stage-6)
-stage-7-retro:       pending (blocked by stage-6)
+stage-7-retro:       done    (8 learnings appended to /LEARNINGS.md — 1 critical, 3 high)
 escalations:         2026-08-24T14:20 stage-1-architect halt-trigger-1 — stack escalation fired,
                      triggers 4 (custodian APIs gated on firm credentials; order routing may need
                      static egress/mTLS that Vercel Pro lacks) and 5 (real-time streaming vs polled
@@ -38,6 +38,13 @@ escalations:         2026-08-24T14:20 stage-1-architect halt-trigger-1 — stack
                      writes, no monitoring cycle, no first user). No deploy attempted, so 0 of 2
                      attempts consumed. Sent to Joel.
 ```
+
+RESUME POINT — this file is deliberately NOT reset. The build is paused, not finished, so the
+idle template would erase where to pick it up. Resume at stage-6-deploy: set the environment
+variables named in /builds/thelma/deploy-record.md (SUPABASE_SERVICE_ROLE_KEY is the blocker),
+then Stage 6, then 5b. Stage 7 already ran, out of order, at Joel's direction (2026-08-25) so
+the learnings were not lost to the halt. No run-record.md exists yet — that is written on
+completion, and this build has not completed.
 
 Preflight degradations, and the stage each is charged to:
 
@@ -121,7 +128,7 @@ stage-4-qa:          loop 2/3 (2 failing tests, detail below)
 stage-5a-security:   done    (local checks clean — advisors are hosted-only, deferred to 5b)
 stage-6-deploy:      halted  (/builds/thelma/deploy-record.md — SUPABASE_SERVICE_ROLE_KEY unobtainable; 0 of 2 attempts used)
 stage-5b-security:   pending (blocked by stage-6)
-stage-7-retro:       pending (blocked by stage-6)
+stage-7-retro:       done    (8 learnings appended to /LEARNINGS.md — 1 critical, 3 high)
 escalations:         2026-08-24T14:20 stage-1-architect halt-trigger-1 — stack escalation fired,
                      triggers 4 (custodian APIs gated on firm credentials; order routing may need
                      static egress/mTLS that Vercel Pro lacks) and 5 (real-time streaming vs polled

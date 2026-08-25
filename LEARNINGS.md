@@ -219,3 +219,236 @@ Recorded because the temptation after a defect list is to change everything.
   directions. Worth keeping as a default in every contract.
 - **The tier check that stopped Stage 2** — Designer refusing to start Mode B until `get_usage`
   confirmed a paid tier — is the cheapest halt in the whole run. More gates should look like it.
+
+---
+
+# Blueprint revisions — learnings from build 2
+
+Derived from `thelma`, the second end-to-end run (2026-08-24). A class C build: a supervised
+agentic portfolio manager for RIAs, halted at Stage 6 on an environment blocker.
+
+**Sequencing note.** Stage 7 normally runs after deploy. This build halted at Stage 6, and Joel
+directed that the retro run anyway rather than lose the learnings — a deliberate deviation, not a
+drift. Entries below draw on every record except `deploy-record.md`'s post-deploy half, which does
+not exist yet.
+
+Numbering continues from build 1. Ranked by cost of leaving it alone.
+
+---
+
+## 13. Preflight probes build tooling and never runtime credentials — CRITICAL
+
+**What happened.** Preflight passed with 0 blocking findings. Stages 1 through 5a all completed
+green: contract validated, 113 test assertions passing, security review passed with 0 blocking
+findings, production build compiling and booting. Stage 6 then could not deploy at all, because
+`SUPABASE_SERVICE_ROLE_KEY` cannot be obtained in this environment. The same missing credential
+also blocked every end-to-end test, so the build reached "verified" on paper while its whole
+write path had never once executed.
+
+**Why it is systemic.** Learning 2 added Preflight to catch missing *tools* — things a stage
+shells out to. It probes `node`, `docker`, `semgrep`, MCP connectivity, plan tiers. Every one of
+those is a **build-time** dependency. A service-role key, an API key, a signing secret and a
+webhook secret are **runtime** dependencies: absent, they break nothing until the moment the
+application tries to serve a request, which is after every gate has passed. Preflight's table has
+no row shape that can express "the app will need this secret at runtime and this environment
+cannot supply it". Every build with a server-side secret hits this, and always at Stage 6, which
+is the most expensive place to find it.
+
+**The change.** `agents/preflight.md` gains a third probe section, **Runtime credentials**, run
+after the stack is known:
+
+```
+| Credential | Needed by | Obtainable here? | If not, what breaks |
+|---|---|---|---|
+| SUPABASE_SERVICE_ROLE_KEY | ledger writes, agent runtime, seed | NO | every write path, and sign-in |
+```
+
+A runtime credential that cannot be obtained is **BLOCKING at Stage 0.5**, not at Stage 6 — the
+whole point of Preflight is that the halt is cheap. `agents/architect.md` §1 gains a matching
+mandatory field: every contract lists the runtime secrets its design requires, so Preflight has
+something to probe against rather than guessing.
+
+**SEVERITY: critical.**
+
+---
+
+## 14. A contract field can be filled with a mechanism that cannot work — HIGH
+
+**What happened.** Contract §1's "First user" field was filled, as build 1's learning 5 requires:
+*"a migration reads `FIRST_PRINCIPAL_EMAIL` from the environment, creates the firms row and an
+auth.users row with no password"*. It passed the Stage 1 validation pass. It is impossible — a SQL
+migration cannot read process environment variables, and inserting directly into `auth.users`
+produces an account that cannot complete a password reset. The Engineer hit it at Stage 3 and
+raised the build's only `CLARIFICATION`; it became amendment A4.
+
+**Why it is systemic.** Learning 5 made the field **mandatory**, which was right, and the
+validation pass checks the field is **present**, which is not the same as checking it is
+**possible**. Any mandatory field can be satisfied by plausible-sounding prose. This is the same
+failure as learning 1 one level up: there, a flow was described rather than bound; here, a
+mechanism is named rather than shown to work.
+
+**The change.** `agents/architect.md`, "First user": the field must name the **artefact** that
+implements it — a file path — not a description of one. `supabase/migrations/*.sql`,
+`scripts/*.mjs`, an invite flow route. The validation pass adds one check: *can the named artefact
+type do what the mechanism claims?* A SQL migration reading process env fails that check in one
+line.
+
+**SEVERITY: high.**
+
+---
+
+## 15. Nothing checks the contract against itself — HIGH
+
+**What happened.** Contract §2 specified `decision_ledger.firm_id … on delete cascade` and, forty
+lines later in the same section, `create trigger trg_ledger_append_only before update or delete on
+decision_ledger`. Both were implemented exactly as written. They are mutually incompatible: a
+cascade from `firms` issues a DELETE the trigger refuses, so deleting a firm fails with a trigger
+error rather than a foreign-key violation. QA found it **in teardown**, by luck of having written
+a teardown, not by design. It became amendment A5.
+
+**Why it is systemic.** Every consistency check in the pipeline is *between* artefacts — flow
+bindings reconcile §1 against §3, QA reconciles the build against the contract. Nothing reconciles
+the contract against itself. §2 is the section most exposed to this, because it contains three
+sub-languages that constrain the same rows — DDL, triggers and RLS policies — written in separate
+blocks by the same agent in one pass. A cascade that a trigger blocks, a policy that a constraint
+forbids, and a default that a check rejects are all the same defect shape, and all invisible to
+every stage that reads only its own half.
+
+**The change.** `agents/architect.md` §2 gains a **self-consistency pass**, the schema analogue of
+the flow-bindings reconciliation that learning 1 added:
+
+> For every table carrying a trigger or an RLS policy, state what each foreign key does on delete
+> and confirm no trigger or policy refuses that action. A cascade into an append-only table is the
+> canonical failure.
+
+Cheap, mechanical, and it catches the whole class rather than this instance.
+
+**SEVERITY: high.**
+
+---
+
+## 16. Preflight records a tool's plan tier, not whether this machine can use it — HIGH
+
+**What happened.** Preflight probed 21st.dev, recorded `tier: paid, unmetered`, and passed it —
+correctly, on its own terms. Stage 2 then found that every `installCommand` the catalogue returns
+embeds `$API_KEY_21ST`, and that variable is not set in this environment. The CLI install route
+was dead. Components had to be retrieved through the MCP tool and vendored by hand instead, which
+means Engineer guardrail 3 ("use the 21st.dev component named in design.md") was satisfied only
+partially — recorded as such in `build-notes.md` rather than claimed as complete.
+
+**Why it is systemic.** This is learning 2 recurring **with Preflight already in place**, which is
+what makes it worth an entry rather than a bug report. Preflight asks two questions — *does the
+tool answer?* and *what tier?* — and both were answered correctly. It never asks the third: *can
+this machine actually invoke it?* Tier and reachability are different facts, and the gap between
+them is invisible until a stage tries to use the tool. `gitleaks` is the same shape: installed
+nowhere, reachable through neither the release route nor the container route.
+
+**The change.** `agents/preflight.md`'s probe table gains an **Invocable?** column distinct from
+Status and Tier, and the 21st.dev row specifically gains "check `API_KEY_21ST` is set, not only
+that `get_usage` answers". A tool that answers but cannot be invoked is `DEGRADED`, with the stage
+that carries it named — which is the machinery Preflight already has, simply never pointed at this
+question.
+
+**SEVERITY: high.**
+
+---
+
+## 17. The 5a/5b split assumes 5a runs against a local stack — MEDIUM
+
+**What happened.** Learning 3 split Security into 5a pre-deploy (local) and 5b post-deploy
+(hosted), because Supabase advisors are hosted-only and could not run at 5a. On this build Docker
+was absent, so there was no local stack at all and every stage worked against the hosted project
+from Stage 3 onward. Advisors therefore ran **at 5a**, found 14 warnings, and had them fixed
+before deploy was even attempted — the outcome learning 3 wanted, reached by ignoring the
+mechanism it prescribed.
+
+**Why it is systemic.** The split encodes *where* a check runs (local vs hosted) as a proxy for
+*when* it can run (pre vs post deploy). Those come apart whenever a build has a hosted project
+before deploy, which is every build without a working local stack — and, on this machine, that is
+every build. Applied mechanically, the rule would have deferred advisors to 5b and shipped with a
+layer unchecked, which is precisely what learning 3 exists to prevent.
+
+**The change.** `agents/security.md` reframes the split by **capability, not by stage**: run every
+check as soon as its target exists. If a hosted project exists at 5a, advisors run at 5a. 5b
+becomes "everything that could not run earlier, plus everything that only becomes true once real
+data and real users exist" — the seeded first user, the deployed client bundle, the live env vars
+— rather than "the hosted checks".
+
+**SEVERITY: medium.**
+
+---
+
+## 18. A degraded tool has no stated substitute, so each stage invents one — MEDIUM
+
+**What happened.** Preflight correctly marked `gitleaks` DEGRADED and named Stage 5a as carrying
+the loss. Stage 5a then had to invent the substitute itself: `semgrep p/secrets` over the tree,
+plus explicit greps for assigned credential literals, JWT-shaped strings and `sb_secret_` values,
+plus a check that `.env.local` is untracked. Those cover the working tree and **not git history**,
+which is the half that matters most for a leaked key — and that limit was reasoned out at 5a
+rather than known in advance.
+
+**Why it is systemic.** The DEGRADED mechanism records *which stage inherits a loss* but nothing
+about *what the fallback is or what it fails to cover*. So the substitute is improvised under time
+pressure by whichever stage hits it, and its blind spots are discovered by whoever thinks hardest
+in the moment rather than being written down once. Preflight already distinguishes DEGRADED from
+BLOCKING on the basis that "a stated fallback exists" — but nowhere is the fallback actually
+stated.
+
+**The change.** `agents/preflight.md`: DEGRADED requires three things, not one — the stage that
+carries it, **the named substitute**, and **what the substitute does not cover**. `agents/security.md`
+gains a per-tool fallback row so the substitute is doctrine rather than improvisation:
+
+```
+| Tool | If unavailable, substitute | Substitute does NOT cover |
+|---|---|---|
+| gitleaks | semgrep p/secrets + literal greps over the tree | git HISTORY — a key committed then removed |
+```
+
+**SEVERITY: medium.**
+
+---
+
+## 19. A pinned test-tool version and a pre-installed browser build are two different facts — MEDIUM
+
+**What happened.** Preflight recorded Playwright as OK: browsers pre-installed at
+`/opt/pw-browsers`, `@playwright/test` resolvable. At Stage 4, every browser test failed and every
+API test passed. The cause was a version mismatch — `@playwright/test` 1.62.1 expects Chromium
+build 1234, the container ships 1194 — and the tool's own advice, `npx playwright install`, is
+forbidden in this environment and cannot succeed. It cost a fix-loop iteration, correctly logged
+`cause: environment` so it did not consume the cap.
+
+**Why it is systemic.** The symptom is indistinguishable from a broken application: seven page
+tests red, an assertion-shaped error message, a trace file. Under learning 4's cap-by-cause rule
+it was survivable; under a naive cap it would have burned an iteration and pointed the Engineer at
+code that was fine. Any pre-provisioned browser will drift from any pinned test package eventually,
+so this recurs on a clock rather than by chance.
+
+**The change.** `agents/preflight.md`'s Playwright row must compare the **pinned package version**
+against the **installed browser build**, not merely confirm both exist. `/ERRORS.md` now carries
+the diagnostic signal that identifies it in one glance, which is the durable half of the fix:
+**API tests passing while every page test fails means the browser never launched.**
+
+**SEVERITY: medium.**
+
+---
+
+## 20. The contract does not say which mechanism wins when two govern the same field — LOW
+
+**What happened.** The mandate governs cash twice over: `min_cash_bps` and `liquidity_need` in §2,
+and separately the allocation bands that guardrail rule 3 enforces. The contract states both and
+never states which governs. The Engineer inferred that an asset class absent from the mandate's
+bands is unauthorised — correct for every class except cash — so every household holding cash was
+reported in breach. QA caught it as GAP 1.
+
+**Why it is systemic.** The loop worked, so the bug itself is not the lesson. The lesson is what
+made it available: whenever a contract constrains one quantity through two mechanisms, the
+precedence between them is a real decision, and prose that mentions both without ranking them
+reads complete. This is a domain-modelling gap that will recur on any class B or C build with
+overlapping constraints, and it is cheapest to settle at Stage 1.
+
+**The change.** `agents/architect.md` §2: where a field is governed by more than one mechanism,
+state which binds and what the other one is for. One line — *"cash is governed by `min_cash_bps`,
+not by allocation bands; a mandate need not band cash"* — would have removed the inference
+entirely.
+
+**SEVERITY: low.**
