@@ -16,11 +16,25 @@ made the call from the intake.
 
 ### Two conditions this stage inherited, and what each changed
 
-**No visual source exists.** Preflight recorded it: the intake was a written brief with no sketch,
-no voice note and no Figma file. Figma tooling is present and licensed (Full seat on Pro) but there
-is nothing to pull from. **Every token in §4 is therefore `derived`, none are `extracted`**, and the
-Engineer is free to adjust any of them. A partial run must not read as a complete one, so it is
-stated here rather than implied.
+**No visual source existed at intake — a Figma file was created at Stage 2 re-do.** Preflight
+recorded the original condition: a written brief, no sketch, no voice note, no Figma file. Tokens
+were therefore `derived` and non-binding.
+
+That was closed on 2026-08-25. `agents/designer.md` permits the Designer to *create* a Figma file
+where none exists — *"If a Figma file exists for the project, **or you create one**, pull exact
+values rather than estimating them"* — and the first pass read the absence as settling the
+question rather than as an instruction. Joel raised it. The file now exists:
+
+```
+Thelma — Design System v1.0
+file key: JWOShrmCfUS7YVaGBArJHg
+https://www.figma.com/design/JWOShrmCfUS7YVaGBArJHg
+```
+
+**Every colour, spacing, radius and type token in §5 is now `extracted`** — created as Figma
+variables, pulled back as data via `get_variable_defs`, and verified against `app/globals.css`.
+Per Engineer guardrail 2 they are now **binding**, not adjustable. See §5 for the round-trip
+evidence and §8 for exactly how much of the design is in Figma and how much is not.
 
 **The 21st.dev CLI install route does not work on this machine.** Discovered at this stage, not at
 Preflight. The account is `paid` and unmetered — that part Preflight got right — but every
@@ -227,9 +241,44 @@ than collide.
 ## 5. Design tokens
 
 ```
-STATUS: derived — all tokens. No Figma file exists for this project (Preflight, 2026-08-24).
-        The Engineer may adjust any of these. None is extracted, so none is binding.
+STATUS: extracted — all tokens, as at 2026-08-25.
+        Source: Figma file JWOShrmCfUS7YVaGBArJHg, collections Color / Spacing / Radius / Type.
+        Pulled back as data via get_variable_defs and reconciled against app/globals.css.
+        Per Engineer guardrail 2 these are BINDING. Ship the value as written; do not eyeball a
+        value that exists as data.
 ```
+
+**Round-trip evidence.** The pull is what makes the status `extracted` — the values below came
+back *out* of Figma, they were not read off this document. All 21 colour tokens returned, keyed by
+the WEB code syntax set on each variable, and all 21 matched `app/globals.css` exactly with zero
+mismatches and zero missing:
+
+```
+var(--bg) #fbfbfd        var(--surface) #ffffff       var(--surface-sunken) #f4f5f8
+var(--border) #e3e5ea    var(--border-strong) #c9cdd6 var(--text) #14161c
+var(--text-muted) #5b6272 var(--text-subtle) #868d9d  var(--accent) #2563eb
+var(--accent-hover) #1d4ed8 var(--accent-subtle) #eff4ff
+var(--positive) #067647  var(--positive-subtle) #ecfdf3
+var(--negative) #b42318  var(--negative-subtle) #fef3f2
+var(--warning) #b54708   var(--warning-subtle) #fffaeb
+var(--info) #175cd3      var(--info-subtle) #eff8ff
+var(--neutral) #5b6272   var(--neutral-subtle) #f4f5f8
+```
+
+**Variable collections in the file** — 45 variables total:
+
+| Collection | Modes | Count | Scopes |
+|---|---|---|---|
+| `Color` | **Light, Dark** | 21 | `FRAME_FILL`/`SHAPE_FILL`, `TEXT_FILL`, `STROKE_COLOR`, `ALL_FILLS` per token |
+| `Spacing` | Default | 10 | `GAP`, `WIDTH_HEIGHT` |
+| `Radius` | Default | 4 | `CORNER_RADIUS` |
+| `Type` | Default | 10 | `FONT_SIZE`, `FONT_FAMILY` |
+
+Dark is a **mode on the Color collection**, not a second set of variables — so switching the mode
+on any frame previews the whole dark palette, and the two can never drift apart the way two
+parallel token sets do. Every variable carries explicit `scopes` (never `ALL_SCOPES`, which
+pollutes every picker) and a `WEB` code syntax equal to its CSS custom property name, so the Figma
+name and the CSS name cannot diverge.
 
 Sober, high-contrast, built for dense numerics. Blue is reserved for interactive affordances only,
 so it never competes with the semantic colours that carry meaning in a table.
@@ -320,3 +369,57 @@ verifying as broken is a successful verification reporting a true result.
 
 None. Every screen in the contract has a design, every control in the flow-bindings table maps to a
 rendered element, and no screen needed a field the contract does not carry.
+
+---
+
+## 8. What is in the Figma file, and what is not
+
+Added at the Stage 2 re-do, 2026-08-25. Stated precisely so a partial file cannot read as a
+complete one — the same rule §1 and §6 are written under.
+
+```
+Thelma — Design System v1.0
+https://www.figma.com/design/JWOShrmCfUS7YVaGBArJHg
+Pages: Tokens · Components · Screens
+```
+
+### Complete
+
+| | Status |
+|---|---|
+| **Design tokens — all 45** | **Complete and `extracted`.** Colour (21, Light + Dark modes), Spacing (10), Radius (4), Type (10). Round-trip verified against `globals.css`, zero mismatches |
+| Colour reference sheet | Complete — every token as a bound swatch, grouped surface / text / accent / semantic |
+| `StatusPill` | Complete — 11 variants, one per status in the system, tone mapping matching `primitives.tsx` |
+| `SeverityDot` | Complete — 3 variants |
+| `DriftBar` | Complete — 2 variants, within-band and breached |
+| **S7 · Recommendation detail** | **Complete.** The screen the product exists for: rationale, proposed trades, all eleven guardrail rows, projected impact, provenance, decision bar |
+
+### Not built in Figma
+
+Nine screens and eight shared components exist **only as the written specification** in §3 and §4
+of this file. They are specified to build-level detail — layout, component list, and all four
+states each — but they are not drawn:
+
+- **Screens:** S1 Sign in, S2 Firm dashboard, S3 Household list, S4 Household detail,
+  S5 Mandate editor, S6 Mandate versions, S8 Decision ledger, S9 Agent run trace, S10 Settings.
+- **Components:** `AppShell`, `NavRail`, `ShadowModeBanner`, `MoneyCell`/`BpsCell`,
+  `ProvenanceBlock`, `EmptyState`, `DataTable`, `ConfirmDialog`, `GuardrailResultPanel`,
+  `LedgerVerifyStrip`. Several are composed inside S7 as frames but are not extracted as
+  reusable components.
+
+S7 was chosen over the other nine deliberately rather than by running out of room: it is the only
+screen that exercises every distinctive decision in the design at once — the eleven-row guardrail
+panel where the passes matter as much as the failures, provenance visible without interaction, and
+approval as a single deliberate action rather than a row-level click.
+
+### What this changes for the Engineer
+
+| Layer | Binding? |
+|---|---|
+| **Tokens** | **Yes.** `extracted`. Ship the values as written; `tailwind.config.ts` and `globals.css` already match exactly, so nothing needs changing today |
+| S7 and the three built components | **Yes.** These are drawn; match them |
+| The nine unbuilt screens | **No** — the §3 written spec still governs them, at the same authority it had before |
+
+`agents/engineer.md` guardrail 2 draws the line at the token level, not the screen level, so the
+tokens flipping to `extracted` is the change that actually binds. The unbuilt screens are no worse
+specified than they were; they are simply still specified in prose.

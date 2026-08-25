@@ -19,7 +19,7 @@ build:               thelma
 started:             2026-08-24T13:57
 stage-0.5-preflight: done    (/builds/thelma/preflight.md — 3 degraded, 0 blocking)
 stage-1-architect:   done    (/builds/thelma/contract.md — class C, escalation resolved, A1–A3)
-stage-2-designer:    done    (/builds/thelma/design.md — mode B, tokens derived, 12 from 21st.dev, 6 hand-built)
+stage-2-designer:    done    (/builds/thelma/design.md — mode B, tokens EXTRACTED, Figma JWOShrmCfUS7YVaGBArJHg)
 stage-3-engineer:    done    (/builds/thelma/build-notes.md — 19 routes, 10 screens, build+start verified)
 stage-4-qa:          done    (/builds/thelma/test-results.md — 113 passed, 3 skipped, 0 failing)
 stage-5a-security:   done    (/builds/thelma/security-review.md — pass, 0 blocking, gitleaks NOT run)
@@ -88,8 +88,15 @@ session (no MCP tool exposes it, which is correct). Ledger writes, the seed scri
 runtime's writes all need it. Unit tests are unaffected; full end-to-end flows are not runnable
 here and QA must report that rather than claim a pass it did not obtain.
 
-Intake variance: brief only. No sketch, no voice note, no Figma file. Stage 2 derives tokens
-rather than extracting them, and says so in design.md.
+Intake variance: brief only. No sketch, no voice note, no Figma file at intake.
+
+Stage 2 RE-DO, 2026-08-25, at Joel's request. designer.md permits the Designer to create a Figma
+file where none exists; the first pass read the absence as settling the question instead. Created
+`Thelma — Design System v1.0` (JWOShrmCfUS7YVaGBArJHg): 45 variables across Color (Light+Dark
+modes), Spacing, Radius and Type; StatusPill/SeverityDot/DriftBar variant sets; S7 Recommendation
+detail complete. Tokens pulled back via get_variable_defs and reconciled against globals.css —
+21/21 exact, 0 mismatches. Tokens are now `extracted` and therefore BINDING on the Engineer.
+Nine screens and eight components remain written-spec only; design.md §8 states which.
 
 ---
 
