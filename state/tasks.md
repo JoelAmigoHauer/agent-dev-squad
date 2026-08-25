@@ -96,7 +96,11 @@ file where none exists; the first pass read the absence as settling the question
 modes), Spacing, Radius and Type; StatusPill/SeverityDot/DriftBar variant sets; S7 Recommendation
 detail complete. Tokens pulled back via get_variable_defs and reconciled against globals.css —
 21/21 exact, 0 mismatches. Tokens are now `extracted` and therefore BINDING on the Engineer.
-Nine screens and eight components remain written-spec only; design.md §8 states which.
+
+2026-08-25 (cont.): ALL TEN SCREENS now built in Figma — S1-S10. Three layout defects found by
+screenshotting each screen and fixed (S3 column collision, S4 drift wrap, S4 column widths that
+never summed inside the card). Eight shared elements are drawn on every screen but not yet
+extracted as Figma components; code remains their source of truth. design.md §8 states it.
 
 ---
 

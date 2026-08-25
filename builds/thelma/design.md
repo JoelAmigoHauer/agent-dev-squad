@@ -372,10 +372,9 @@ rendered element, and no screen needed a field the contract does not carry.
 
 ---
 
-## 8. What is in the Figma file, and what is not
+## 8. What is in the Figma file
 
-Added at the Stage 2 re-do, 2026-08-25. Stated precisely so a partial file cannot read as a
-complete one — the same rule §1 and §6 are written under.
+Added at the Stage 2 re-do, 2026-08-25. All ten screens are built.
 
 ```
 Thelma — Design System v1.0
@@ -383,43 +382,63 @@ https://www.figma.com/design/JWOShrmCfUS7YVaGBArJHg
 Pages: Tokens · Components · Screens
 ```
 
-### Complete
+### Screens — 10 of 10
+
+| Screen | Route | Built |
+|---|---|---|
+| S1 Sign in | `/sign-in` | Yes — no sign-up affordance anywhere, invite-only copy present |
+| S2 Firm dashboard | `/` | Yes — four stat cards, open recommendations, agent activity |
+| S3 Household list | `/households` | Yes — drift bars per household, mandate version, open count |
+| S4 Household detail | `/households/:id` | Yes — the densest screen: allocation bands, holdings, run history |
+| S5 Mandate editor | `/households/:id/mandate` | Yes — six-step rail, band editor, live 100.00% total |
+| S6 Mandate versions | `.../mandate/versions` | Yes — field-level diffs, and the first version says it has nothing to compare against |
+| S7 Recommendation detail | `/recommendations/:id` | Yes — rationale, legs, all eleven guardrail rows, provenance, decision |
+| S8 Decision ledger | `/ledger` | Yes — agent and advisor actors visually distinct, chain-intact strip |
+| S9 Agent run trace | `/runs/:id` | Yes — seven steps including a guardrail `rejection` rendered distinctly |
+| S10 Settings | `/settings` | Yes — connections with verbatim vendor error, shadow mode, advisors |
+
+Every screen carries the `AppShell` nav rail and the `ShadowModeBanner`, which lives inside the
+shell rather than per-screen precisely so no screen can be missing it.
+
+### Tokens and components
 
 | | Status |
 |---|---|
 | **Design tokens — all 45** | **Complete and `extracted`.** Colour (21, Light + Dark modes), Spacing (10), Radius (4), Type (10). Round-trip verified against `globals.css`, zero mismatches |
-| Colour reference sheet | Complete — every token as a bound swatch, grouped surface / text / accent / semantic |
-| `StatusPill` | Complete — 11 variants, one per status in the system, tone mapping matching `primitives.tsx` |
+| Colour reference sheet | Complete — every token as a bound swatch |
+| `StatusPill` | Complete — 11 variants |
 | `SeverityDot` | Complete — 3 variants |
-| `DriftBar` | Complete — 2 variants, within-band and breached |
-| **S7 · Recommendation detail** | **Complete.** The screen the product exists for: rationale, proposed trades, all eleven guardrail rows, projected impact, provenance, decision bar |
+| `DriftBar` | Complete — 2 variants |
 
-### Not built in Figma
+### Still not extracted as reusable components
 
-Nine screens and eight shared components exist **only as the written specification** in §3 and §4
-of this file. They are specified to build-level detail — layout, component list, and all four
-states each — but they are not drawn:
+Eight shared elements are **drawn on every screen but composed as frames**, not extracted into
+Figma components: `AppShell`, `NavRail`, `ShadowModeBanner`, `MoneyCell`/`BpsCell`,
+`ProvenanceBlock`, `EmptyState`, `DataTable`, `ConfirmDialog`, `GuardrailResultPanel`,
+`LedgerVerifyStrip`. They exist in code in `components/ui/`, so the code is the single source for
+them today; a later pass should extract them in Figma so the two agree structurally as well as
+visually.
 
-- **Screens:** S1 Sign in, S2 Firm dashboard, S3 Household list, S4 Household detail,
-  S5 Mandate editor, S6 Mandate versions, S8 Decision ledger, S9 Agent run trace, S10 Settings.
-- **Components:** `AppShell`, `NavRail`, `ShadowModeBanner`, `MoneyCell`/`BpsCell`,
-  `ProvenanceBlock`, `EmptyState`, `DataTable`, `ConfirmDialog`, `GuardrailResultPanel`,
-  `LedgerVerifyStrip`. Several are composed inside S7 as frames but are not extracted as
-  reusable components.
+### Defects found and fixed while building
 
-S7 was chosen over the other nine deliberately rather than by running out of room: it is the only
-screen that exercises every distinctive decision in the design at once — the eleven-row guardrail
-panel where the passes matter as much as the failures, provenance visible without interaction, and
-approval as a single deliberate action rather than a row-level click.
+Three, all caught by screenshotting each screen rather than assuming it rendered:
+
+1. **S3** — the market-value and drift columns collided with zero gap, rendering as
+   `MARKET VALUEWORST DRIFT`. Cells were laid out with `itemSpacing: 0` and exact widths.
+2. **S4** — drift values wrapped one character per line on breached rows only. The value was set
+   to `FILL` and the `outside band` flag squeezed it to near-zero width.
+3. **S4 again** — the first fix made every row wrap, because rows carrying the flag were 88px
+   narrower than the rest. The columns had never summed inside the card. Fixed with widths that
+   actually fit, and a slimmer recommendations card.
+
+The second and third are the same defect the flow-bindings table exists to catch one level up: a
+layout that looks right in one row and fails in another is invisible until something drives every
+row.
 
 ### What this changes for the Engineer
 
 | Layer | Binding? |
 |---|---|
-| **Tokens** | **Yes.** `extracted`. Ship the values as written; `tailwind.config.ts` and `globals.css` already match exactly, so nothing needs changing today |
-| S7 and the three built components | **Yes.** These are drawn; match them |
-| The nine unbuilt screens | **No** — the §3 written spec still governs them, at the same authority it had before |
-
-`agents/engineer.md` guardrail 2 draws the line at the token level, not the screen level, so the
-tokens flipping to `extracted` is the change that actually binds. The unbuilt screens are no worse
-specified than they were; they are simply still specified in prose.
+| **Tokens** | **Yes.** `extracted`. `tailwind.config.ts` and `globals.css` already match exactly |
+| **All ten screens** | **Yes.** These are drawn; match them |
+| The eight unextracted components | Code is the source of truth for now |
