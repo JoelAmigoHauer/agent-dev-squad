@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tokens from /builds/thelma/design.md §5. All `derived` — no Figma source exists — so the
+   Engineer may adjust them; any change is recorded in build-notes.md. */
+:root {
+  --bg: #FBFBFD;            --surface: #FFFFFF;
+  --surface-sunken: #F4F5F8; --border: #E3E5EA;
+  --border-strong: #C9CDD6;
+  --text: #14161C;          --text-muted: #5B6272;
+  --text-subtle: #868D9D;
+  --accent: #2563EB;        --accent-hover: #1D4ED8;  --accent-subtle: #EFF4FF;
+  --positive: #067647;      --positive-subtle: #ECFDF3;
+  --negative: #B42318;      --negative-subtle: #FEF3F2;
+  --warning: #B54708;       --warning-subtle: #FFFAEB;
+  --info: #175CD3;          --info-subtle: #EFF8FF;
+  --neutral: #5B6272;       --neutral-subtle: #F4F5F8;
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0C0E13;            --surface: #14171E;
+    --surface-sunken: #0F1218; --border: #262B36;
+    --border-strong: #3A414F;
+    --text: #F2F4F8;          --text-muted: #9AA2B1;
+    --text-subtle: #6E7686;
+    --accent: #5A8BFF;        --accent-hover: #7BA3FF;  --accent-subtle: #16213A;
+    --positive: #47CD89;      --positive-subtle: #0B2A1C;
+    --negative: #F97066;      --negative-subtle: #2E1512;
+    --warning: #F5A524;       --warning-subtle: #2B1F08;
+    --info: #6BA6FF;          --info-subtle: #101E33;
+    --neutral: #9AA2B1;       --neutral-subtle: #1A1E27;
+  }
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Every figure in this product is read in a column against other figures. Digits that change
+   width between rows make a drift column unreadable at a glance, which is the only way anyone
+   reads it. design.md §5. */
+.tabular { font-variant-numeric: tabular-nums; }
+
+table { border-collapse: collapse; }

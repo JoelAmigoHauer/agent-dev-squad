@@ -1,0 +1,32 @@
+-- Contract §2 constraint suite — run against the deployed database via the Supabase MCP
+-- `execute_sql` tool, or psql. Every assertion raises on failure; reaching the end means all
+-- passed. Fixtures are created and torn down inside the run.
+--
+-- These prove the governance rules hold AT THE DATABASE, where application code cannot route
+-- around them. That is the difference between a convention and a constraint, and it is the whole
+-- claim contract §2 makes.
+--
+-- Last run: 2026-08-24. Result: 16/16 PASS.
+--
+--   T1  ledger hash chain links row to row, seq assigned by trigger
+--   T2  ledger UPDATE refused
+--   T3  ledger DELETE refused
+--   T4  published mandate immutable
+--   T5  published -> superseded permitted
+--   T6  at most one published mandate per household
+--   T7  unbounded auto_execute refused
+--   T8  bounded auto_execute stored
+--   T9  disordered allocation band refused
+--   T10 negative close price refused
+--   T11 approved recommendation must name an advisor
+--   T12 pending recommendation with no decider is storable
+--   T13 recommendation rationale frozen after creation
+--   T14 firm with ledger history cannot be deleted (amendment A5)
+--   T15 RLS enabled on every public table
+--   T16 decision_ledger has no write policy
+--
+-- Teardown removes ledger rows by explicitly disabling trg_ledger_append_only. That is the
+-- deliberate archival path A5 describes; the application has no route to it.
+--
+-- The full executable body is reproduced in test-results.md alongside its output, so the suite
+-- and the evidence it produced stay together.

@@ -20,9 +20,9 @@ started:             2026-08-24T13:57
 stage-0.5-preflight: done    (/builds/thelma/preflight.md — 3 degraded, 0 blocking)
 stage-1-architect:   done    (/builds/thelma/contract.md — class C, escalation resolved, A1–A3)
 stage-2-designer:    done    (/builds/thelma/design.md — mode B, tokens derived, 12 from 21st.dev, 6 hand-built)
-stage-3-engineer:    running
-stage-4-qa:          pending
-stage-5a-security:   pending
+stage-3-engineer:    done    (/builds/thelma/build-notes.md — 19 routes, 10 screens, build+start verified)
+stage-4-qa:          done    (/builds/thelma/test-results.md — 113 passed, 3 skipped, 0 failing)
+stage-5a-security:   running
 stage-6-deploy:      pending
 stage-5b-security:   pending
 stage-7-retro:       pending
@@ -59,6 +59,23 @@ the proposal and its cost.
 Flow-bindings reconciliation: run and repaired. Three routes in §3 were reached by no control
 (`GET .../mandate`, `GET .../drift`, `GET /api/recommendations`); rows added. `GET /api/health` is
 the one deliberate exception — a deploy probe, not a screen.
+
+QA findings so far:
+  GAP 1  cash reported as an unbanded band breach; rule 3 failed for any household holding cash
+         test: /builds/thelma/tests/unit/guardrails.test.ts:149
+         class: bug — FIXED, full suite re-run green, regression test pinned
+  GAP 2  decision_ledger.firm_id is ON DELETE CASCADE but the append-only trigger blocks the
+         cascade, so deleting a firm fails with a confusing trigger error instead of a clear
+         constraint violation. contract §2 specifies both clauses; they contradict.
+         class: spec-gap — no scope change, so no halt. Routed to the Architect as A5.
+
+Stage 3 clarification: 1 raised, answered as contract amendment A4 (first-user mechanism is a
+seed script, not a SQL migration — SQL cannot read process env). No schema or API change.
+
+Environment blocker carried into stage 4: SUPABASE_SERVICE_ROLE_KEY is not obtainable in this
+session (no MCP tool exposes it, which is correct). Ledger writes, the seed script and the agent
+runtime's writes all need it. Unit tests are unaffected; full end-to-end flows are not runnable
+here and QA must report that rather than claim a pass it did not obtain.
 
 Intake variance: brief only. No sketch, no voice note, no Figma file. Stage 2 derives tokens
 rather than extracting them, and says so in design.md.

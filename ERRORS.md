@@ -106,3 +106,31 @@ and vendor it into the project's `components/ui/`. Same code, no CLI, no key.
 answers "may I retrieve?" and says nothing about "can this machine install?". The 21st.dev row needs
 both cells. Found at Stage 2 of the `thelma` build, which is one stage later than it should have
 been.
+
+### Playwright browser build does not match recent `@playwright/test` — as at 2026-08-24
+
+`/opt/pw-browsers` ships Chromium build **1194**. `@playwright/test` 1.62.1 looks for build
+**1234** and fails with:
+
+```
+browserType.launch: Executable doesn't exist at
+/opt/pw-browsers/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell
+...  Please run the following command to download new browsers:  npx playwright install
+```
+
+**Do not follow that advice.** `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` is set and GitHub release
+downloads 403 through the proxy, so the install cannot succeed and will burn several minutes
+failing.
+
+**Working route** — point at the installed binary in `playwright.config.ts`:
+
+```ts
+use: { launchOptions: { executablePath: '/opt/pw-browsers/chromium' } }
+```
+
+`/opt/pw-browsers/chromium` is a stable symlink to `chromium-1194/chrome-linux/chrome`, so it
+survives a browser-build bump better than a versioned path.
+
+**Diagnostic note worth keeping:** API-only tests (Playwright's `request` fixture) pass while every
+page test fails, because only page tests launch a browser. A suite failing in exactly that pattern
+is this, not an application bug — do not go looking at the app.

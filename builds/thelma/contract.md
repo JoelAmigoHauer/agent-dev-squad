@@ -1192,3 +1192,88 @@ UI components:           21st.dev MCP
 ```
 
 **Downstream impact.** None to schema or API. Stage 3 builds the graph in TypeScript.
+
+---
+
+## 2026-08-24 — A4: the first-user mechanism is a seed script, not a SQL migration
+
+Raised by: Stage 3 Engineer, as a `CLARIFICATION`. Answered by the Architect.
+Clause affected: §1, "First user".
+
+**The clarification, as raised:**
+
+```
+CLARIFICATION — thelma
+CONTRACT CLAUSE: §1 "First user" — "supabase/migrations/*_seed_first_principal.sql runs at
+                 deploy, reads FIRST_PRINCIPAL_EMAIL and FIRST_FIRM_NAME from the environment,
+                 creates the firms row and an auth.users row with no password"
+THE AMBIGUITY:   A SQL migration cannot read process environment variables. It could read a
+                 Postgres GUC, but nothing sets one at deploy. Separately, inserting directly
+                 into auth.users bypasses Supabase's own identity creation and produces an
+                 account that cannot complete a password reset.
+BLOCKED:         the first-user mechanism only.
+PROCEEDING ON:   everything else.
+```
+
+**The Architect's answer, binding.** The clause was wrong; the requirement it expresses was not.
+What must hold is unchanged: a deployed database has exactly one way in, that account is a
+`principal`, and nobody else can set its password.
+
+The mechanism becomes `scripts/seed-first-principal.mjs`, run against the **deployed** database as
+a post-deploy step. It:
+
+1. Reads `FIRST_FIRM_NAME` and `FIRST_PRINCIPAL_EMAIL` from the environment.
+2. Exits successfully and does nothing if a `principal` already exists — so a redeploy is safe.
+3. Creates the `firms` row with `shadow_mode = true`.
+4. Invites the principal through Supabase Auth rather than inserting into `auth.users`. **No
+   password is ever set by this script.** The principal sets their own from the invite email.
+
+`supabase/migrations/` therefore contains schema only. There is no seed migration and there must
+not be one — a migration that creates an account is a migration that cannot be re-run.
+
+**Downstream impact.** No schema change, no API change. Stage 6 gains one post-deploy step. QA's
+first-user test drives the invite flow rather than looking for a seeded password.
+
+---
+
+## 2026-08-24 — A5: `decision_ledger.firm_id` is ON DELETE RESTRICT, not CASCADE
+
+Raised by: Stage 4 QA, as a `GAP` classed **spec-gap**. Answered by the Architect.
+Clause affected: §2, `decision_ledger`.
+
+**The gap.** §2 specifies two clauses that cannot both hold:
+
+```sql
+firm_id uuid not null references firms(id) on delete cascade
+```
+
+and
+
+```sql
+create trigger trg_ledger_append_only
+  before update or delete on decision_ledger ...
+```
+
+A cascade from `firms` issues a DELETE against `decision_ledger`, which the trigger refuses. So
+deleting a firm does not cascade — it fails, with a trigger error naming append-only rather than a
+foreign-key violation. The behaviour is right; the declaration is a promise the schema cannot keep,
+and the error it produces sends whoever hits it looking in the wrong place.
+
+QA found it in teardown, which is the honest way to find it: the suite tried to delete its own
+fixture firm and could not.
+
+**The fix.** `firm_id` becomes `on delete restrict`, matching the choice already made deliberately
+for `household_id` in the same table and for the same reason:
+
+> households is ON DELETE RESTRICT, not CASCADE. Deleting a household must not be able to delete
+> its audit trail — the household is what an examiner would be asking about.
+
+That reasoning applies with more force to a firm, not less. Migration `0004_ledger_fk_restrict.sql`.
+
+**What this means operationally, and it is a feature.** A firm with any ledger history cannot be
+deleted. Offboarding a firm is a retention decision — SEC books-and-records retention is measured
+in years — and it must not be reachable by a stray `DELETE`. When a firm genuinely must be removed,
+that is a deliberate, separately-authorised archival procedure, not a cascade.
+
+**Downstream impact.** One migration, no application code change, no API change. QA converts the
+finding into an assertion: deleting a firm with ledger entries is refused.

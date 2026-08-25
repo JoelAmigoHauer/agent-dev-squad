@@ -81,17 +81,25 @@ export function computeDrift(
   // A class held but not present in the mandate is itself a finding, surfaced as an unbanded row
   // rather than dropped. Dropping it would make the percentages not add up, which is the kind of
   // discrepancy that destroys trust in every other number on the screen.
+  //
+  // Cash is the one exception, and it is not a special case so much as a different rule: the
+  // mandate governs cash through `min_cash_bps` and `liquidity_need` (guardrail rule 5), not
+  // through allocation bands. Mandates routinely band only the invested classes, summing to
+  // 10000bps, while the household still holds cash. Flagging that as a band breach would put
+  // essentially every real household permanently in breach and train advisors to ignore the
+  // breach flag entirely — which is the one signal on the screen that must never become noise.
   for (const [assetClass, marketValue] of byClass) {
     if (states.some((s) => s.assetClass === assetClass)) continue;
     const actualBps = shareBps(marketValue, total);
+    const governedElsewhere = assetClass === 'cash';
     states.push({
       assetClass,
       targetBps: 0,
       minBps: 0,
-      maxBps: 0,
+      maxBps: governedElsewhere ? FULL_BPS : 0,
       actualBps,
-      driftBps: actualBps,
-      breached: actualBps > 0,
+      driftBps: governedElsewhere ? 0 : actualBps,
+      breached: governedElsewhere ? false : actualBps > 0,
       marketValue,
     });
   }
