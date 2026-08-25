@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc --noEmit)",
+      "Bash(npx tsc --noEmit *)",
+      "Bash(npx vitest run --config vitest.config.ts)",
+      "Bash(npx vitest run --config vitest.config.ts *)",
+      "Bash(npm audit)",
+      "Bash(npm audit --json *)",
+      "Bash(npm audit --omit=dev *)",
+      "mcp__21_dev__search",
+      "mcp__21_dev__get_usage",
+      "mcp__Supabase__get_advisors",
+      "mcp__Supabase__get_cost",
+      "mcp__Figma__get_figma_skill",
+      "mcp__Figma__get_variable_defs"
+    ]
+  }
+}
