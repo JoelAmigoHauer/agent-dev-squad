@@ -23,9 +23,9 @@ stage-2-designer:    done    (/builds/thelma/design.md — mode B, tokens derive
 stage-3-engineer:    done    (/builds/thelma/build-notes.md — 19 routes, 10 screens, build+start verified)
 stage-4-qa:          done    (/builds/thelma/test-results.md — 113 passed, 3 skipped, 0 failing)
 stage-5a-security:   done    (/builds/thelma/security-review.md — pass, 0 blocking, gitleaks NOT run)
-stage-6-deploy:      running
-stage-5b-security:   pending
-stage-7-retro:       pending
+stage-6-deploy:      halted  (/builds/thelma/deploy-record.md — SUPABASE_SERVICE_ROLE_KEY unobtainable; 0 of 2 attempts used)
+stage-5b-security:   pending (blocked by stage-6)
+stage-7-retro:       pending (blocked by stage-6)
 escalations:         2026-08-24T14:20 stage-1-architect halt-trigger-1 — stack escalation fired,
                      triggers 4 (custodian APIs gated on firm credentials; order routing may need
                      static egress/mTLS that Vercel Pro lacks) and 5 (real-time streaming vs polled
@@ -33,6 +33,10 @@ escalations:         2026-08-24T14:20 stage-1-architect halt-trigger-1 — stack
                      2026-08-24T14:35 stage-1-architect resolved — Joel answered: aggregator
                      (ByAllAccounts) for ingestion, polled snapshot prices, TypeScript agent graph.
                      Contract amended A1–A3. Stack unchanged. Stages 2 and 3 released.
+                     2026-08-25T01:30 stage-6-deploy halted — SUPABASE_SERVICE_ROLE_KEY cannot be
+                     obtained in this session and the app cannot function without it (no ledger
+                     writes, no monitoring cycle, no first user). No deploy attempted, so 0 of 2
+                     attempts consumed. Sent to Joel.
 ```
 
 Preflight degradations, and the stage each is charged to:
@@ -115,9 +119,9 @@ stage-2-designer:    done    (mode B, tokens derived, 21st.dev components logged
 stage-3-engineer:    done    (/builds/invoice-chaser/build-notes.md)
 stage-4-qa:          loop 2/3 (2 failing tests, detail below)
 stage-5a-security:   done    (local checks clean — advisors are hosted-only, deferred to 5b)
-stage-6-deploy:      running
-stage-5b-security:   pending
-stage-7-retro:       pending
+stage-6-deploy:      halted  (/builds/thelma/deploy-record.md — SUPABASE_SERVICE_ROLE_KEY unobtainable; 0 of 2 attempts used)
+stage-5b-security:   pending (blocked by stage-6)
+stage-7-retro:       pending (blocked by stage-6)
 escalations:         2026-08-24T14:20 stage-1-architect halt-trigger-1 — stack escalation fired,
                      triggers 4 (custodian APIs gated on firm credentials; order routing may need
                      static egress/mTLS that Vercel Pro lacks) and 5 (real-time streaming vs polled
@@ -125,6 +129,10 @@ escalations:         2026-08-24T14:20 stage-1-architect halt-trigger-1 — stack
                      2026-08-24T14:35 stage-1-architect resolved — Joel answered: aggregator
                      (ByAllAccounts) for ingestion, polled snapshot prices, TypeScript agent graph.
                      Contract amended A1–A3. Stack unchanged. Stages 2 and 3 released.
+                     2026-08-25T01:30 stage-6-deploy halted — SUPABASE_SERVICE_ROLE_KEY cannot be
+                     obtained in this session and the app cannot function without it (no ledger
+                     writes, no monitoring cycle, no first user). No deploy attempted, so 0 of 2
+                     attempts consumed. Sent to Joel.
 ```
 
 Failing detail, when a loop is active, goes below the block:
