@@ -23,3 +23,15 @@ export async function requirePrincipal(): Promise<Guarded<unknown>> {
   if (!isPrincipal(result.session.profile.role)) return { response: forbidden('principal_only') };
   return result;
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/**
+ * Path params reach the database directly. Supabase parameterises the value so there is no
+ * injection, but an id that is not a UUID makes Postgres raise, which surfaces as a 500 with a
+ * log ref — telling the caller their input reached the data layer, and burying a real 500 in
+ * noise. A non-UUID id is simply not found.
+ */
+export function isUuid(value: string): boolean {
+  return UUID_RE.test(value);
+}

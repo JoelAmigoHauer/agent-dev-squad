@@ -1,5 +1,5 @@
 import { getServerClient } from '@/lib/db/server';
-import { requireSession } from '@/lib/api/guards';
+import { requireSession, isUuid } from '@/lib/api/guards';
 import { internal, notFound, ok } from '@/lib/api/respond';
 import { loadHouseholdFacts } from '@/lib/api/household-facts';
 import { computeDrift } from '@/lib/domain/drift';
@@ -11,6 +11,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const guard = await requireSession();
   if ('response' in guard) return guard.response;
   const { id } = await params;
+  if (!isUuid(id)) return notFound();
 
   try {
     const supabase = await getServerClient();

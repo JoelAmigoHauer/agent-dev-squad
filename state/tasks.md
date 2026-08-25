@@ -22,8 +22,8 @@ stage-1-architect:   done    (/builds/thelma/contract.md — class C, escalation
 stage-2-designer:    done    (/builds/thelma/design.md — mode B, tokens derived, 12 from 21st.dev, 6 hand-built)
 stage-3-engineer:    done    (/builds/thelma/build-notes.md — 19 routes, 10 screens, build+start verified)
 stage-4-qa:          done    (/builds/thelma/test-results.md — 113 passed, 3 skipped, 0 failing)
-stage-5a-security:   running
-stage-6-deploy:      pending
+stage-5a-security:   done    (/builds/thelma/security-review.md — pass, 0 blocking, gitleaks NOT run)
+stage-6-deploy:      running
 stage-5b-security:   pending
 stage-7-retro:       pending
 escalations:         2026-08-24T14:20 stage-1-architect halt-trigger-1 — stack escalation fired,
@@ -115,7 +115,7 @@ stage-2-designer:    done    (mode B, tokens derived, 21st.dev components logged
 stage-3-engineer:    done    (/builds/invoice-chaser/build-notes.md)
 stage-4-qa:          loop 2/3 (2 failing tests, detail below)
 stage-5a-security:   done    (local checks clean — advisors are hosted-only, deferred to 5b)
-stage-6-deploy:      pending
+stage-6-deploy:      running
 stage-5b-security:   pending
 stage-7-retro:       pending
 escalations:         2026-08-24T14:20 stage-1-architect halt-trigger-1 — stack escalation fired,

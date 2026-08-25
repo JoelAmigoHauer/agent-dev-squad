@@ -1,5 +1,5 @@
 import { getServerClient } from '@/lib/db/server';
-import { requireWriter } from '@/lib/api/guards';
+import { requireWriter, isUuid } from '@/lib/api/guards';
 import { validateForPublish } from '@/lib/api/mandate';
 import { appendLedger } from '@/lib/ledger';
 import { conflict, internal, notFound, ok, unprocessable } from '@/lib/api/respond';
@@ -8,6 +8,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const guard = await requireWriter();
   if ('response' in guard) return guard.response;
   const { id } = await params;
+  if (!isUuid(id)) return notFound();
   const { session } = guard;
 
   try {

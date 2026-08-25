@@ -1,5 +1,5 @@
 import { getServerClient, getServiceClient } from '@/lib/db/server';
-import { requireWriter } from '@/lib/api/guards';
+import { requireWriter, isUuid } from '@/lib/api/guards';
 import { loadHouseholdFacts } from '@/lib/api/household-facts';
 import { selectProposalEngine } from '@/lib/api/engine';
 import { runGraph } from '@/lib/agents/graph';
@@ -16,6 +16,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const guard = await requireWriter();
   if ('response' in guard) return guard.response;
   const { id } = await params;
+  if (!isUuid(id)) return notFound();
   const { session } = guard;
 
   try {

@@ -1,5 +1,5 @@
 import { getServerClient } from '@/lib/db/server';
-import { requireWriter } from '@/lib/api/guards';
+import { requireWriter, isUuid } from '@/lib/api/guards';
 import { draftSchema } from '@/lib/api/mandate';
 import { internal, notFound, ok, unprocessable } from '@/lib/api/respond';
 
@@ -7,6 +7,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const guard = await requireWriter();
   if ('response' in guard) return guard.response;
   const { id } = await params;
+  if (!isUuid(id)) return notFound();
   const { session } = guard;
 
   const parsed = draftSchema.safeParse(await req.json().catch(() => null));

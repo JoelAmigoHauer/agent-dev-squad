@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { getServerClient, getServiceClient } from '@/lib/db/server';
-import { requireWriter } from '@/lib/api/guards';
+import { requireWriter, isUuid } from '@/lib/api/guards';
 import { loadDecidable } from '@/lib/api/decide';
 import { loadHouseholdFacts } from '@/lib/api/household-facts';
 import { evaluateGuardrails } from '@/lib/guardrails/engine';
@@ -23,6 +23,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const guard = await requireWriter();
   if ('response' in guard) return guard.response;
   const { id } = await params;
+  if (!isUuid(id)) return notFound();
   const { session } = guard;
 
   try {

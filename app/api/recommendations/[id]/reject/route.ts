@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { getServerClient } from '@/lib/db/server';
-import { requireWriter } from '@/lib/api/guards';
+import { requireWriter, isUuid } from '@/lib/api/guards';
 import { loadDecidable } from '@/lib/api/decide';
 import { appendLedger } from '@/lib/ledger';
-import { conflict, internal, ok, unprocessable } from '@/lib/api/respond';
+import { conflict, internal, notFound, ok, unprocessable } from '@/lib/api/respond';
 
 const bodySchema = z.object({ reason: z.string().min(1).max(4000) });
 
@@ -11,6 +11,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const guard = await requireWriter();
   if ('response' in guard) return guard.response;
   const { id } = await params;
+  if (!isUuid(id)) return notFound();
   const { session } = guard;
 
   try {
