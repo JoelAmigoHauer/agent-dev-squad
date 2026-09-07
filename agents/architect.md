@@ -55,6 +55,28 @@ State the class in the contract and name the trait that puts it there. **A build
 two classes takes the higher one** — an underestimated class reads as a failed build, which is the
 exact failure this table exists to prevent.
 
+### Mode — greenfield or brownfield
+
+```
+MODE: greenfield | brownfield
+```
+
+`brownfield` means the Surveyor ran at Stage 0.25 and `/builds/<change-name>/survey.md` exists.
+Then **the survey is your primary input, ahead of the intake.** You do not write the contract from
+nothing — you complete it. Sections 1 to 4 start from what the survey found, and every flow binding
+carries a status:
+
+| Status | Meaning | Downstream |
+|---|---|---|
+| `existing` | Found working by the survey. Not changed by this build | QA regression-covers it. Security records, does not block |
+| `changing` | Found by the survey, and this build alters it | QA regenerates its tests. Security reviews it as new |
+| `new` | Not in the survey. This build creates it | Full pipeline treatment, exactly as greenfield |
+
+The survey's `wired-but-broken` and `unwired` rows become `changing` or `new` here — that is the
+decision you make. Its §8 host constraints become clauses in this contract. Its §9 guardrail debt is
+carried into §1 marked `existing`, so no later stage mistakes inherited debt for this build's
+defect.
+
 The spec then covers:
 
 - Every screen, named.
@@ -84,6 +106,10 @@ both — all 31 passed. The deployed application could not create a quote, becau
 button to the route and nothing in the contract said it had to. Every stage verified its own half.
 
 A row in this table is a thing QA can drive. A sentence is not.
+
+In `brownfield` mode the table gains a sixth column, **Status**, per the Mode section above. Rows
+the survey found `working` come in as `existing`; you decide which of the rest are `changing` and
+which are `new`.
 
 ### 2. Data model
 

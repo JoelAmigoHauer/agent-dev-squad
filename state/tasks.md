@@ -16,7 +16,9 @@ file to the idle template below.
 
 ```
 build:               none
+mode:                —
 started:             —
+stage-0.25-surveyor: idle
 stage-0.5-preflight: idle
 stage-1-architect:   idle
 stage-2-designer:    idle
@@ -49,6 +51,7 @@ current on the next one.
 | `loop n/N` | In a fix loop, iteration n of cap N |
 | `done` | Complete. Must carry an output location in brackets |
 | `halted` | Cap hit or trigger fired. Must carry a reason |
+| `skipped` | Stage does not apply to this build's mode. Must carry the reason, e.g. `skipped (greenfield)` |
 
 A `done` without an output path is not done.
 
@@ -65,7 +68,9 @@ so the numbers cannot disagree with themselves.
 
 ```
 build: invoice-chaser
+mode: greenfield
 started: 2026-08-15T14:02
+stage-0.25-surveyor: skipped (greenfield)
 stage-0.5-preflight: done    (/builds/invoice-chaser/preflight.md — Figma degraded, Stage 2 carries it)
 stage-1-architect:   done    (/builds/invoice-chaser/contract.md — class B, escalation no)
 stage-2-designer:    done    (mode B, tokens derived, 21st.dev components logged)

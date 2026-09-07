@@ -15,9 +15,15 @@ not against this file.
 ## 1. Written spec
 
 ```
+MODE:        greenfield | brownfield
 FIDELITY:    prototype | production
 BUILD CLASS: A | B | C — <the trait that puts it there>
 ```
+
+**Mode** is `brownfield` when a survey exists at `survey.md`. Then this contract is completed from
+the survey, not written from nothing, and every flow binding in §1 carries a status —
+`existing | changing | new`. The survey's host constraints (§8) become clauses here; its guardrail
+debt (§9) is carried in marked `existing`.
 
 **Fidelity** sets the Designer's mode and the Engineer's tolerance for rough edges. When the intake
 does not say, this is `production`.

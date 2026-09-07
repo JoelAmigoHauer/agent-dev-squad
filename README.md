@@ -22,6 +22,7 @@ your-build/
 ├── BLUEPRINT.md           Original design document. History, not instruction
 ├── LEARNINGS.md           Why v0.2 differs from v0.1. Read before changing rules
 ├── agents/                One file per role — each is that agent's entire world
+│   ├── surveyor.md        0.25 · brownfield audit      (v0.3)
 │   ├── preflight.md       0.5 · tooling probe          (v0.2)
 │   ├── architect.md       1   · the binding contract
 │   ├── designer.md        2   · UI, tokens, components

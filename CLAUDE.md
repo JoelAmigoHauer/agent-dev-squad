@@ -16,11 +16,13 @@ Scaffolded from [BLUEPRINT.md](BLUEPRINT.md).
 **Precedence.** `BLUEPRINT.md` is the source document, kept unedited as the record of why this repo
 is shaped the way it is — the seven-role split, the cap numbers, the Section 9 layout. It is
 history, not instruction. Where it and a working file disagree, the working file wins and the
-disagreement is recorded in the UI decision log. Three known divergences as at 2026-08-22: the
+disagreement is recorded in the UI decision log. Four known divergences as at 2026-09-07: the
 blueprint's escalation triggers 1 and 2 have since been narrowed (see
 [skills/stack-decision.md](skills/stack-decision.md)), its Section 13 tooling gaps for QA and
 Security are closed (see [agents/qa.md](agents/qa.md), [agents/security.md](agents/security.md)),
-and its Section 9 repo layout predates `preflight.md`, `retro.md` and `LEARNINGS.md`.
+its Section 9 repo layout predates `preflight.md`, `retro.md` and `LEARNINGS.md`, and it assumes
+every build is greenfield — the Surveyor stage and `brownfield` mode
+([agents/surveyor.md](agents/surveyor.md)) have no counterpart in it.
 
 No stage loads `BLUEPRINT.md`. It is not in any agent's context by design — an agent reading the
 superseded triggers alongside the current ones would have no way to tell which binds.
@@ -48,6 +50,7 @@ no dependency manifest here — the code lives in the repos generated *from* thi
 | `BLUEPRINT.md` | The original design document. History, not instruction | **Never.** By design |
 | `LEARNINGS.md` | Build 1's defect list, ranked, with the fix for each | Before changing any rule; written by Stage 7 |
 | `PRIOR-ART.md` | External projects worth mining, what to take from each and what not to | **Never by a stage.** Mode 2 only |
+| `agents/surveyor.md` | 0.25 · brownfield codebase audit, in the contract's shapes | Stage 0.25 only, brownfield builds |
 | `agents/preflight.md` | 0.5 · tooling and plan-tier probe | Stage 0.5 only |
 | `agents/architect.md` | 1 · the binding contract | Stage 1 only |
 | `agents/designer.md` | 2 · fidelity modes, 21st.dev, Figma | Stage 2 only |
@@ -60,6 +63,7 @@ no dependency manifest here — the code lives in the repos generated *from* thi
 | `state/tasks.md` | Live pipeline state for the one running build | Every stage transition |
 | `builds/_template/` | The per-build folder, copied at the start of each build | On build start |
 | `builds/<app-name>/` | One folder per build. The audit trail | Per stage, its own file |
+| `.claude/skills/squad/SKILL.md` | The `/squad` trigger: stamps this template into another repo's `.squad/` at a pinned version and hands the Orchestrator this brief | **Never by a stage.** Invoked in the host repo, not here |
 | `/ERRORS.md` | Durable machine facts, written by Preflight. **Does not exist yet** — created on the first run that finds one | Stage 0.5 reads and appends |
 
 Each agent file is that agent's entire world. It is written to be read cold, with no other pipeline
@@ -97,6 +101,13 @@ When you fire a stage, load **only**:
 Never load the whole repo into a stage. Narrow context per stage is what keeps each agent sharp
 and cheap. Skills in `/skills/` are loaded on demand by the agent that needs them, not pre-loaded.
 
+**One leak this rule cannot close.** When the squad runs inside another repository via `/squad`,
+that repository's own `CLAUDE.md` auto-loads into every stage regardless. You cannot prevent it.
+What you can do is make it intentional: the Surveyor pulls its constraints into `survey.md` §8 and
+the Architect binds them in the contract, so stages obey host conventions as contract clauses
+rather than treating a second brief as instructions. The host's `CLAUDE.md` never overrides
+pipeline mechanics, caps or halt triggers.
+
 ---
 
 ## Run order
@@ -104,6 +115,7 @@ and cheap. Skills in `/skills/` are loaded on demand by the agent that needs the
 | # | Stage | Agent file | Runs |
 |---|---|---|---|
 | 0 | Intake | — (handled in the kickoff turn) | Sketch + app name + voice note read directly, vision-enabled |
+| 0.25 | **Surveyor** | [agents/surveyor.md](agents/surveyor.md) | **Brownfield only.** Before Preflight. Reads the existing codebase into the contract's shapes; drafts the intake. `skipped` on greenfield |
 | 0.5 | **Preflight** | [agents/preflight.md](agents/preflight.md) | **v0.2.** Before Stage 1. Probes tooling, records plan tiers, halts cheaply |
 | 1 | Architect | [agents/architect.md](agents/architect.md) | Sequential. Gate. |
 | 2 | Designer | [agents/designer.md](agents/designer.md) | Sequential, after Stage 1 clears |
@@ -122,6 +134,14 @@ splits.
 
 Stage 0 has no separate parsing agent. Transcribe and interpret the voice note and read the sketch
 in the same turn that kicks off the Architect.
+
+**Brownfield changes the front of the run, not the rest of it.** When the squad is pointed at a
+repository that already has code, the Surveyor runs first — before Preflight, because Preflight
+probes the stack the repo actually uses and only the survey knows what that is. There is no sketch
+and no voice note: **the intake is the survey's intent draft plus Joel's corrections.** Putting that
+draft to Joel is not an invented check-in; it is Stage 0. Every stage after that reads the contract
+exactly as it would on a greenfield build — the contract just arrives with `existing | changing |
+new` on every binding. Brownfield is an input, not a second set of stage files.
 
 Stages 4 and 5 run in parallel to avoid dead time. Stage 6 does not start until both report green.
 
@@ -303,6 +323,7 @@ conversation exports.
 
 | File | Written by | Stage |
 |---|---|---|
+| `survey.md` | Surveyor | 0.25 — brownfield only |
 | `preflight.md` | Preflight | 0.5 |
 | `contract.md` | Architect | 1 |
 | `design.md` | Designer | 2 |
@@ -331,6 +352,8 @@ is deliberately repeated for a stage that reads cold, one copy binds:
 | Status vocabulary | `state/tasks.md` | — |
 | Escalation triggers, current narrowed form | `skills/stack-decision.md` | `agents/architect.md` |
 | What a contract must contain | `agents/architect.md` | `builds/_template/contract.md`, as a scaffold |
+| What a survey must contain | `agents/surveyor.md` | `builds/_template/survey.md`, as a scaffold |
+| How `/squad` stamps and routes | `.claude/skills/squad/SKILL.md` | — it defers to this file for everything else |
 | Vercel platform notes | `agents/devops.md` | `agents/engineer.md`, for the build side |
 | Deploy record template | `agents/devops.md` | `skills/deploy-sequence.md` points at it |
 | Default stack | `skills/stack-decision.md` | `agents/architect.md`, `README.md` |
