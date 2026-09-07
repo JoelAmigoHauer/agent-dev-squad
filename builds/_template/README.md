@@ -8,6 +8,7 @@ conversation exports.
 
 | File | Written by | Stage |
 |---|---|---|
+| `survey.md` | Surveyor | 0.25 — brownfield only |
 | `preflight.md` | Preflight | 0.5 |
 | `contract.md` | Architect | 1 |
 | `design.md` | Designer | 2 |

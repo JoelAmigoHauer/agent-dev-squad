@@ -202,6 +202,13 @@ budget and escalate a finding that was already fixed.
 
 Before recording a re-review as a failure, confirm the tree you scanned contains the fix.
 
+**Inherited debt does not enter the loop.** On a `brownfield` build the contract marks bindings
+`existing | changing | new`, and the survey's §9 lists guardrail debt the codebase already carried.
+A finding on `existing` code is **recorded and carried forward in the deploy record, not
+blocking**, unless this build touched that code. Advisors on an existing project will return a
+backlog that predates this build; holding it to a 2-iteration cap would end the run before it
+started, on defects nobody in it wrote. `changing` and `new` get the full review.
+
 On cap: halt, escalate with the finding and both attempted fixes.
 
 ---

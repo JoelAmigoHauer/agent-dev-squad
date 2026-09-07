@@ -33,7 +33,13 @@ Probe each, record the result, and never assume. A tooling map records *intent*;
 | Git + `gh` | `gh auth status`, note scopes | Stage 6 |
 | Docker daemon | `docker info` | Stage 4 local database |
 
-### Per the contract's stack
+### Per the stack this build will use
+
+On a **greenfield** build the contract does not exist yet, so you probe the default stack below.
+On a **brownfield** build the Surveyor ran before you: probe the stack recorded in
+`/builds/<change-name>/survey.md` §1 instead, and drop any row below the repo does not use. Probing
+the default against a repo that deviates from it reports a clean bill of health for tools the build
+will never touch.
 | Tool | Probe | Blocks |
 |---|---|---|
 | Supabase MCP | `list_projects`, record **plan tier** | Stages 3–6 |
