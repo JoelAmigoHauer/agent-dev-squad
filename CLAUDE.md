@@ -390,12 +390,37 @@ Mode 2 work. These are conventions for the prose, since prose is all there is.
 
 ---
 
-## Known gaps as at 2026-08-22
+## Known gaps as at 2026-09-07
 
 Audited against `LEARNINGS.md`. Recorded so a stage does not trust this repo to be level with its
-own learnings.
+own learnings. Entries 1–12 (build 1) have all reached the stage file or template they name. Entries
+13–19 (build 2, `workshop-hub`, the first brownfield run) have **not yet** — each is a gap until its
+change lands, and the Retro that produced them lists the exact file and section.
 
-**None open.** Every item in `LEARNINGS.md` has reached the stage file or template it names.
+**13 — `working` is not runtime-verified.** `agents/surveyor.md` §5 does not yet separate
+`read-verified` from `working`, and §2 does not yet require the schema to be captured from the live
+catalogue on brownfield builds. Until it does, a survey can pass a binding the database refuses.
+
+**14 — Preflight probes binaries, not capabilities, at one moment.** `agents/preflight.md` does not
+yet count `npx <tool>` plus a named credential as present, does not record the runner's approval
+mode, and this file has no rule that a stage re-probes an MCP write before relying on it.
+
+**15 — Host-test invariants are not host constraints.** `agents/surveyor.md` §8 does not yet list
+the rules the host's own tests enforce, and `agents/architect.md` brownfield mode does not yet run
+the host suite against the contract's structural claims before validation.
+
+**16 — QA's harness is greenfield-specific.** `agents/qa.md` still mandates a local Supabase stack
+and `npm run build && npm start`; the contract has no mandatory "test strategy" field for the
+degraded case. `agents/architect.md` §4 needs it.
+
+**17 — Smoke data in production has no owner.** `skills/deploy-sequence.md` names the verifying write
+but not its removal; `agents/devops.md`'s record has no `SMOKE DATA REMOVED` line.
+
+**18 — Rollback-target age is not recorded.** `skills/deploy-sequence.md` §6 records the previous
+deployment id but not its commit or how far behind the base branch it is.
+
+**19 — Learnings from `/squad` runs need a return path.** `.claude/skills/squad/SKILL.md` has no
+"port learnings" step; build 2's entries were ported by hand.
 
 Add a paragraph per gap as one appears, and delete it when it closes rather than marking it done.
 This section is a list of open items, not a changelog.

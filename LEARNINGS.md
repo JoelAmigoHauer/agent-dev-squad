@@ -1,7 +1,9 @@
-# Blueprint revisions — learnings from build 1
+# Blueprint revisions — learnings, cumulative
 
-Derived from `print-estimator`, the first end-to-end run of the pipeline (2026-08-15).
-`BLUEPRINT.md` stays unedited as the source record; this file is what build 1 proved needs changing.
+Build 1 (`print-estimator`, greenfield, 2026-08-15) produced entries 1–12. Build 2 (`workshop-hub`
+Phase 2, the first brownfield run through `/squad`, 2026-09-07) produced entries 13–19; its full
+record is in that repository under `.squad/builds/workshop-hub/`. `BLUEPRINT.md` stays unedited as
+the source record; this file is what the builds proved needs changing.
 
 Ranked by cost of leaving it alone. Each entry states what actually happened, why it is systemic
 rather than a one-off, and the specific change.
@@ -198,6 +200,174 @@ Editing it means editing it four times.
 
 **The change.** `agents/designer.md`: any element appearing on more than one screen is a component,
 not a clone. Applies to Figma and to code.
+
+---
+
+# Build 2 — workshop-hub, Phase 2 (2026-09-07), the first brownfield run
+
+Derived from the run recorded in `builds/workshop-hub/`. Same test for inclusion as above: a stage
+passed its own check and the product was still wrong, an environmental blocker, a contract field
+invented mid-build, or a tool that could not run where its stage runs. Ordinary bugs the loop caught
+are excluded — the Engineer's own smoke test catching the handler's clock-skew defect before QA ran is
+the system working, not a lesson.
+
+---
+
+## 13. workshop-hub — a binding marked `working` was refused by the database — HIGH
+
+**What happened.** The Surveyor marked "Advance stage" `working` after reading the page (posts the
+stage key) and the handler (validates it with the rulebook, inserts it). Only the schema capture at
+Preflight showed that `workshop_state.phase` was check-constrained to three *other* values, so every
+press of that button since 6 August had been refused with a 400 that the handler reported as 502.
+Code and database each held a copy of the phase list and had diverged a month earlier.
+
+**Why it is systemic.** `working` conflated *read-verified* (both ends of the wire agree) with
+*runtime-verified* (the write actually lands). On a brownfield build the third end — the database —
+is not in the repository at all unless migrations are, and this repo had none. Any brownfield build
+whose schema lives only on the hosted project will pass a code-reading survey while the data layer
+disagrees.
+
+**The change.** `agents/surveyor.md` §5: the status vocabulary gains the distinction — `working`
+requires a runtime probe or a capture that includes the data layer; a code-only reading is
+`read-verified` and the Architect treats it as `changing` until proven. §2: on brownfield the schema
+is **captured from the live catalogue** (columns, constraints, policies, functions, migration list)
+as a precondition, never reconstructed from handler code; the reconstruction stays only as the drift
+comparison. `agents/architect.md` and `agents/security.md`: the rule this build recorded as ADR 0005
+— *the database constrains shape, the rulebook constrains values* — as the default for any value list
+the code already owns.
+
+---
+
+## 14. workshop-hub — tool availability changed three times during one run — HIGH
+
+**What happened.** Preflight probed the Supabase and Vercel MCP servers at 10:52Z and they answered.
+At 11:00Z, when the session left auto mode, every MCP call returned "requires approval", which a
+non-interactive runner cannot grant; Stages 3–5a ran with the migration written but unapplied and
+the advisors unrun. At 21:30Z the MCP servers reconnected under new names and answered again; the
+migration was applied and 5b ran. Separately, Preflight recorded `vercel` CLI as *absent* because
+`command -v vercel` failed, yet `npx vercel@latest` with the `VERCEL_TOKEN` already in the
+environment deployed first time.
+
+**Why it is systemic.** Preflight tests **binaries at one moment**. On a remote runner a capability
+is a function of the binary, the credential in the environment, the package fetcher, and the
+approval mode — and the last of those changes without notice. A stage that assumes Preflight's answer
+still holds will halt on a capability that is present, or plan around one that has gone.
+
+**The change.** `agents/preflight.md`: probe **capabilities, not binaries** — `npx <tool> --version`
+and the presence of the credential by name (`VERCEL_TOKEN`, never its value) count as present; record
+the runner's approval mode as a row. `CLAUDE.md` context-loading/stage rules: any stage that depends
+on an MCP write re-probes immediately before relying on it and records `cause: environment` on a
+refusal rather than halting. `ERRORS.md` template gains the fact: MCP calls succeed in auto mode and
+are denied outside it in a non-interactive session.
+
+---
+
+## 15. workshop-hub — the contract asserted a host-shell mechanic the host's own test forbids — MEDIUM
+
+**What happened.** The Architect wrote `sections: ['choose']` for three new stages. The host shell's
+`roomRender` toggles every stage's sections in order, so a section claimed by three stages ends up
+hidden whenever the visible stage is not the last claimant — and the host already had a test, "no two
+stages claim the same section", that encodes exactly that. It failed on the Engineer's first run and
+became the run's one contract amendment.
+
+**Why it is systemic.** In brownfield mode the contract makes structural claims about code the
+Architect has read but not executed. The cheapest validator of those claims already exists: the
+host's own test suite. The survey's §8 listed conventions from `CLAUDE.md` and ADRs but not the
+invariants the host's tests enforce, so the Architect never saw this one.
+
+**The change.** `agents/surveyor.md` §8: list the invariants the host's tests encode, one row per
+test that guards a structural rule (not per assertion), as host constraints. `agents/architect.md`
+brownfield mode: before validation, run the host's existing test suite against any rulebook or
+config change the contract prescribes — a red host test is a contract defect, not an Engineer task.
+
+---
+
+## 16. workshop-hub — QA's harness section assumes a stack the contract may not have — MEDIUM
+
+**What happened.** `agents/qa.md` mandates a local Supabase stack (`supabase start`, `db reset`) and a
+Playwright `webServer` of `npm run build && npm start`. This build had no Docker daemon, no CLI, a
+free tier with no branching, and a host constraint forbidding a build step. The Architect had to
+design the test harness in the contract: a zero-dependency dev server with an in-memory PostgREST
+double that enforces the migration's checks and RLS, plus one-shot live SQL assertions after the
+migration. It worked — 40/40 through the UI — but it was invented mid-build.
+
+**Why it is systemic.** The harness prescription is greenfield-and-Next.js-specific. Every brownfield
+build, and any greenfield build whose plan tier or runner lacks Docker, hits the same gap at Stage 4,
+after the contract is written.
+
+**The change.** `agents/qa.md`: the `webServer` command is **whatever the contract names** as the
+build-and-serve equivalent (§4 gains that field); the local-stack section becomes one of three
+sanctioned strategies — local stack, in-memory double with post-migration live assertions, or cloud
+branch — chosen in the contract with the reason. `agents/architect.md` §4 gains "Test strategy" as a
+mandatory subsection whenever Preflight reports the local stack degraded.
+
+---
+
+## 17. workshop-hub — deploy verification writes production data and nothing says who deletes it — LOW
+
+**What happened.** The deploy sequence requires "one write path verified in the database" on preview
+and on production. Doing it created three sessions, nine candidates, ten votes and twenty-four
+choose rows in the only database the app has. Deleting them needed a service-role SQL statement
+across seven tables that no brief mentions.
+
+**Why it is systemic.** Every verified deploy creates test data in production by definition; the
+sequence names the write but not its removal, so it accumulates or gets removed ad hoc.
+
+**The change.** `skills/deploy-sequence.md` §5 and §7: smoke sessions carry a fixed prefix
+(`squad-smoke-`), and the sequence ends with a recorded delete of every row keyed to them, listed in
+the deploy record. `agents/devops.md` deploy record gains `SMOKE DATA REMOVED: <counts>`.
+
+---
+
+## 18. workshop-hub — the rollback target can be a month old — LOW
+
+**What happened.** Production had been pointing at a deployment from 6 August while nine later
+commits existed only as un-promoted previews. Promoting this build made the rollback target a build
+that predates the stage machine, the shared rulebook and the ADRs — a rollback would restore a month-
+old app, not yesterday's.
+
+**Why it is systemic.** Brownfield repos deployed by hand accumulate previews nobody promotes. The
+survey records the gap (§7 did), but the deploy sequence assumes the previous production deployment
+is a safe near-past.
+
+**The change.** `skills/deploy-sequence.md` §6: record the rollback target's **commit and age**, and
+when it is behind the base branch by more than the build's own commits, say so in the deploy record
+as a caveat — the rollback is a regression, not a recovery, and Joel decides in advance whether that
+is acceptable.
+
+---
+
+## 19. workshop-hub — the Retro's own file lives in two places — LOW
+
+**What happened.** On a `/squad` run the pipeline is stamped into the host repo's `.squad/`, so this
+file is a copy pinned to one template commit. Stage 7 appends here; the template repository, which
+the next `/squad` run will stamp from, does not see it unless someone ports it.
+
+**Why it is systemic.** Every brownfield run produces learnings into a copy. Without a return path the
+template stops learning exactly when it is used most.
+
+**The change.** `.claude/skills/squad/SKILL.md`: the run ends with a "port learnings" step — the
+Retro's new entries are added to the template repository's `LEARNINGS.md` and listed under its
+`CLAUDE.md` *Known gaps* until the stage files absorb them. Done by hand for this run.
+
+---
+
+## What worked in build 2 and should not be changed
+
+- **Capturing the live schema before the Architect ran** found the month-old stage-machine failure
+  that no amount of code reading had. Intake item 3 was Joel's call; it should be the default.
+- **The contract's verbatim-copy clause (C13)** kept every deck string identical across rulebook, page,
+  handler and tests. Nothing was paraphrased and nothing had to be reconciled.
+- **The in-memory PostgREST double** enforced the migration's checks and RLS locally, so the test
+  that proves an attendee cannot write a choose row ran forty times before the live one ran once.
+- **The Engineer's own smoke run** caught the clock-skew defect in the handler's optimistic
+  re-derivation before QA saw it, and the fix (the database returns its own `created_at`) is now the
+  pattern for any append-only log the client re-derives.
+- **PIN authority inside the database** (`choose_record` as SECURITY DEFINER with no anon INSERT
+  policy) was cheaper than the handler-only gating it replaced and gave the advisors exactly one
+  class of warning to accept. The eight existing tables still carry the older pattern.
+- **Preview first, promote the tested deployment, verify production with one real write path**
+  worked exactly as written, first attempt, including the migration-before-preview ordering.
 
 ---
 
