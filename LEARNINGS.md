@@ -352,6 +352,96 @@ Retro's new entries are added to the template repository's `LEARNINGS.md` and li
 
 ---
 
+## 20. workshop-hub-end — the deploy CLI invents a project when the link is missing — HIGH
+WHAT HAPPENED: The first `npx vercel --yes` from `app/` did not deploy to `methodworks-workshop-hub`.
+  It created a **new Vercel project called `app`**, named after the directory, linked it to the
+  GitHub repo, and deployed there. The command reported success. Nothing in the deploy sequence
+  checks which project it is about to deploy to, so the step passed its own check and the outcome
+  was wrong — the exact failure class this file exists for.
+WHY IT IS SYSTEMIC: `.vercel/` is git-ignored (correctly — it holds an OIDC token), so the project
+  link never survives into a fresh container. Every run in a new container starts unlinked, and
+  `--yes`, which the pipeline needs for non-interactive use, converts "which project?" from a prompt
+  into a silent creation. Build 2 missed it only because its container happened to still hold a link
+  from an earlier interactive run. Left alone this recurs on every first deploy of every session,
+  and each occurrence leaves an outward-facing artefact on Joel's account.
+THE CHANGE: `skills/deploy-sequence.md` §3 gains a mandatory first step before any deploy —
+  `npx vercel link --yes --project <name> --scope <team>` — and a verification line: read back
+  `.vercel/project.json` and confirm `projectName` matches the contract's C14 project before
+  deploying. `agents/devops.md` platform notes carry the same rule.
+SEVERITY: high
+
+## 21. workshop-hub-end — Preflight records a tool as absent and nobody ever tries to get it — HIGH
+WHAT HAPPENED: Preflight recorded `semgrep` absent on this runner, for the second build running, and
+  Security inherited "1 of 3 scanners" as a degraded capability. At Stage 5a, installing it took
+  under five minutes (`python3 -m pip install --ignore-installed PyJWT semgrep`), and it then scanned
+  29 files and produced a real result. Two builds had accepted a permanent-looking gap that was five
+  minutes of work.
+WHY IT IS SYSTEMIC: `agents/preflight.md` asks "does the binary resolve?" and the answer feeds a
+  Degraded table. There is no step that asks whether an absent tool is *cheaply obtainable*, and the
+  word "degraded" reads as a settled fact rather than an open question. A stage that inherits a
+  degradation has every incentive to accept it, because accepting is one line and fixing is unbudgeted
+  work. The same logic is why `gitleaks` is still unrun after three builds — though there the answer
+  really is no, because its Docker path needs a daemon this runner does not have.
+THE CHANGE: `agents/preflight.md`, *What you check* — every absent tool gets a one-line acquisition
+  attempt and its result recorded next to it: `absent — install tried: <command> → succeeded |
+  failed: <reason>`. A tool recorded absent with no attempt line is an incomplete probe. The
+  Degraded table then carries only what genuinely cannot be had.
+SEVERITY: high
+
+## 22. workshop-hub-end — time-derived state cannot be tested by rewinding one record — MEDIUM
+WHAT HAPPENED: The lock is derived from a close timestamp plus twenty minutes. Testing the locked
+  state means stamping a close time in the past. Three separate attempts failed the same way — twice
+  against the dev server, once against the live project — because the "current" state is the newest
+  row **by `created_at`**, so a row stamped 21 minutes ago and inserted after a row stamped a moment
+  ago simply loses. Each failure looked like a broken lock and was actually correct behaviour.
+WHY IT IS SYSTEMIC: this pipeline now recommends append-only logs as a default (ADR 0005 in build 2,
+  ADR 0006 here), and "current = newest by timestamp" is intrinsic to that pattern. Any build that
+  derives state from elapsed time inherits the property, and `agents/qa.md` says nothing about how to
+  drive a clock. Three repetitions inside one build, by an agent that had already diagnosed it once,
+  is the signature of a missing written rule rather than carelessness.
+THE CHANGE: `agents/qa.md`, *Test data*, gains a paragraph: when state is derived from elapsed time,
+  test it by controlling the stored timestamp, never by waiting, and **use a fresh fixture for each
+  position in the window** — a single record cannot be walked backwards through it. Note that the
+  arithmetic itself belongs in a pure unit test, where the clock is an argument.
+SEVERITY: medium
+
+## 23. workshop-hub-end — `vercel promote` cannot promote a preview built with preview variables — MEDIUM
+WHAT HAPPENED: `skills/deploy-sequence.md` §6 says to capture the rollback target and then promote
+  the tested preview. `vercel promote <preview-id>` refused: a preview built with preview environment
+  variables cannot be promoted directly, and the CLI offers to rebuild with production variables
+  instead. The sequence had no branch for that, so the step had to be improvised mid-deploy.
+WHY IT IS SYSTEMIC: the two environments have different variables in every project that has any
+  secrets at all, which is every project this pipeline will deploy. Build 2's promote succeeded only
+  because its preview had been produced in a way that made the artifacts interchangeable. The written
+  step is therefore wrong more often than it is right.
+THE CHANGE: `skills/deploy-sequence.md` §6 states both paths: promote when the preview and production
+  environments match, and otherwise deploy `--prod` from the identical tree and **prove equivalence**
+  — for a repo with no build step, by diffing the served page against the tested preview and
+  accounting for every difference (Vercel injects a preview feedback script). Record which path was
+  taken in the deploy record.
+SEVERITY: medium
+
+## 24. workshop-hub-end — the loop-cause vocabulary has no word for a defective test — LOW
+WHAT HAPPENED: QA's first suite run had two failures, both in the tests rather than the build: one
+  expected a phase value to be refused that the handler has always lower-cased, and one hit the
+  ordering trap in entry 22. Neither was a gap against the contract and neither should consume a
+  fix-loop iteration, but `cause: code | environment` has no third value, so the honest label had to
+  be invented in the record (`cause: test-authoring`).
+WHY IT IS SYSTEMIC: tests are written from the contract before or alongside the build, so a test
+  defect found before the suite is ever green is a normal event, not an exception. With only two
+  labels available the pressure is to record it as `code` (which wrongly consumes a cap and implicates
+  the Engineer) or to say nothing (which makes a suite that went green on its second run look like it
+  went green on its first).
+THE CHANGE: `agents/qa.md` and `agents/security.md` extend the diagnosis line to
+  `cause: code | environment | test-defect`, with `test-defect` explicitly not consuming the cap and
+  required to be recorded rather than silently fixed. `CLAUDE.md`'s *Loop caps* section carries the
+  same three values.
+SEVERITY: low
+
+**Still open from build 2, second consecutive manual port.** Entry 19 (learnings from `/squad` runs
+have no return path) is unchanged: this build's entries were again carried to the template by hand.
+Two builds is enough evidence that the port step will not happen by itself.
+
 ## What worked in build 2 and should not be changed
 
 - **Capturing the live schema before the Architect ran** found the month-old stage-machine failure
@@ -368,6 +458,28 @@ Retro's new entries are added to the template repository's `LEARNINGS.md` and li
   class of warning to accept. The eight existing tables still carry the older pattern.
 - **Preview first, promote the tested deployment, verify production with one real write path**
   worked exactly as written, first attempt, including the migration-before-preview ordering.
+
+---
+
+## What worked in build 3 and should not be changed
+
+- **A prior decision made this build nearly free.** ADR 0005 (the database constrains shape, the
+  rulebook constrains values) was written in build 2 to repair the stage machine. Because of it, this
+  build needed **no migration, no table, no column and no policy** — the lifecycle rode the existing
+  append-only log. The Architect checking whether an existing decision removes work, before designing
+  new storage, is worth more than any process step in this file.
+- **Deriving rather than storing.** The lock is `close_time + 20 minutes`, computed identically on the
+  server and in the page, with nothing stored and no scheduled job to flip a flag. One constant in the
+  rulebook is the whole configuration surface.
+- **Failing open, deliberately and in writing.** The gate returns "not locked" on any read failure,
+  and both the ADR and the security review state why: the cost of failing closed is a room of fifteen
+  people locked out mid-workshop. QA asserts the fail-open path explicitly, so it cannot be
+  "tidied up" later by someone who reads it as a bug.
+- **Translating one status code once, at the fetch layer.** Six write paths show the right sentence
+  for a locked session without any of them learning what 403 means.
+- **The security review naming what the feature does *not* enforce.** The lock reads like a security
+  boundary but is enforced by the routes, not the database; saying so plainly in 5a and again in 5b
+  is what stops the next reader trusting it further than it deserves.
 
 ---
 

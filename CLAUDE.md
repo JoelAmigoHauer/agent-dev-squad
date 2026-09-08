@@ -390,12 +390,13 @@ Mode 2 work. These are conventions for the prose, since prose is all there is.
 
 ---
 
-## Known gaps as at 2026-09-07
+## Known gaps as at 2026-09-08
 
 Audited against `LEARNINGS.md`. Recorded so a stage does not trust this repo to be level with its
 own learnings. Entries 1–12 (build 1) have all reached the stage file or template they name. Entries
-13–19 (build 2, `workshop-hub`, the first brownfield run) have **not yet** — each is a gap until its
-change lands, and the Retro that produced them lists the exact file and section.
+13–19 (build 2, `workshop-hub`, the first brownfield run) and 20–24 (build 3, `workshop-hub-end`)
+have **not yet** — each is a gap until its change lands, and the Retro that produced them lists the
+exact file and section.
 
 **13 — `working` is not runtime-verified.** `agents/surveyor.md` §5 does not yet separate
 `read-verified` from `working`, and §2 does not yet require the schema to be captured from the live
@@ -420,7 +421,33 @@ but not its removal; `agents/devops.md`'s record has no `SMOKE DATA REMOVED` lin
 deployment id but not its commit or how far behind the base branch it is.
 
 **19 — Learnings from `/squad` runs need a return path.** `.claude/skills/squad/SKILL.md` has no
-"port learnings" step; build 2's entries were ported by hand.
+"port learnings" step; build 2's **and build 3's** entries were both ported by hand. Two consecutive
+builds is enough evidence the step will not happen by itself.
+
+**20 — The deploy sequence never confirms which project it is deploying to.**
+`skills/deploy-sequence.md` §3 has no link step and no read-back of `.vercel/project.json`, so a
+fresh container with `--yes` silently creates a project named after the directory and deploys there.
+`agents/devops.md`'s platform notes need the same rule.
+
+**21 — Preflight records absence without ever attempting acquisition.** `agents/preflight.md`
+records a tool as absent and the stage that needs it inherits a Degraded row; nothing asks whether
+the tool is cheaply obtainable. `semgrep` was accepted as absent across two builds and took five
+minutes to install on the third. Every absent tool needs a recorded install attempt and its result.
+
+**22 — QA has no rule for driving a clock.** `agents/qa.md` §*Test data* says nothing about state
+derived from elapsed time: control the stored timestamp rather than waiting, and use a fresh fixture
+per position in the window, because "current = newest by timestamp" means one record cannot be
+walked backwards through it.
+
+**23 — The promote step has only one branch.** `skills/deploy-sequence.md` §6 assumes
+`vercel promote` works on the tested preview; it is refused whenever preview and production
+environment variables differ, which is every project holding a secret. The `--prod`-from-the-same-tree
+path, and how to prove the artifact is equivalent, are unwritten.
+
+**24 — The loop-cause vocabulary has no value for a defective test.** `agents/qa.md`,
+`agents/security.md` and this file's *Loop caps* offer `cause: code | environment` only, so a test
+defect found before a suite is first green has to be mislabelled or omitted. It needs
+`test-defect`, explicitly not consuming the cap.
 
 Add a paragraph per gap as one appears, and delete it when it closes rather than marking it done.
 This section is a list of open items, not a changelog.
