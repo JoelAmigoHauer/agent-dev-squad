@@ -448,6 +448,83 @@ SEVERITY: low
 have no return path) is unchanged: this build's entries were again carried to the template by hand.
 Two builds is enough evidence that the port step will not happen by itself.
 
+## 25. workshop-hub-room-runner — "additive migration" was read as "order does not matter" — HIGH
+
+**What broke.** Build 4 took production down by applying a migration that removed a policy its
+still-deployed handler depended on. The lesson taken from that was *make migrations additive*, and
+this build's contract, build notes and commit message all said so. They then went further and said
+the migration and the deploy could therefore land **in either order**. That was wrong, and it was
+caught at Stage 6 by reading the handler rather than by any test.
+
+`create` writes `expected_headcount` into `workshop_sessions`. Against a database without that
+column PostgREST answers `PGRST204` and the insert fails, so a deploy landing before its migration
+would not have degraded the head count — it would have made it impossible to create a session at
+all. Build 4's incident, in mirror image, from a rule written to prevent build 4's incident.
+
+**Why it is systemic.** "Additive" describes the *migration's* effect on running code: nothing is
+taken away, so the old deployment keeps working. It says nothing about the *new* code's dependence
+on the new schema, which is the other direction entirely. Every build that adds a column a write
+path populates has this property, and the vocabulary the squad inherited has one word covering two
+independent questions.
+
+**The fix.** `agents/architect.md` §2 needs both questions asked and answered separately in the
+contract, and `agents/devops.md`'s record needs the answer carried:
+
+| Question | Answer decides |
+|---|---|
+| Does the migration break the **currently deployed** code? | whether it may be applied early |
+| Does the **new** code fail against the **old** schema? | whether it *must* be applied early |
+
+Two "no"s mean either order. This build was no / yes: safe to apply early, and required to.
+Build 4 was yes / yes, which is the only genuinely dangerous combination and needs one window.
+
+---
+
+## 26. workshop-hub-room-runner — the `[hidden]` guard is a hand-maintained list, so it stops guarding — HIGH
+
+**What broke.** Host constraint C2 — any class with a `display:` rule that is also toggled by the
+`hidden` property needs a matching `[hidden]{display:none}` override — has now shipped as a bug
+**four times** in this repository, twice before the squad arrived. `app/test/page.test.js` exists to
+catch it. It did not catch either of this build's two occurrences.
+
+The guard iterates a hardcoded array of eleven class names. `.btn` and `.joinpanel` were not in it,
+because nothing had ever toggled them with `hidden` before this build did. The test passed on a
+page carrying two live instances of the exact bug it was written for. Both were found by a browser
+assertion in QA's suite instead.
+
+**Why it is systemic.** A guard whose scope is a manually maintained list only ever covers what
+someone remembered to add, and the failures it exists to catch are by definition the ones nobody
+anticipated. It reads as coverage and is a checklist. The same shape appears anywhere a test
+enumerates rather than derives.
+
+**The fix.** `agents/qa.md` needs a rule: a guard against a class of defect must **derive its
+subjects from the artefact**, not from a list beside it. Here that means parsing the stylesheet for
+every selector carrying a `display:` rule and asserting an override for each, so a new class is
+covered the moment it is written. Where derivation is genuinely impossible, the test must assert
+the size of its own list so that adding a subject without adding a case fails.
+
+---
+
+## 27. workshop-hub-room-runner — a shared enumeration is indexed by suites nobody runs — MEDIUM
+
+**What happened, and what stopped it.** This build removed one entry from `ROOM_STAGES`, the running
+order every screen and all three Playwright suites index into. The pipeline runs only the current
+build's suite, which is how build 2's suite sat red across two builds (learning 19's neighbour).
+
+This time it did not break, and the reason is worth keeping: the **Surveyor** recorded in §6 that
+three suites index into that enumeration, and the **Architect** turned that into a mandatory clause
+in the contract's §4 test strategy — *QA runs all three*. QA found four coupled assertions in build
+2's suite and one shared helper that every spec in two suites depends on, and fixed them as
+`changing` bindings.
+
+**Why it is worth a rule anyway.** It worked because one survey happened to look. Nothing required
+it to. `agents/surveyor.md` §6 should require naming any enumeration or fixture **more than one
+test suite depends on**, and `agents/architect.md` §4 should require the test strategy to say which
+suites run when a named shared dependency changes. Otherwise the next build's survey may not think
+of it, and the failure is silent — a red suite nobody executes.
+
+---
+
 ## What worked in build 2 and should not be changed
 
 - **Capturing the live schema before the Architect ran** found the month-old stage-machine failure
@@ -507,3 +584,20 @@ Recorded because the temptation after a defect list is to change everything.
   directions. Worth keeping as a default in every contract.
 - **The tier check that stopped Stage 2** — Designer refusing to start Mode B until `get_usage`
   confirmed a paid tier — is the cheapest halt in the whole run. More gates should look like it.
+
+## What worked in build 5 and should not be changed
+
+- **Preflight deferring a known blocker instead of halting.** The Vercel block was recorded at
+  Stage 0.5 as *blocking, deferred by Orchestrator decision*, and the run continued to
+  security-green. The block then cleared on its own before Stage 6. Halting at 0.5 would have
+  produced nothing while waiting on something outside the repository.
+- **Making the new state a phase rather than a column.** The lobby cost one array entry and no
+  migration, because `roomStageIndex` returns -1 for it and every guard already written as *nobody
+  gets ahead of the facilitator* refused every stage for free. Second build running to get a whole
+  feature out of ADR 0005.
+- **Keeping the default for a room with no rows.** `firstPhase('room')` deliberately did not move to
+  the new first phase, so sessions created before the build behaved exactly as before. The
+  temptation to let array order decide it would have locked live workshops out of their own day.
+- **Deciding two things in the contract and saying "made not asked".** The review-moves-the-projector
+  rule and the never-disabled Initiate were written into `/state/tasks.md` at intake with their
+  reasons. No later stage re-opened either.

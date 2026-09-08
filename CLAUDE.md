@@ -390,13 +390,13 @@ Mode 2 work. These are conventions for the prose, since prose is all there is.
 
 ---
 
-## Known gaps as at 2026-09-08
+## Known gaps as at 2026-09-08 (build 5)
 
 Audited against `LEARNINGS.md`. Recorded so a stage does not trust this repo to be level with its
 own learnings. Entries 1–12 (build 1) have all reached the stage file or template they name. Entries
-13–19 (build 2, `workshop-hub`, the first brownfield run) and 20–24 (build 3, `workshop-hub-end`)
-have **not yet** — each is a gap until its change lands, and the Retro that produced them lists the
-exact file and section.
+13–19 (build 2, `workshop-hub`, the first brownfield run), 20–24 (build 3, `workshop-hub-end`) and
+25–27 (build 5, `workshop-hub-room-runner`) have **not yet** — each is a gap until its change lands,
+and the Retro that produced them lists the exact file and section.
 
 **13 — `working` is not runtime-verified.** `agents/surveyor.md` §5 does not yet separate
 `read-verified` from `working`, and §2 does not yet require the schema to be captured from the live
@@ -421,8 +421,8 @@ but not its removal; `agents/devops.md`'s record has no `SMOKE DATA REMOVED` lin
 deployment id but not its commit or how far behind the base branch it is.
 
 **19 — Learnings from `/squad` runs need a return path.** `.claude/skills/squad/SKILL.md` has no
-"port learnings" step; build 2's **and build 3's** entries were both ported by hand. Two consecutive
-builds is enough evidence the step will not happen by itself.
+"port learnings" step; build 2's, build 3's **and build 5's** entries were all ported by hand.
+Three builds running, and every one of them only because the Orchestrator happened to remember.
 
 **20 — The deploy sequence never confirms which project it is deploying to.**
 `skills/deploy-sequence.md` §3 has no link step and no read-back of `.vercel/project.json`, so a
@@ -452,6 +452,24 @@ path, and how to prove the artifact is equivalent, are unwritten.
 `agents/security.md` and this file's *Loop caps* offer `cause: code | environment` only, so a test
 defect found before a suite is first green has to be mislabelled or omitted. It needs
 `test-defect`, explicitly not consuming the cap.
+
+**25 — The contract asks one question about migration ordering where there are two.**
+`agents/architect.md` §2 has no field separating *does this migration break the deployed code* from
+*does the new code fail against the old schema*. Build 4 was halted by the first; build 5 wrote
+"additive, so either order" and would have broken session creation entirely on the second.
+`agents/devops.md`'s deploy record needs both answers carried into it.
+
+**26 — A guard whose subjects are a hand-written list is a checklist, not a guard.**
+`agents/qa.md` has no rule that a test written against a *class* of defect must derive its subjects
+from the artefact. The host repo's `[hidden]` guard iterates eleven hardcoded class names and passed
+cleanly over two live instances of the exact bug it exists to catch, because the two classes were
+not on the list.
+
+**27 — Nothing requires the survey to name a dependency more than one test suite shares.**
+`agents/surveyor.md` §6 records what tests exist and whether they pass, not which fixtures or
+enumerations several suites index into; `agents/architect.md` §4's test strategy has no field for
+which suites re-run when a shared dependency changes. Build 5 only avoided leaving a suite red
+because one survey happened to look.
 
 Add a paragraph per gap as one appears, and delete it when it closes rather than marking it done.
 This section is a list of open items, not a changelog.
