@@ -362,8 +362,11 @@ WHY IT IS SYSTEMIC: `.vercel/` is git-ignored (correctly — it holds an OIDC to
   link never survives into a fresh container. Every run in a new container starts unlinked, and
   `--yes`, which the pipeline needs for non-interactive use, converts "which project?" from a prompt
   into a silent creation. Build 2 missed it only because its container happened to still hold a link
-  from an earlier interactive run. Left alone this recurs on every first deploy of every session,
-  and each occurrence leaves an outward-facing artefact on Joel's account.
+  from an earlier interactive run. Left alone this recurs on every first deploy of every session.
+  **And the artefact it leaves does not stay still:** the CLI links the new project to the GitHub
+  repository, so the stray project auto-deployed on every subsequent push to the branch — three more
+  builds before anyone looked at it, silently shadowing the real project. A mistake that keeps
+  building itself is worth catching at the first command rather than the fourth.
 THE CHANGE: `skills/deploy-sequence.md` §3 gains a mandatory first step before any deploy —
   `npx vercel link --yes --project <name> --scope <team>` — and a verification line: read back
   `.vercel/project.json` and confirm `projectName` matches the contract's C14 project before
@@ -380,12 +383,15 @@ WHY IT IS SYSTEMIC: `agents/preflight.md` asks "does the binary resolve?" and th
   Degraded table. There is no step that asks whether an absent tool is *cheaply obtainable*, and the
   word "degraded" reads as a settled fact rather than an open question. A stage that inherits a
   degradation has every incentive to accept it, because accepting is one line and fixing is unbudgeted
-  work. The same logic is why `gitleaks` is still unrun after three builds — though there the answer
-  really is no, because its Docker path needs a daemon this runner does not have.
+  work. The same logic had kept `gitleaks` unrun for three builds, each recording it as
+  unavoidable because Homebrew and the Docker image were both out of reach. **Asked for it directly,
+  it took one `curl` of the vendor's release binary** — the same lesson, twice in one day, on two
+  different tools. Neither gap was ever real; both were merely unexamined.
 THE CHANGE: `agents/preflight.md`, *What you check* — every absent tool gets a one-line acquisition
   attempt and its result recorded next to it: `absent — install tried: <command> → succeeded |
-  failed: <reason>`. A tool recorded absent with no attempt line is an incomplete probe. The
-  Degraded table then carries only what genuinely cannot be had.
+  failed: <reason>`. A tool recorded absent with no attempt line is an incomplete probe, and the
+  probe must try the vendor's own release binary before treating a package manager's absence as
+  decisive. The Degraded table then carries only what genuinely cannot be had.
 SEVERITY: high
 
 ## 22. workshop-hub-end — time-derived state cannot be tested by rewinding one record — MEDIUM

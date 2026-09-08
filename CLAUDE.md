@@ -426,13 +426,17 @@ builds is enough evidence the step will not happen by itself.
 
 **20 — The deploy sequence never confirms which project it is deploying to.**
 `skills/deploy-sequence.md` §3 has no link step and no read-back of `.vercel/project.json`, so a
-fresh container with `--yes` silently creates a project named after the directory and deploys there.
-`agents/devops.md`'s platform notes need the same rule.
+fresh container with `--yes` silently creates a project named after the directory and deploys there
+— and, because the CLI links it to the repo, that stray project then auto-deploys on every later
+push until someone deletes it. `agents/devops.md`'s platform notes need the same rule.
 
 **21 — Preflight records absence without ever attempting acquisition.** `agents/preflight.md`
 records a tool as absent and the stage that needs it inherits a Degraded row; nothing asks whether
 the tool is cheaply obtainable. `semgrep` was accepted as absent across two builds and took five
-minutes to install on the third. Every absent tool needs a recorded install attempt and its result.
+minutes to install on the third; `gitleaks` was called unavoidable across three and took one `curl`
+of the vendor's release binary. Every absent tool needs a recorded install attempt and its result,
+and the probe must try the vendor's own binary before treating a package manager's absence as
+decisive.
 
 **22 — QA has no rule for driving a clock.** `agents/qa.md` §*Test data* says nothing about state
 derived from elapsed time: control the stored timestamp rather than waiting, and use a fresh fixture
