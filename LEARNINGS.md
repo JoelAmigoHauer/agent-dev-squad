@@ -525,6 +525,53 @@ of it, and the failure is silent — a red suite nobody executes.
 
 ---
 
+## 28. workshop-hub-ink-actions — a rule with no executable form is a rule that drifts — HIGH
+
+**What broke.** The host's `CLAUDE.md` carried a non-negotiable rule for months: *red, amber and
+green are reserved for score encoding*. Every build read it. Every build obeyed it as it understood
+it. And the rule was violated in **30 declarations**, including by the two builds that quoted it
+most carefully — `workshop-hub-end` put the session lock in amber, and `workshop-hub-room-runner`
+put the accent green on the Initiate pill and wrote a contract decision justifying it on a claim
+about token separation that was false.
+
+The claim was checkable in one grep. Nobody grepped, because the rule lived only in prose and prose
+does not fail.
+
+**Why it is systemic.** A constraint stated in a brief is enforced by whoever last read the brief.
+A constraint with a test is enforced by the runner. This repository already knew that — `C2`, the
+`[hidden]` rule, has a test — and still got it wrong, because that test iterates a hand-written list
+(LEARNINGS 26) rather than deriving its subjects. Both failures are the same failure at different
+depths: **the enforcement was narrower than the rule.**
+
+**The fix.** `agents/architect.md` needs a mandatory field on brownfield builds: for every host
+constraint the contract binds, state **how it is enforced** — `test: <path>`, or `manual`, and if
+manual, say who checks it and when. A constraint bound in a contract with no executable form is a
+constraint the next build will break while citing it.
+
+And `agents/qa.md` needs the corollary: a test written for a *rule* derives its subjects from the
+artefact. `tokens.test.js` in this build parses every rule out of the stylesheet and holds each
+against an allow-list of the three legitimate instruments; a new violation written next month fails
+without anyone updating the test. It was verified by reintroducing the original defect and watching
+two assertions fail.
+
+---
+
+## 29. workshop-hub-ink-actions — a documented assertion that was never written — MEDIUM
+
+**What happened.** `workshop-hub-end`'s `test-results.md` states: *"C3 / C9 — the closing states'
+computed colours contain neither `--red` nor `--accent`."* No such assertion exists in
+`flows.end.spec.ts`. It was prose describing an intention.
+
+That sentence is why the lock kept its amber through two subsequent builds: anyone auditing the
+colour rule would read the test record, see the check claimed, and move on. **A false claim of
+coverage is worse than no coverage**, because it stops the next person looking.
+
+**The fix.** `agents/qa.md`'s output section should require every coverage claim in `test-results.md`
+to name the spec file and the assertion that makes it. A claim without a citation is a plan, and
+should be written as one.
+
+---
+
 ## What worked in build 2 and should not be changed
 
 - **Capturing the live schema before the Architect ran** found the month-old stage-machine failure

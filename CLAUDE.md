@@ -395,7 +395,7 @@ Mode 2 work. These are conventions for the prose, since prose is all there is.
 Audited against `LEARNINGS.md`. Recorded so a stage does not trust this repo to be level with its
 own learnings. Entries 1–12 (build 1) have all reached the stage file or template they name. Entries
 13–19 (build 2, `workshop-hub`, the first brownfield run), 20–24 (build 3, `workshop-hub-end`) and
-25–27 (build 5, `workshop-hub-room-runner`) have **not yet** — each is a gap until its change lands,
+25–27 (build 5, `workshop-hub-room-runner`) and 28–29 (build 6, `workshop-hub-ink-actions`) have **not yet** — each is a gap until its change lands,
 and the Retro that produced them lists the exact file and section.
 
 **13 — `working` is not runtime-verified.** `agents/surveyor.md` §5 does not yet separate
@@ -470,6 +470,18 @@ not on the list.
 enumerations several suites index into; `agents/architect.md` §4's test strategy has no field for
 which suites re-run when a shared dependency changes. Build 5 only avoided leaving a suite red
 because one survey happened to look.
+
+**28 — A host constraint can be bound in a contract with no executable form.**
+`agents/architect.md` brownfield mode has no field requiring the contract to state *how* each host
+constraint it binds is enforced — `test: <path>`, or `manual` with an owner. The host repo's colour
+rule was quoted by every build and violated in thirty declarations, including by a contract decision
+that justified the violation on a claim checkable in one grep.
+
+**29 — A coverage claim in `test-results.md` needs a citation.**
+`agents/qa.md`'s output section lets a test record assert what was covered without naming the spec
+and assertion that cover it. Build 3's record claimed the closing states' colours were asserted; no
+such assertion was ever written, and that sentence is why the defect survived two further builds —
+a false claim of coverage stops the next person looking.
 
 Add a paragraph per gap as one appears, and delete it when it closes rather than marking it done.
 This section is a list of open items, not a changelog.
