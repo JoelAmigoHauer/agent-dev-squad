@@ -201,6 +201,38 @@ not a clone. Applies to Figma and to code.
 
 ---
 
+## 13. Nothing compared a built screen with its drawing (CRITICAL)
+
+Found in build 2 (client-portal v2, a brownfield build), 2026-10-26, by Joel on the live site.
+
+**What happened.** The Designer drew every screen in Figma at 2 widths, including a 240-wide left
+sidebar shell for staff and another for clients. The Engineer built every route, rule and string to
+the contract. QA ran 3 times and went green; Security passed; production was rebuilt and promoted.
+The live staff page showed v1's top bar instead of the sidebar, with the last menu item pushed off
+the end. Joel found it in the first minute of looking. The contract even assumed the sidebar ("the
+company switcher, in the sidebar's header"), and every test passed anyway, because a test checks that
+the switcher works, not where it sits.
+
+**Why it is systemic.** The same shape as entry 1, for appearance instead of wiring: every stage
+verified its own half. The Designer's output was frames; the Engineer's was behaviour; QA's tests
+came from the contract, which describes behaviour. No stage held "this screen looks like its frame"
+as a check, so no stage could fail it. In a brownfield build it is worse: the survey's shell is
+existing code, the contract named screens but never the shell, so nothing told any stage to rebuild
+the thing every screen sits inside.
+
+**The change.**
+
+| File | Change |
+|---|---|
+| `agents/surveyor.md` §4 | Shells listed as surfaces; every screen and shell screenshotted as built at 1440 and 390 |
+| `agents/architect.md` | A mandatory screen binding table, shells included; in brownfield, a redrawn surface is `changing`, never `existing` |
+| `agents/designer.md` | A mandatory frame index: every surface, state and width to its frame; in brownfield, each marked `matches`, `differs` or `not compared` against the survey's screenshot |
+| `agents/engineer.md` | Guardrail 3a: build each row to its frame and screenshot it beside the frame before hand-back; definition of done item 2 |
+| `agents/qa.md` | Coverage item 5: a structural fidelity check of every frame-index row, both images saved, the count of rows reported; a difference is a GAP |
+| `skills/figma-pull.md` | Frame screenshots, and their cost against the call budget |
+
+---
+
 # What worked and should not be changed
 
 Recorded because the temptation after a defect list is to change everything.

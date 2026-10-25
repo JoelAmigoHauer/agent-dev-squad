@@ -352,6 +352,7 @@ is deliberately repeated for a stage that reads cold, one copy binds:
 | Status vocabulary | `state/tasks.md` | — |
 | Escalation triggers, current narrowed form | `skills/stack-decision.md` | `agents/architect.md` |
 | What a contract must contain | `agents/architect.md` | `builds/_template/contract.md`, as a scaffold |
+| What a fidelity check compares (v0.3) | `agents/qa.md`, coverage item 5 | `agents/engineer.md` guardrail 3a, `agents/designer.md` frame index |
 | What a survey must contain | `agents/surveyor.md` | `builds/_template/survey.md`, as a scaffold |
 | How `/squad` stamps and routes | `.claude/skills/squad/SKILL.md` | — it defers to this file for everything else |
 | Vercel platform notes | `agents/devops.md` | `agents/engineer.md`, for the build side |

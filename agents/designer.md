@@ -94,6 +94,34 @@ Write to `/builds/<app-name>/design.md`:
    missing is treated as `derived` and may be changed underneath you.
 5. **States** — empty, loading, error and success for every screen that fetches or submits. A
    screen without its empty and error states is not designed, and QA will find it.
+6. **Frame index** (mandatory, v0.3). See below.
+
+---
+
+## Frame index (mandatory, v0.3)
+
+The frame index is how the Engineer and QA find the drawing for a surface. One row per surface in
+the contract's screen binding table, per state, per width:
+
+| Surface | State | Width | Frame | As built (brownfield) |
+|---|---|---|---|---|
+| `<role>` shell | default | wide | `<node id>` | `differs`: top bar as built, the design is a left sidebar |
+| `<role>` shell | menu open | narrow | `<node id>` | `differs`: no drawer as built |
+| `<entity>` list | empty | wide | `<node id>` | `matches` |
+
+Rules:
+
+- **Every row in the contract's screen binding table appears here**, shells included. A surface with
+  no frame is a gap you raise, not one you leave for the Engineer to fill by eye.
+- **Brownfield: compare before you mark.** Open the survey's screenshot of each surface beside your
+  frame. `matches` when its shell, layout regions, components and their order agree; otherwise
+  `differs`, naming what differs in a few words. A `differs` row is work the Engineer is told to do.
+  A surface you did not compare is `not compared`, never `matches`.
+- **Shared shells first.** A shell sits under every screen, so a wrong shell makes every screen
+  wrong. Index it before the screens.
+
+The Engineer builds each row to its frame ([engineer.md](engineer.md), guardrail 3a), and QA checks
+each row against it ([qa.md](qa.md), coverage item 5).
 
 ---
 

@@ -31,6 +31,27 @@ Cover, at minimum:
    classic miss.
 4. **Data model constraints.** Not-null, checks, foreign key cascades. If the schema says
    `amount_cents > 0`, there is a test that -1 is rejected.
+5. **Visual fidelity, frame by frame (v0.3).** Every row of `design.md`'s frame index, shells
+   first: render the surface at the row's width and in its state, screenshot it, and compare it with
+   the frame's screenshot. This is a structural check, not a pixel diff:
+
+   | Check | Matches when |
+   |---|---|
+   | Shell | Navigation in the same place (sidebar, top bar, drawer), the same items in the same order, the same account area |
+   | Layout | The same regions and columns, in the same order, with the primary blocks aligned as drawn |
+   | Components | Every component in the frame is present and none is added; each in the variant drawn (a Primary button is not a Quiet one) |
+   | Words | Headings, labels and buttons as drawn, unless the contract words them differently (the contract wins; say so) |
+   | Tokens | Colours and type styles from the design's tokens, not near neighbours |
+   | Narrow width | The narrow frame's arrangement (drawer, stacked columns), not the wide one squeezed |
+
+   A difference of a few pixels is not a finding. A difference in any row of that table is a GAP:
+   `CLASS: bug` when the frame and the contract agree, `spec-gap` when they contradict each other.
+   Save both images per row under `tests/fidelity/`, and report the count of rows checked, so a
+   fidelity pass that looked at nothing can't read as a clean one.
+
+   **A suite that never looked at a screen has not tested it.** In build 2 every route, rule and
+   string passed, three QA runs went green, and production shipped a top-bar shell where the design
+   drew a sidebar (`LEARNINGS.md` entry 13).
 
 Write the suite to `/builds/<app-name>/tests/` and the results to
 `/builds/<app-name>/test-results.md`.

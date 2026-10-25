@@ -78,6 +78,15 @@ downstream rename. Do that before spending a call on extraction.
 - Component instances and their variant properties.
 - Constraints and resizing behaviour, which is where responsive intent lives.
 
+### Frame screenshots for fidelity checks (v0.3)
+
+For every row of `design.md`'s frame index the round touches, take the frame's screenshot
+(`get_screenshot` with the row's node id) and save it beside the built screen's screenshot, under
+`tests/fidelity/<surface>-<state>-<width>.frame.png` and `.built.png`. The Engineer uses the pair
+before handing back (guardrail 3a); QA makes its own pair independently (coverage item 5). A
+screenshot is a read call: count it against the call budget above, and on a capped seat take the
+shells and the most-used screens first.
+
 ### Assets
 
 - Export icons and images at the resolutions the build needs.

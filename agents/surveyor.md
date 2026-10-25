@@ -75,6 +75,13 @@ copy them. Where they do not, write `untyped` — do not infer a shape from usag
 Every page and every component that renders one, as a screen inventory. Note which have empty,
 loading and error states and which do not.
 
+**Shells too, and a screenshot of each (v0.3).** List every shared shell (navigation, header, page
+frame, drawer) as its own row, with the routes that sit inside it. Screenshot every screen and every
+shell as built, at a wide width (1440) and a narrow one (390), into
+`/builds/<change-name>/survey-screens/`. The Designer compares each frame against these before
+marking a surface `matches` or `differs`; without them, an inherited shell reads as "existing" and
+is never rebuilt (`LEARNINGS.md` entry 13).
+
 ### 5. Flow bindings, extracted
 
 **The single most valuable thing you produce.** Trace every control that crosses the UI/API
