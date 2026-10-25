@@ -138,7 +138,7 @@ left-hand sidebar shell for staff and for clients. The contract named screens an
 shell as a surface, and the survey's top-bar shell came through as existing code. Every slice added
 menu items to the old top bar, and every flow test passed, because a test checks that the company
 switcher works, not where it sits. The shell shipped to production unchanged, and Joel found it by
-looking at the live page. See `LEARNINGS.md` entry 13.
+looking at the live page. See `LEARNINGS.md` B3-24.
 
 ### 2. Data model
 

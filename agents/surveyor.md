@@ -80,7 +80,7 @@ frame, drawer) as its own row, with the routes that sit inside it. Screenshot ev
 shell as built, at a wide width (1440) and a narrow one (390), into
 `/builds/<change-name>/survey-screens/`. The Designer compares each frame against these before
 marking a surface `matches` or `differs`; without them, an inherited shell reads as "existing" and
-is never rebuilt (`LEARNINGS.md` entry 13).
+is never rebuilt (`LEARNINGS.md` B3-24).
 
 ### 5. Flow bindings, extracted
 

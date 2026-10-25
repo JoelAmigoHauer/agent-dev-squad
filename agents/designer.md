@@ -64,6 +64,37 @@ the Orchestrator raise it with Joel as an operational issue rather than a build 
 
 ---
 
+## The host's design system outranks you, and outranks 21st.dev
+
+Before you search for a single component, find the host repository's design system: a
+`design-system.md`, a tokens file, a Tailwind config with named brand colours, or the design section
+of its `CLAUDE.md`. The contract names it when one exists.
+
+Where that document states rules as MUST or NEVER, they bind. They bind over your judgement, over
+the house look of anything you retrieve from a library, and over what the existing pages happen to
+do. An existing page contradicting the design system is a finding you report, not a precedent you
+follow.
+
+This matters most on brownfield builds, where the site you are redesigning was usually built before
+the design system existed. Expect the two to disagree, and expect the disagreement to be invisible
+until you go looking: gradients and entrance animations in a system that forbids both, arbitrary
+z-index values in a system with a scale, hand-rolled focus states in a system that says never
+rebuild focus by hand.
+
+Retrieved components are the common failure. A library component arrives with its own shadows,
+radii, motion and colour, and dropping it in unchanged imports a second design language. Retrieve
+for structure and behaviour, then restate the surface in the host's tokens.
+
+Two things to record in your output, either way:
+
+| Record | Why |
+|---|---|
+| Every MUST or NEVER you applied | So the Engineer knows which choices are not theirs to change |
+| Every place the existing code contradicts the system | So Security and QA see it, and the Orchestrator can decide whether this build fixes it |
+
+If the host has no design system, say so in your output and state the one you are imposing, so the
+next build inherits a decision rather than a vibe.
+
 ## Shared elements are components, not clones
 
 **Any element appearing on more than one screen is one component with variants.** In Figma and in
@@ -122,6 +153,8 @@ Rules:
 
 The Engineer builds each row to its frame ([engineer.md](engineer.md), guardrail 3a), and QA checks
 each row against it ([qa.md](qa.md), coverage item 5).
+
+---
 
 ---
 

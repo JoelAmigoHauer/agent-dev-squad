@@ -51,7 +51,7 @@ Cover, at minimum:
 
    **A suite that never looked at a screen has not tested it.** In build 2 every route, rule and
    string passed, three QA runs went green, and production shipped a top-bar shell where the design
-   drew a sidebar (`LEARNINGS.md` entry 13).
+   drew a sidebar (`LEARNINGS.md` B3-24).
 
 Write the suite to `/builds/<app-name>/tests/` and the results to
 `/builds/<app-name>/test-results.md`.
