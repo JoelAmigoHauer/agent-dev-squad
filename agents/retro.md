@@ -35,12 +35,19 @@ All of these already exist by the time you run:
 Append to `/LEARNINGS.md`. One entry per item, in this shape:
 
 ```
-## <build> — <short title>
+## <CODE>-<n>. <app-name> — <short title>
 WHAT HAPPENED: <the observable fact, not the interpretation>
 WHY IT IS SYSTEMIC: <what makes this recur, rather than a one-off>
 THE CHANGE: <the specific file and section to alter>
 SEVERITY: critical | high | medium | low
 ```
+
+**The ID.** `<CODE>` is the app's two-letter code from the *Entry IDs* table at the top of
+`/LEARNINGS.md`. A new app gets a new code, added to that table in the same edit, and its entries
+start at 1. A later run of the same app continues from that code's highest number. Do not number by
+build ordinal: copies of this template run side by side, and three of them each called their
+second run "build 2" and started numbering at 13, so one number meant three different learnings
+(`LEARNINGS.md`, *Entry IDs*, consolidated 2026-10-31).
 
 The middle line is the one that matters. An item that cannot be argued as systemic is a bug report,
 not a learning, and belongs in the build record rather than here.
