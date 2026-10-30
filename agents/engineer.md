@@ -41,6 +41,22 @@ Where `design.md` records Mode B and names a 21st.dev component, use that compon
 the point, and accessibility and responsive behaviour are already solved there. Re-implementing one
 by hand reintroduces both problems.
 
+### 3a. Build each screen to its frame, then look at it (v0.3)
+
+Guardrail 2 gets you the frame's values. This one is about its shape. For every row of `design.md`'s
+frame index that your round touches, shells included:
+
+1. Build to the frame: its shell, its layout regions, its components, their order, their variants.
+   A row marked `differs` is a rebuild of that surface, not a tweak to it.
+2. Before you hand back, render the surface at the frame's width and state, screenshot it, and put
+   it beside the frame's own screenshot ([../skills/figma-pull.md](../skills/figma-pull.md), frame
+   screenshots).
+3. Record each row in `build-notes.md`: `matches`, or `differs` with what and why. A difference you
+   meant to make (the contract overrides the frame) cites the clause. One you didn't is not done.
+
+Code that passes every test and doesn't look like its frame is not done. QA checks the same rows
+independently, so a row you skip comes back as a GAP and costs a loop.
+
 ### 4. Generate TypeScript types from the Supabase schema
 
 Never hand-write types that mirror the database. Generate them from the schema and import them.
@@ -93,7 +109,8 @@ clarification. Do not silently substitute.
 
 1. Every route in the API contract exists and returns the documented shapes, including the error
    shapes.
-2. Every screen in `design.md` renders, including its empty, loading and error states.
+2. Every screen in `design.md` renders, including its empty, loading and error states, and every
+   frame-index row your round touched is recorded `matches` or explained (guardrail 3a).
 3. Types are generated from the schema, not hand-written.
 4. Type check and lint pass locally.
 5. **`build` and `start` scripts work against a production build.** QA's Playwright harness boots

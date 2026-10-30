@@ -65,9 +65,12 @@ reconciliations.
 
 ## 4. Screens as built
 
-| Screen | Path | Empty state | Loading state | Error state |
-|---|---|---|---|---|
-| | | yes / no | yes / no | yes / no |
+| Screen or shell | Path(s) | Empty state | Loading state | Error state | Screenshots |
+|---|---|---|---|---|---|
+| | | yes / no | yes / no | yes / no | `survey-screens/<name>-1440.png`, `-390.png` |
+
+Shells are rows too (v0.3): the navigation, header, page frame and drawer, with the routes inside
+each.
 
 ---
 

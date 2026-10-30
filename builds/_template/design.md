@@ -59,6 +59,17 @@ UNRESOLVED:
 
 ---
 
+## Frame index
+
+**Mandatory, v0.3.** One row per surface in the contract's screen binding table, per state, per
+width. Shells first.
+
+| Surface | State | Width | Frame | As built (brownfield) |
+|---|---|---|---|---|
+| `<role>` shell | default | wide | `<node id>` | `matches` / `differs`: <what> / `not compared` |
+
+---
+
 ## Raised to the Architect
 
 <any screen needing a field the contract does not have — as a clarification request, never a quiet

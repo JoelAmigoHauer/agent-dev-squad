@@ -111,6 +111,35 @@ In `brownfield` mode the table gains a sixth column, **Status**, per the Mode se
 the survey found `working` come in as `existing`; you decide which of the rest are `changing` and
 which are `new`.
 
+### Screen bindings (mandatory, v0.3)
+
+A flow binding proves a control reaches a route. It says nothing about what the screen looks like,
+so a screen can pass every flow test while looking nothing like its design. Every screen **and every
+shared shell** gets a row. A shell is anything more than one screen sits inside: the navigation, the
+header, the page frame, a drawer.
+
+| Surface | Kind | Routes | Widths | Status |
+|---|---|---|---|---|
+| `<role>` shell | shell | every `/<role>/*` route | wide, narrow | `new` |
+| `<entity>` list | screen | `/<entities>` | wide, narrow | `new` |
+| `<entity>` detail | screen | `/<entities>/:id` | wide, narrow | `new` |
+
+Placeholders on purpose, as in the flow table. The Designer adds each row's frame ids in
+`design.md`'s frame index; QA checks every row against its frames ([qa.md](qa.md), coverage item 5).
+
+**In `brownfield` mode, a surface the build's design redraws is `changing`, never `existing`.**
+`existing` means the build keeps the surface as built, and it is only true when the Designer's frame
+for that surface matches the survey's screenshot of it. When the build brings a new design system or
+a new Figma file, every surface starts as `changing` and comes down to `existing` only on that
+evidence. A shell marked `existing` is never rebuilt, because no stage is told to rebuild it.
+
+**Why this is mandatory.** In build 2 (client-portal v2, found 2026-10-26) the design drew a
+left-hand sidebar shell for staff and for clients. The contract named screens and flows but never the
+shell as a surface, and the survey's top-bar shell came through as existing code. Every slice added
+menu items to the old top bar, and every flow test passed, because a test checks that the company
+switcher works, not where it sits. The shell shipped to production unchanged, and Joel found it by
+looking at the live page. See `LEARNINGS.md` B3-24.
+
 ### 2. Data model
 
 Written as **schema, not prose**. Exact tables, exact fields, exact types, nullability, defaults,

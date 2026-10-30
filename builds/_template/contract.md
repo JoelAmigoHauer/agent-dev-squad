@@ -73,6 +73,20 @@ a worked example in one domain gets pattern-matched into the next build's thinki
 Every row here must reconcile with a screen in the list above and a route in §3. A control that
 calls nothing, or a route no control reaches, is the defect this table exists to catch.
 
+### Screen bindings
+
+**Mandatory, v0.3.** Every screen and every shared shell (navigation, header, page frame, drawer)
+gets a row. The Designer adds each row's frame ids in `design.md`'s frame index, and QA checks every
+row against its frames.
+
+| Surface | Kind | Routes | Widths | Status |
+|---|---|---|---|---|
+| `<role>` shell | shell | every `/<role>/*` route | wide, narrow | `new` |
+| `<entity>` list | screen | `/<entities>` | wide, narrow | `new` |
+
+Status is brownfield only. A surface the build's design redraws is `changing`, never `existing`:
+`existing` needs the Designer's frame to match the survey's screenshot.
+
 ---
 
 ## 2. Data model

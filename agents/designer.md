@@ -64,6 +64,37 @@ the Orchestrator raise it with Joel as an operational issue rather than a build 
 
 ---
 
+## The host's design system outranks you, and outranks 21st.dev
+
+Before you search for a single component, find the host repository's design system: a
+`design-system.md`, a tokens file, a Tailwind config with named brand colours, or the design section
+of its `CLAUDE.md`. The contract names it when one exists.
+
+Where that document states rules as MUST or NEVER, they bind. They bind over your judgement, over
+the house look of anything you retrieve from a library, and over what the existing pages happen to
+do. An existing page contradicting the design system is a finding you report, not a precedent you
+follow.
+
+This matters most on brownfield builds, where the site you are redesigning was usually built before
+the design system existed. Expect the two to disagree, and expect the disagreement to be invisible
+until you go looking: gradients and entrance animations in a system that forbids both, arbitrary
+z-index values in a system with a scale, hand-rolled focus states in a system that says never
+rebuild focus by hand.
+
+Retrieved components are the common failure. A library component arrives with its own shadows,
+radii, motion and colour, and dropping it in unchanged imports a second design language. Retrieve
+for structure and behaviour, then restate the surface in the host's tokens.
+
+Two things to record in your output, either way:
+
+| Record | Why |
+|---|---|
+| Every MUST or NEVER you applied | So the Engineer knows which choices are not theirs to change |
+| Every place the existing code contradicts the system | So Security and QA see it, and the Orchestrator can decide whether this build fixes it |
+
+If the host has no design system, say so in your output and state the one you are imposing, so the
+next build inherits a decision rather than a vibe.
+
 ## Shared elements are components, not clones
 
 **Any element appearing on more than one screen is one component with variants.** In Figma and in
@@ -94,6 +125,36 @@ Write to `/builds/<app-name>/design.md`:
    missing is treated as `derived` and may be changed underneath you.
 5. **States** — empty, loading, error and success for every screen that fetches or submits. A
    screen without its empty and error states is not designed, and QA will find it.
+6. **Frame index** (mandatory, v0.3). See below.
+
+---
+
+## Frame index (mandatory, v0.3)
+
+The frame index is how the Engineer and QA find the drawing for a surface. One row per surface in
+the contract's screen binding table, per state, per width:
+
+| Surface | State | Width | Frame | As built (brownfield) |
+|---|---|---|---|---|
+| `<role>` shell | default | wide | `<node id>` | `differs`: top bar as built, the design is a left sidebar |
+| `<role>` shell | menu open | narrow | `<node id>` | `differs`: no drawer as built |
+| `<entity>` list | empty | wide | `<node id>` | `matches` |
+
+Rules:
+
+- **Every row in the contract's screen binding table appears here**, shells included. A surface with
+  no frame is a gap you raise, not one you leave for the Engineer to fill by eye.
+- **Brownfield: compare before you mark.** Open the survey's screenshot of each surface beside your
+  frame. `matches` when its shell, layout regions, components and their order agree; otherwise
+  `differs`, naming what differs in a few words. A `differs` row is work the Engineer is told to do.
+  A surface you did not compare is `not compared`, never `matches`.
+- **Shared shells first.** A shell sits under every screen, so a wrong shell makes every screen
+  wrong. Index it before the screens.
+
+The Engineer builds each row to its frame ([engineer.md](engineer.md), guardrail 3a), and QA checks
+each row against it ([qa.md](qa.md), coverage item 5).
+
+---
 
 ---
 

@@ -54,6 +54,7 @@ no dependency manifest here — the code lives in the repos generated *from* thi
 | `agents/preflight.md` | 0.5 · tooling and plan-tier probe | Stage 0.5 only |
 | `agents/architect.md` | 1 · the binding contract | Stage 1 only |
 | `agents/designer.md` | 2 · fidelity modes, 21st.dev, Figma | Stage 2 only |
+| `agents/RETIRED-copywriter.md` | 2a · **retired 20 Sep 2026.** Copy runs through `/anthropic-skills:full-rewrite` | Read before writing any copy |
 | `agents/engineer.md` | 3 · guardrails, type generation, ambiguity ban | Stage 3 only |
 | `agents/qa.md` | 4 · contract-derived tests, Playwright harness | Stage 4 only |
 | `agents/security.md` | 5a/5b · pre- and post-deploy review | Stages 5a and 5b |
@@ -119,6 +120,7 @@ pipeline mechanics, caps or halt triggers.
 | 0.5 | **Preflight** | [agents/preflight.md](agents/preflight.md) | **v0.2.** Before Stage 1. Probes tooling, records plan tiers, halts cheaply |
 | 1 | Architect | [agents/architect.md](agents/architect.md) | Sequential. Gate. |
 | 2 | Designer | [agents/designer.md](agents/designer.md) | Sequential, after Stage 1 clears |
+| 2a | ~~Copywriter~~ | [agents/RETIRED-copywriter.md](agents/RETIRED-copywriter.md) | **Retired 20 Sep 2026.** No copy agent. The stage owning a surface writes its words, runs `/anthropic-skills:full-rewrite` over them, and the Orchestrator checks every figure against its primary source before the stage hands back |
 | 3 | Engineer | [agents/engineer.md](agents/engineer.md) | Sequential, after Stage 2 |
 | 4 | QA | [agents/qa.md](agents/qa.md) | Parallel with Stage 5a |
 | 5a | Security (pre-deploy) | [agents/security.md](agents/security.md) | Parallel with Stage 4 |
@@ -352,6 +354,7 @@ is deliberately repeated for a stage that reads cold, one copy binds:
 | Status vocabulary | `state/tasks.md` | — |
 | Escalation triggers, current narrowed form | `skills/stack-decision.md` | `agents/architect.md` |
 | What a contract must contain | `agents/architect.md` | `builds/_template/contract.md`, as a scaffold |
+| What a fidelity check compares (v0.3) | `agents/qa.md`, coverage item 5 | `agents/engineer.md` guardrail 3a, `agents/designer.md` frame index |
 | What a survey must contain | `agents/surveyor.md` | `builds/_template/survey.md`, as a scaffold |
 | How `/squad` stamps and routes | `.claude/skills/squad/SKILL.md` | — it defers to this file for everything else |
 | Vercel platform notes | `agents/devops.md` | `agents/engineer.md`, for the build side |
