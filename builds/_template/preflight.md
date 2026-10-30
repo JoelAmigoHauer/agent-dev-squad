@@ -12,15 +12,16 @@ not against this file.
 ## Result
 
 ```
-PREFLIGHT — <app-name>, <YYYY-MM-DD>
+PREFLIGHT — <app-name>, <YYYY-MM-DD>, approval mode: <mode>
 BLOCKING: none | <list>
-DEGRADED: <capability lost, and which stage carries the loss>
+DEGRADED: none | <capability> | carried by: <stage> | substitute: <named> | not covered: <gap>
 ```
 
-**Blocking** is a tool a stage cannot proceed without — halt and escalate before Stage 1.
-**Degraded** is a capability lost where a stated fallback exists — do not halt, but name the stage
-that inherits the loss and what it must say in its output, so a partial run never reads as a
-complete one.
+**Blocking** is a tool a stage cannot proceed without, or a runtime credential this environment
+cannot supply. Halt and escalate before Stage 1.
+**Degraded** is a capability lost where a stated fallback exists. Do not halt. One line per
+capability, naming the stage that inherits the loss, the substitute, and what the substitute does
+not cover, so a partial run never reads as a complete one.
 
 Halting on everything trains the operator to wave preflight through. The distinction is the point.
 
@@ -29,31 +30,44 @@ Halting on everything trains the operator to wave preflight through. The distinc
 ## Probes
 
 Record what you **found**, never what you expected. A tooling map records intent; this file records
-reality. When a probe fails, the Notes cell names the stage that carries it.
+reality. When a probe fails, the Notes cell names the stage that carries it. A tool recorded
+absent carries its install attempt: `absent: install tried: <command> → succeeded | failed:
+<reason>`. **Invocable?** is separate from status and tier: can this machine use it now, by the
+route the stage will use?
 
 ### Always
 
-| Tool | Status | Tier / version | Notes |
-|---|---|---|---|
-| Node + package manager |  |  |  |
-| `NODE_ENV` |  | — | must not be `production` |
-| Git + `gh` |  |  | record scopes |
-| Docker daemon |  |  |  |
+| Tool | Status | Invocable? | Tier / version | Notes |
+|---|---|---|---|---|
+| Node + package manager |  |  |  |  |
+| `NODE_ENV` |  |  | — | must not be `production` |
+| Git + `gh` |  |  |  | record scopes |
+| Docker daemon |  |  |  |  |
+| Runner approval mode |  |  | — | interactive, auto, or non-interactive outside auto |
 
 ### Per the stack this build will use
 
 Rows below are the default stack. Add, remove and rename to match the stack actually in play — and
 if a service is not touched by this build, delete its row rather than marking it unknown.
 
-| Tool | Status | Tier / version | Notes |
+| Tool | Status | Invocable? | Tier / version | Notes |
+|---|---|---|---|---|
+| Supabase |  |  |  | **plan tier is mandatory** |
+| Vercel |  |  |  | `npx vercel@latest` with `VERCEL_TOKEN` set counts |
+| 21st.dev |  |  |  | **plan tier is mandatory**, remaining quota, `API_KEY_21ST` set |
+| Figma |  |  |  | seat type, not just presence |
+| `semgrep` |  |  |  |  |
+| `gitleaks` |  |  |  |  |
+| Playwright |  |  |  | pinned package's expected browser build vs installed build |
+
+### Runtime credentials
+
+Every secret the app needs at runtime. **Obtainable here?** is `YES, set`, `YES, via <tool> once
+<resource> exists`, or `NO`. A `NO` is blocking.
+
+| Credential | Needed by | Obtainable here? | If not, what breaks |
 |---|---|---|---|
-| Supabase |  |  | **plan tier is mandatory** |
-| Vercel |  |  |  |
-| 21st.dev |  |  | **plan tier is mandatory** — remaining quota |
-| Figma |  |  | seat type, not just presence |
-| `semgrep` |  |  |  |
-| `gitleaks` |  |  |  |
-| Playwright |  |  | scaffolded per build, not global |
+|  |  |  |  |
 
 ---
 

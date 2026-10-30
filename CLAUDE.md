@@ -398,9 +398,10 @@ Mode 2 work. These are conventions for the prose, since prose is all there is.
 Audited against `LEARNINGS.md`. Recorded so a stage does not trust this repo to be level with its
 own learnings.
 
-**51 open.** Entries 1–12 and B3-24 have reached the stage files they name. Every other entry has
-not: thelma's, workshop-hub's and client-portal's learnings were written into separate copies of
-this file on separate branches and consolidated on 2026-10-31 without their changes being applied.
+**48 open.** Entries 1–12, B3-24, TH-16, TH-19 and WH-21 have reached the stage files they name,
+and TH-13, TH-18 and WH-14 have partly. Every other entry has not: thelma's, workshop-hub's and
+client-portal's learnings were written into separate copies of this file on separate branches and
+consolidated on 2026-10-31 without their changes being applied.
 That is WH-19 (no return path for `/squad` learnings) happening at scale, which is why it is listed
 here despite its low severity.
 
@@ -409,18 +410,16 @@ names only where it lands. Files are in `agents/` unless a path is given.
 
 | ID | Gap | Change lands in |
 |---|---|---|
-| TH-13 | Preflight never probes runtime credentials; a missing service-role key surfaced at Stage 6 | `preflight.md`, `architect.md` §1 |
+| TH-13 | The contract does not list the runtime secrets its design needs, so Preflight cannot re-probe them | `architect.md` §1 |
 | B3-1 | The contract binds how state is used, never how it comes to exist | `architect.md`, `builds/_template/contract.md`, `qa.md` |
 | B3-2 | An amendment set gets no stage lines, so an unbuilt set is invisible | `CLAUDE.md`, `architect.md`, `devops.md` |
 | B3-3 | No test environment, so tests, fixtures and migrations ran on production | `architect.md`, `qa.md`, `engineer.md`, `skills/deploy-sequence.md` |
 | B3-4 | A retro's changes cannot reach the rest of the same build | `CLAUDE.md`, `retro.md`, `qa.md`, `devops.md` |
 | TH-14 | A mandatory contract field can name a mechanism that cannot work | `architect.md` |
 | TH-15 | Nothing checks the contract against itself | `architect.md` §2 |
-| TH-16 | Preflight records a tool's tier, not whether this machine can invoke it | `preflight.md` |
 | WH-13 | `working` is not runtime-verified; brownfield schema is not captured live | `surveyor.md` §2, §5, `architect.md`, `security.md` |
-| WH-14 | Preflight probes binaries at one moment, not capabilities | `preflight.md`, `CLAUDE.md` |
+| WH-14 | No rule that a stage re-probes an MCP write before relying on it | `CLAUDE.md` |
 | WH-20 | The deploy never confirms its target project | `skills/deploy-sequence.md` §3, `devops.md` |
-| WH-21 | An absent tool never gets an install attempt | `preflight.md` |
 | WH-25 | Migration ordering is one question where there are two | `architect.md` §2, `devops.md` |
 | WH-26 | A guard over a hand-written list stops guarding | `qa.md` |
 | WH-28 | A host constraint can be bound with no executable form | `architect.md` |
@@ -433,8 +432,7 @@ names only where it lands. Files are in `agents/` unless a path is given.
 | B3-10 | Platform settings contradict contract clauses, unseen by any scanner | `architect.md`, `security.md` |
 | B3-11 | On a git-linked project the merge is the promote | `skills/deploy-sequence.md`, `devops.md` |
 | TH-17 | The 5a/5b split is by stage, not by when a check's target exists | `security.md` |
-| TH-18 | A degraded tool has no stated substitute or blind spot | `preflight.md`, `security.md` |
-| TH-19 | Pinned Playwright version is not compared with the installed browser build | `preflight.md` |
+| TH-18 | Security has no per-tool fallback table for a degraded scanner | `security.md` |
 | WH-15 | Invariants the host's tests enforce are not host constraints | `surveyor.md` §8, `architect.md` |
 | WH-16 | QA's harness is greenfield-specific; no test-strategy field | `qa.md`, `architect.md` §4 |
 | WH-22 | No rule for driving a clock in tests | `qa.md` |
@@ -461,8 +459,8 @@ names only where it lands. Files are in `agents/` unless a path is given.
 | B3-22 | Residency is bound for the data store, not the functions | `architect.md`, `skills/deploy-sequence.md` |
 | B3-23 | The survey does not list other writers to shared hosted resources | `surveyor.md` |
 
-Several rows touch the same file and some overlap (WH-14, WH-21, TH-16 and TH-18 are all
-Preflight's probe table). Close them a file at a time rather than an ID at a time.
+Several rows touch the same file. Close them a file at a time rather than an ID at a time, and
+when a row spans files, cut the closed file from its last column so the row says what is left.
 
 Add a row per gap as one appears, and delete it when it closes rather than marking it done.
 This section is a list of open items, not a changelog.
