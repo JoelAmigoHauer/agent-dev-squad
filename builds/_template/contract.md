@@ -34,7 +34,7 @@ A build landing between two classes takes the higher one.
 
 ### Screens
 
-<one entry per screen, named>
+<one entry per screen, named by its path; a number is a label local to one file>
 
 ### User flows
 
@@ -54,18 +54,57 @@ A build landing between two classes takes the higher one.
 
 "Users are seeded" describes local development and leaves production with no way in. Name the
 mechanism: a migration that inserts it, an invite flow, a first-run claim, a manually created
-account with the exact steps.
+account with the exact steps. Name the **artefact** that does it as a file path, and check its type
+can do what the mechanism claims: a SQL migration cannot read process environment.
+
+### Runtime secrets
+
+| Variable | Needed by | Obtainable here? (from `preflight.md`) |
+|---|---|---|
+|  |  |  |
+
+A secret listed here that Preflight did not probe goes back to Preflight before Stage 3.
+
+### Residency
+
+none | <the data store's region **and** the compute region>
+
+### Unverified premises
+
+A clause stating a fact about existing code, a consumer, a credential, a third-party call or a
+platform limit cites where it was read (file and line, or URL and date). Anything unread goes here.
+
+| Unverified premise | Owner | How to verify |
+|---|---|---|
+|  |  |  |
+
+### Platform settings
+
+| Platform | Setting | Required value | Clause it serves |
+|---|---|---|---|
+|  |  |  |  |
+
+### Host constraints
+
+Brownfield only. Every constraint from the survey's §8 names how it is enforced.
+
+| Host constraint | Enforced by | If manual: who checks, and when |
+|---|---|---|
+|  | `test: <path>` \| `manual` |  |
 
 ### Flow bindings
 
 **Mandatory.** Prose is not testable — a flow written as a sentence gets verified as a sentence.
 Every flow that crosses the UI/API boundary gets a row, because a row is a thing QA can drive.
 
-| Flow | Screen | Control | Calls | Post-condition |
-|---|---|---|---|---|
-| Create `<entity>` | `<entity>` list | "New `<entity>`" | `POST /api/<entities>` | lands on `/<entities>/:id` |
-| Add child to `<entity>` | `<entity>` detail | "Add `<child>`" | `POST /api/<entities>/:id/<children>` | child appears, derived totals change |
-| Change state | `<entity>` detail | "`<verb>`" | `PATCH /api/<entities>/:id` | badge changes, prior state refused |
+| Flow | Screen | Reached from | Control | Calls | Post-condition |
+|---|---|---|---|---|---|
+| Create `<entity>` | `/<entities>` | nav "`<Entities>`", signed in | "New `<entity>`" | `POST /api/<entities>` | lands on `/<entities>/:id` |
+| Add child to `<entity>` | `/<entities>/:id` | a row in `/<entities>`, `<entity>` open | "Add `<child>`" | `POST /api/<entities>/:id/<children>` | child appears, derived totals change |
+| Change state | `/<entities>/:id` | a row in `/<entities>`, state `<from>` | "`<verb>`" | `PATCH /api/<entities>/:id` | badge changes, prior state refused |
+
+**Reached from** is the navigation path and the state in which the control is live. QA starts
+there, never from a typed URL.
 
 Placeholders on purpose. Substitute this build's own nouns and delete any row that does not apply —
 a worked example in one domain gets pattern-matched into the next build's thinking.
@@ -98,11 +137,49 @@ intent per table.
 
 ```
 
+### Writers
+
+Every table, and every column its own insert does not set. An empty cell fails validation.
+
+| Table.column | Created by | Changed by | Ended by | Inside this build? |
+|---|---|---|---|---|
+|  |  |  |  |  |
+
+### Self-consistency
+
+For every table with a trigger or policy: what each foreign key does on delete, and confirmation no
+trigger or policy refuses it.
+
+### One field, two mechanisms
+
+none | <field: which mechanism binds, and what the other is for>
+
+### Tenant references
+
+Multi-tenant only.
+
+| Column | References | Anchors to | Guard |
+|---|---|---|---|
+|  |  |  |  |
+
+### Migration ordering
+
+| Migration | Breaks the deployed code? | New code fails on old schema? | Order |
+|---|---|---|---|
+|  |  |  |  |
+
 ---
 
 ## 3. API contract
 
-Exact routes, request and response shapes, status codes, error shape.
+Exact routes, request and response shapes, status codes. The common error shape is stated once,
+here; route sketches name only what is specific to them.
+
+```
+errors, every route:  { error: string; field?: string }
+order:                401 → 400 → 403 → 404 → 500 (no detail for an untranslated database error)
+update and delete:    zero rows affected is 404
+```
 
 ```
 
@@ -120,6 +197,21 @@ Hosting:
 Database, auth, storage: 
 UI components:           
 ```
+
+### Test target and strategy
+
+```
+TEST TARGET:      local stack | Supabase branch <name> | separate project <ref>   (never production)
+TEST STRATEGY:    local stack | in-memory double + post-migration live assertions | cloud branch
+                  reason: 
+BUILD-AND-SERVE:  
+```
+
+Brownfield: shared test dependencies.
+
+| Shared dependency | Suites that index it | Re-run when it changes |
+|---|---|---|
+|  |  |  |
 
 **Deviation from default:** none | <trigger number, the specific spec text that fires it, what the
 default stack would fail to do, what is proposed instead and what it costs>
@@ -157,7 +249,11 @@ reason:
 <!-- 
 ## <YYYY-MM-DD> — <what changed>
 Raised by: <stage>
-Clause affected: <section>
+Clause affected: <section>, edited in place: ~~old text~~ superseded by A<n>
 Change: <the new binding text>
 Downstream impact: <does QA need to regenerate tests? does the schema change?>
+
+| Amendment | Changes | Routes to |
+|---|---|---|
+| A<n> | <clause or table> | Designer (surface or control) / Engineer (always) / QA (data model or API shape) |
 -->
