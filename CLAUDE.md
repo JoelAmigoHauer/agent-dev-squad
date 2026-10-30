@@ -48,7 +48,7 @@ no dependency manifest here — the code lives in the repos generated *from* thi
 | `CLAUDE.md` | This file. The Orchestrator's entire brief | Always — auto-loaded by Claude Code |
 | `README.md` | Human-facing overview of the template | Never by an agent |
 | `BLUEPRINT.md` | The original design document. History, not instruction | **Never.** By design |
-| `LEARNINGS.md` | Build 1's defect list, ranked, with the fix for each | Before changing any rule; written by Stage 7 |
+| `LEARNINGS.md` | Every build's defect list, by app, with the fix for each. IDs are `<app code>-<n>` | Before changing any rule; written by Stage 7 |
 | `PRIOR-ART.md` | External projects worth mining, what to take from each and what not to | **Never by a stage.** Mode 2 only |
 | `agents/surveyor.md` | 0.25 · brownfield codebase audit, in the contract's shapes | Stage 0.25 only, brownfield builds |
 | `agents/preflight.md` | 0.5 · tooling and plan-tier probe | Stage 0.5 only |
@@ -393,12 +393,76 @@ Mode 2 work. These are conventions for the prose, since prose is all there is.
 
 ---
 
-## Known gaps as at 2026-08-22
+## Known gaps as at 2026-10-31
 
 Audited against `LEARNINGS.md`. Recorded so a stage does not trust this repo to be level with its
 own learnings.
 
-**None open.** Every item in `LEARNINGS.md` has reached the stage file or template it names.
+**51 open.** Entries 1–12 and B3-24 have reached the stage files they name. Every other entry has
+not: thelma's, workshop-hub's and client-portal's learnings were written into separate copies of
+this file on separate branches and consolidated on 2026-10-31 without their changes being applied.
+That is WH-19 (no return path for `/squad` learnings) happening at scale, which is why it is listed
+here despite its low severity.
 
-Add a paragraph per gap as one appears, and delete it when it closes rather than marking it done.
+Ordered by severity, then by ID. The entry in `LEARNINGS.md` carries the full change; this column
+names only where it lands. Files are in `agents/` unless a path is given.
+
+| ID | Gap | Change lands in |
+|---|---|---|
+| TH-13 | Preflight never probes runtime credentials; a missing service-role key surfaced at Stage 6 | `preflight.md`, `architect.md` §1 |
+| B3-1 | The contract binds how state is used, never how it comes to exist | `architect.md`, `builds/_template/contract.md`, `qa.md` |
+| B3-2 | An amendment set gets no stage lines, so an unbuilt set is invisible | `CLAUDE.md`, `architect.md`, `devops.md` |
+| B3-3 | No test environment, so tests, fixtures and migrations ran on production | `architect.md`, `qa.md`, `engineer.md`, `skills/deploy-sequence.md` |
+| B3-4 | A retro's changes cannot reach the rest of the same build | `CLAUDE.md`, `retro.md`, `qa.md`, `devops.md` |
+| TH-14 | A mandatory contract field can name a mechanism that cannot work | `architect.md` |
+| TH-15 | Nothing checks the contract against itself | `architect.md` §2 |
+| TH-16 | Preflight records a tool's tier, not whether this machine can invoke it | `preflight.md` |
+| WH-13 | `working` is not runtime-verified; brownfield schema is not captured live | `surveyor.md` §2, §5, `architect.md`, `security.md` |
+| WH-14 | Preflight probes binaries at one moment, not capabilities | `preflight.md`, `CLAUDE.md` |
+| WH-20 | The deploy never confirms its target project | `skills/deploy-sequence.md` §3, `devops.md` |
+| WH-21 | An absent tool never gets an install attempt | `preflight.md` |
+| WH-25 | Migration ordering is one question where there are two | `architect.md` §2, `devops.md` |
+| WH-26 | A guard over a hand-written list stops guarding | `qa.md` |
+| WH-28 | A host constraint can be bound with no executable form | `architect.md` |
+| B2-1 | Admin-client RPCs hidden in a non-exposed schema fail closed | `engineer.md`, `qa.md`, `security.md`, `devops.md` |
+| B3-5 | Contract premises about code, consumers and third parties go unread | `architect.md`, `engineer.md`, `skills/deploy-sequence.md` |
+| B3-6 | The contract grows by appending until no stage can read it whole | `CLAUDE.md`, `architect.md` |
+| B3-7 | Checks that cannot fail are read as evidence | `qa.md`, `security.md`, `engineer.md`, `devops.md` |
+| B3-8 | Supabase default grants undo column revokes and hand out TRUNCATE | `engineer.md`, `security.md` |
+| B3-9 | A foreign key proves a row exists, never that it is yours | `architect.md`, `engineer.md`, `security.md` |
+| B3-10 | Platform settings contradict contract clauses, unseen by any scanner | `architect.md`, `security.md` |
+| B3-11 | On a git-linked project the merge is the promote | `skills/deploy-sequence.md`, `devops.md` |
+| TH-17 | The 5a/5b split is by stage, not by when a check's target exists | `security.md` |
+| TH-18 | A degraded tool has no stated substitute or blind spot | `preflight.md`, `security.md` |
+| TH-19 | Pinned Playwright version is not compared with the installed browser build | `preflight.md` |
+| WH-15 | Invariants the host's tests enforce are not host constraints | `surveyor.md` §8, `architect.md` |
+| WH-16 | QA's harness is greenfield-specific; no test-strategy field | `qa.md`, `architect.md` §4 |
+| WH-22 | No rule for driving a clock in tests | `qa.md` |
+| WH-23 | The promote step has one path, refused when environments differ | `skills/deploy-sequence.md` §6 |
+| WH-27 | The survey does not name dependencies several suites share | `surveyor.md` §6, `architect.md` §4 |
+| WH-29 | A coverage claim needs a spec and assertion citation | `qa.md` |
+| B2-2 | A new Vercel project's first deploy is production | `skills/deploy-sequence.md` |
+| B3-12 | Status codes and bodies do not say what happened | `engineer.md`, `architect.md` |
+| B3-13 | Builds share one state file | `CLAUDE.md`, `state/tasks.md` |
+| B3-14 | What counts as a loop iteration is undefined | `CLAUDE.md`, `qa.md`, `security.md` |
+| B3-15 | Stages share one working tree and the Orchestrator commits under them | `CLAUDE.md` |
+| B3-16 | An API shape can change outside an amendment with no test to tell | `CLAUDE.md`, `qa.md` |
+| B3-17 | The flow binding table has no column for how a screen is reached | `architect.md`, `qa.md`, `designer.md` |
+| B3-18 | Container restarts lose evidence | `engineer.md`, `qa.md` |
+| B3-19 | Findings and briefs do not say how a claim was known | `qa.md`, `CLAUDE.md` |
+| TH-20 | Two mechanisms govern one field and the contract does not rank them | `architect.md` §2 |
+| WH-17 | Smoke data written to production has no owner | `skills/deploy-sequence.md`, `devops.md` |
+| WH-18 | The rollback target's age is not recorded | `skills/deploy-sequence.md` §6 |
+| WH-19 | Learnings from `/squad` runs have no return path | `.claude/skills/squad/SKILL.md` |
+| WH-24 | The loop-cause vocabulary has no `test-defect` | `qa.md`, `security.md`, `CLAUDE.md` |
+| B2-3 | Magic-link sign-in needs Auth URL config no connector exposes | `skills/deploy-sequence.md` |
+| B3-20 | The spec tree sits outside the app's typecheck | `qa.md` |
+| B3-21 | The contract and the design number screens differently | `architect.md`, `designer.md` |
+| B3-22 | Residency is bound for the data store, not the functions | `architect.md`, `skills/deploy-sequence.md` |
+| B3-23 | The survey does not list other writers to shared hosted resources | `surveyor.md` |
+
+Several rows touch the same file and some overlap (WH-14, WH-21, TH-16 and TH-18 are all
+Preflight's probe table). Close them a file at a time rather than an ID at a time.
+
+Add a row per gap as one appears, and delete it when it closes rather than marking it done.
 This section is a list of open items, not a changelog.

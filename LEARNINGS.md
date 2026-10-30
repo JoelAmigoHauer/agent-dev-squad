@@ -1,10 +1,42 @@
-# Blueprint revisions — learnings from build 1
+# Blueprint revisions — learnings, cumulative
 
-Derived from `print-estimator`, the first end-to-end run of the pipeline (2026-08-15).
-`BLUEPRINT.md` stays unedited as the source record; this file is what build 1 proved needs changing.
+What each build proved needs changing. `BLUEPRINT.md` stays unedited as the source record; this file
+is the evidence behind every rule that has moved since.
 
-Ranked by cost of leaving it alone. Each entry states what actually happened, why it is systemic
-rather than a one-off, and the specific change.
+Each entry states what actually happened, why it is systemic rather than a one-off, and the specific
+change. Within a build, entries are ranked by cost of leaving it alone.
+
+## Entry IDs
+
+Every entry carries an ID of the form `<build code>-<n>`, where the build code names the app, not
+the build's position in a sequence. Build ordinals collided: three copies of this template each
+called their second run "build 2" and each numbered its first new entry 13, so the same number
+meant three different learnings. An app name cannot collide that way. Build 1's entries keep their
+bare numbers 1–12; nothing else is unprefixed.
+
+| Code | App | Runs | Mode | Entries | Was numbered | Ported from |
+|---|---|---|---|---|---|---|
+| none | `print-estimator` | 2026-08-15 | greenfield | 1–12 | 1–12 | build 1, this repo |
+| `TH` | `thelma` | 2026-08-24 to 08-25 | greenfield, halted at Stage 6 | TH-13 to TH-20 | 13–20, "build 2" | branch `claude/thelma-portfolio-agent-ba057f`, archived as tag `archive/thelma-2026-08-25` |
+| `WH` | `workshop-hub` | 2026-09-07 to 09-09 | brownfield via `/squad` | WH-13 to WH-29 | 13–29, "builds 2, 3, 5, 6" | branch `claude/claude-md-docs-3l7ior` |
+| `B2`, `B3` | `client-portal` | 2026-09-11 to 10-26 | brownfield via `/squad` | B2-1 to B2-3, B3-1 to B3-24 | unchanged | branch `claude/screen-fidelity-check` |
+
+`TH` and `WH` keep their original numbers after the prefix, so a citation in an old run record
+still finds its entry by stripping or adding the prefix. `client-portal` keeps its `B2-` and `B3-`
+IDs because stage files already cite `B3-24`; read them as client-portal's first and second
+harvests, not as build ordinals.
+
+A bare number in an entry's text (learning 2, entry 5) means build 1's entry. A prefixed number
+means that build's.
+
+New entries follow [agents/retro.md](agents/retro.md): a new app gets a new two-letter code, added
+to this table, and a later run of the same app continues that code's numbering.
+
+---
+
+# print-estimator: build 1 (2026-08-15), greenfield
+
+The first end-to-end run of the pipeline. Entries 1–12.
 
 ---
 
@@ -201,7 +233,7 @@ not a clone. Applies to Figma and to code.
 
 ---
 
-# What worked and should not be changed
+## What worked in print-estimator and should not be changed
 
 Recorded because the temptation after a defect list is to change everything.
 
@@ -222,9 +254,680 @@ Recorded because the temptation after a defect list is to change everything.
 
 ---
 
-# Build 2 — learnings from client-portal (2026-09-11)
+# TH: thelma (2026-08-24), greenfield, halted at Stage 6
 
-Second end-to-end run. Deployed to `methodworks-portal.vercel.app`. One high-severity latent bug
+Derived from `thelma`, the second end-to-end run (2026-08-24), made in this repository on a
+branch that also carried the app's code. A class C build: a supervised
+agentic portfolio manager for RIAs, halted at Stage 6 on an environment blocker.
+
+**Sequencing note.** Stage 7 normally runs after deploy. This build halted at Stage 6, and Joel
+directed that the retro run anyway rather than lose the learnings — a deliberate deviation, not a
+drift. Entries below draw on every record except `deploy-record.md`'s post-deploy half, which does
+not exist yet.
+
+Numbered 13–20 on its own branch, continuing from build 1, and kept as `TH-13` to `TH-20`.
+Ranked by cost of leaving it alone.
+
+---
+
+## TH-13. Preflight probes build tooling and never runtime credentials — CRITICAL
+
+**What happened.** Preflight passed with 0 blocking findings. Stages 1 through 5a all completed
+green: contract validated, 113 test assertions passing, security review passed with 0 blocking
+findings, production build compiling and booting. Stage 6 then could not deploy at all, because
+`SUPABASE_SERVICE_ROLE_KEY` cannot be obtained in this environment. The same missing credential
+also blocked every end-to-end test, so the build reached "verified" on paper while its whole
+write path had never once executed.
+
+**Why it is systemic.** Learning 2 added Preflight to catch missing *tools* — things a stage
+shells out to. It probes `node`, `docker`, `semgrep`, MCP connectivity, plan tiers. Every one of
+those is a **build-time** dependency. A service-role key, an API key, a signing secret and a
+webhook secret are **runtime** dependencies: absent, they break nothing until the moment the
+application tries to serve a request, which is after every gate has passed. Preflight's table has
+no row shape that can express "the app will need this secret at runtime and this environment
+cannot supply it". Every build with a server-side secret hits this, and always at Stage 6, which
+is the most expensive place to find it.
+
+**The change.** `agents/preflight.md` gains a third probe section, **Runtime credentials**, run
+after the stack is known:
+
+```
+| Credential | Needed by | Obtainable here? | If not, what breaks |
+|---|---|---|---|
+| SUPABASE_SERVICE_ROLE_KEY | ledger writes, agent runtime, seed | NO | every write path, and sign-in |
+```
+
+A runtime credential that cannot be obtained is **BLOCKING at Stage 0.5**, not at Stage 6 — the
+whole point of Preflight is that the halt is cheap. `agents/architect.md` §1 gains a matching
+mandatory field: every contract lists the runtime secrets its design requires, so Preflight has
+something to probe against rather than guessing.
+
+**SEVERITY: critical.**
+
+---
+
+## TH-14. A contract field can be filled with a mechanism that cannot work — HIGH
+
+**What happened.** Contract §1's "First user" field was filled, as build 1's learning 5 requires:
+*"a migration reads `FIRST_PRINCIPAL_EMAIL` from the environment, creates the firms row and an
+auth.users row with no password"*. It passed the Stage 1 validation pass. It is impossible — a SQL
+migration cannot read process environment variables, and inserting directly into `auth.users`
+produces an account that cannot complete a password reset. The Engineer hit it at Stage 3 and
+raised the build's only `CLARIFICATION`; it became amendment A4.
+
+**Why it is systemic.** Learning 5 made the field **mandatory**, which was right, and the
+validation pass checks the field is **present**, which is not the same as checking it is
+**possible**. Any mandatory field can be satisfied by plausible-sounding prose. This is the same
+failure as learning 1 one level up: there, a flow was described rather than bound; here, a
+mechanism is named rather than shown to work.
+
+**The change.** `agents/architect.md`, "First user": the field must name the **artefact** that
+implements it — a file path — not a description of one. `supabase/migrations/*.sql`,
+`scripts/*.mjs`, an invite flow route. The validation pass adds one check: *can the named artefact
+type do what the mechanism claims?* A SQL migration reading process env fails that check in one
+line.
+
+**SEVERITY: high.**
+
+---
+
+## TH-15. Nothing checks the contract against itself — HIGH
+
+**What happened.** Contract §2 specified `decision_ledger.firm_id … on delete cascade` and, forty
+lines later in the same section, `create trigger trg_ledger_append_only before update or delete on
+decision_ledger`. Both were implemented exactly as written. They are mutually incompatible: a
+cascade from `firms` issues a DELETE the trigger refuses, so deleting a firm fails with a trigger
+error rather than a foreign-key violation. QA found it **in teardown**, by luck of having written
+a teardown, not by design. It became amendment A5.
+
+**Why it is systemic.** Every consistency check in the pipeline is *between* artefacts — flow
+bindings reconcile §1 against §3, QA reconciles the build against the contract. Nothing reconciles
+the contract against itself. §2 is the section most exposed to this, because it contains three
+sub-languages that constrain the same rows — DDL, triggers and RLS policies — written in separate
+blocks by the same agent in one pass. A cascade that a trigger blocks, a policy that a constraint
+forbids, and a default that a check rejects are all the same defect shape, and all invisible to
+every stage that reads only its own half.
+
+**The change.** `agents/architect.md` §2 gains a **self-consistency pass**, the schema analogue of
+the flow-bindings reconciliation that learning 1 added:
+
+> For every table carrying a trigger or an RLS policy, state what each foreign key does on delete
+> and confirm no trigger or policy refuses that action. A cascade into an append-only table is the
+> canonical failure.
+
+Cheap, mechanical, and it catches the whole class rather than this instance.
+
+**SEVERITY: high.**
+
+---
+
+## TH-16. Preflight records a tool's plan tier, not whether this machine can use it — HIGH
+
+**What happened.** Preflight probed 21st.dev, recorded `tier: paid, unmetered`, and passed it —
+correctly, on its own terms. Stage 2 then found that every `installCommand` the catalogue returns
+embeds `$API_KEY_21ST`, and that variable is not set in this environment. The CLI install route
+was dead. Components had to be retrieved through the MCP tool and vendored by hand instead, which
+means Engineer guardrail 3 ("use the 21st.dev component named in design.md") was satisfied only
+partially — recorded as such in `build-notes.md` rather than claimed as complete.
+
+**Why it is systemic.** This is learning 2 recurring **with Preflight already in place**, which is
+what makes it worth an entry rather than a bug report. Preflight asks two questions — *does the
+tool answer?* and *what tier?* — and both were answered correctly. It never asks the third: *can
+this machine actually invoke it?* Tier and reachability are different facts, and the gap between
+them is invisible until a stage tries to use the tool. `gitleaks` is the same shape: installed
+nowhere, reachable through neither the release route nor the container route.
+
+**The change.** `agents/preflight.md`'s probe table gains an **Invocable?** column distinct from
+Status and Tier, and the 21st.dev row specifically gains "check `API_KEY_21ST` is set, not only
+that `get_usage` answers". A tool that answers but cannot be invoked is `DEGRADED`, with the stage
+that carries it named — which is the machinery Preflight already has, simply never pointed at this
+question.
+
+**SEVERITY: high.**
+
+---
+
+## TH-17. The 5a/5b split assumes 5a runs against a local stack — MEDIUM
+
+**What happened.** Learning 3 split Security into 5a pre-deploy (local) and 5b post-deploy
+(hosted), because Supabase advisors are hosted-only and could not run at 5a. On this build Docker
+was absent, so there was no local stack at all and every stage worked against the hosted project
+from Stage 3 onward. Advisors therefore ran **at 5a**, found 14 warnings, and had them fixed
+before deploy was even attempted — the outcome learning 3 wanted, reached by ignoring the
+mechanism it prescribed.
+
+**Why it is systemic.** The split encodes *where* a check runs (local vs hosted) as a proxy for
+*when* it can run (pre vs post deploy). Those come apart whenever a build has a hosted project
+before deploy, which is every build without a working local stack — and, on this machine, that is
+every build. Applied mechanically, the rule would have deferred advisors to 5b and shipped with a
+layer unchecked, which is precisely what learning 3 exists to prevent.
+
+**The change.** `agents/security.md` reframes the split by **capability, not by stage**: run every
+check as soon as its target exists. If a hosted project exists at 5a, advisors run at 5a. 5b
+becomes "everything that could not run earlier, plus everything that only becomes true once real
+data and real users exist" — the seeded first user, the deployed client bundle, the live env vars
+— rather than "the hosted checks".
+
+**SEVERITY: medium.**
+
+---
+
+## TH-18. A degraded tool has no stated substitute, so each stage invents one — MEDIUM
+
+**What happened.** Preflight correctly marked `gitleaks` DEGRADED and named Stage 5a as carrying
+the loss. Stage 5a then had to invent the substitute itself: `semgrep p/secrets` over the tree,
+plus explicit greps for assigned credential literals, JWT-shaped strings and `sb_secret_` values,
+plus a check that `.env.local` is untracked. Those cover the working tree and **not git history**,
+which is the half that matters most for a leaked key — and that limit was reasoned out at 5a
+rather than known in advance.
+
+**Why it is systemic.** The DEGRADED mechanism records *which stage inherits a loss* but nothing
+about *what the fallback is or what it fails to cover*. So the substitute is improvised under time
+pressure by whichever stage hits it, and its blind spots are discovered by whoever thinks hardest
+in the moment rather than being written down once. Preflight already distinguishes DEGRADED from
+BLOCKING on the basis that "a stated fallback exists" — but nowhere is the fallback actually
+stated.
+
+**The change.** `agents/preflight.md`: DEGRADED requires three things, not one — the stage that
+carries it, **the named substitute**, and **what the substitute does not cover**. `agents/security.md`
+gains a per-tool fallback row so the substitute is doctrine rather than improvisation:
+
+```
+| Tool | If unavailable, substitute | Substitute does NOT cover |
+|---|---|---|
+| gitleaks | semgrep p/secrets + literal greps over the tree | git HISTORY — a key committed then removed |
+```
+
+**SEVERITY: medium.**
+
+---
+
+## TH-19. A pinned test-tool version and a pre-installed browser build are two different facts — MEDIUM
+
+**What happened.** Preflight recorded Playwright as OK: browsers pre-installed at
+`/opt/pw-browsers`, `@playwright/test` resolvable. At Stage 4, every browser test failed and every
+API test passed. The cause was a version mismatch — `@playwright/test` 1.62.1 expects Chromium
+build 1234, the container ships 1194 — and the tool's own advice, `npx playwright install`, is
+forbidden in this environment and cannot succeed. It cost a fix-loop iteration, correctly logged
+`cause: environment` so it did not consume the cap.
+
+**Why it is systemic.** The symptom is indistinguishable from a broken application: seven page
+tests red, an assertion-shaped error message, a trace file. Under learning 4's cap-by-cause rule
+it was survivable; under a naive cap it would have burned an iteration and pointed the Engineer at
+code that was fine. Any pre-provisioned browser will drift from any pinned test package eventually,
+so this recurs on a clock rather than by chance.
+
+**The change.** `agents/preflight.md`'s Playwright row must compare the **pinned package version**
+against the **installed browser build**, not merely confirm both exist. thelma's `/ERRORS.md` (on the archived tag, not in this template) carried
+the diagnostic signal that identifies it in one glance, which is the durable half of the fix:
+**API tests passing while every page test fails means the browser never launched.**
+
+**SEVERITY: medium.**
+
+---
+
+## TH-20. The contract does not say which mechanism wins when two govern the same field — LOW
+
+**What happened.** The mandate governs cash twice over: `min_cash_bps` and `liquidity_need` in §2,
+and separately the allocation bands that guardrail rule 3 enforces. The contract states both and
+never states which governs. The Engineer inferred that an asset class absent from the mandate's
+bands is unauthorised — correct for every class except cash — so every household holding cash was
+reported in breach. QA caught it as GAP 1.
+
+**Why it is systemic.** The loop worked, so the bug itself is not the lesson. The lesson is what
+made it available: whenever a contract constrains one quantity through two mechanisms, the
+precedence between them is a real decision, and prose that mentions both without ranking them
+reads complete. This is a domain-modelling gap that will recur on any class B or C build with
+overlapping constraints, and it is cheapest to settle at Stage 1.
+
+**The change.** `agents/architect.md` §2: where a field is governed by more than one mechanism,
+state which binds and what the other one is for. One line — *"cash is governed by `min_cash_bps`,
+not by allocation bands; a mandate need not band cash"* — would have removed the inference
+entirely.
+
+**SEVERITY: low.**
+
+---
+
+# WH: workshop-hub (2026-09-07 to 09-09), brownfield via `/squad`
+
+Four runs in the `workshop-hub` repository, whose records live there under
+`.squad/builds/`. Inside this section, "build N" counts runs in *that* repository: build 2 is
+Phase 2 (WH-13 to WH-19), build 3 is `workshop-hub-end` (WH-20 to WH-24), build 4 left no
+entries, build 5 is `workshop-hub-room-runner` (WH-25 to WH-27) and build 6 is
+`workshop-hub-ink-actions` (WH-28, WH-29).
+
+Derived from the runs recorded in `builds/workshop-hub/`. Same test for inclusion as above: a stage
+passed its own check and the product was still wrong, an environmental blocker, a contract field
+invented mid-build, or a tool that could not run where its stage runs. Ordinary bugs the loop caught
+are excluded — the Engineer's own smoke test catching the handler's clock-skew defect before QA ran is
+the system working, not a lesson.
+
+---
+
+## WH-13. workshop-hub — a binding marked `working` was refused by the database — HIGH
+
+**What happened.** The Surveyor marked "Advance stage" `working` after reading the page (posts the
+stage key) and the handler (validates it with the rulebook, inserts it). Only the schema capture at
+Preflight showed that `workshop_state.phase` was check-constrained to three *other* values, so every
+press of that button since 6 August had been refused with a 400 that the handler reported as 502.
+Code and database each held a copy of the phase list and had diverged a month earlier.
+
+**Why it is systemic.** `working` conflated *read-verified* (both ends of the wire agree) with
+*runtime-verified* (the write actually lands). On a brownfield build the third end — the database —
+is not in the repository at all unless migrations are, and this repo had none. Any brownfield build
+whose schema lives only on the hosted project will pass a code-reading survey while the data layer
+disagrees.
+
+**The change.** `agents/surveyor.md` §5: the status vocabulary gains the distinction — `working`
+requires a runtime probe or a capture that includes the data layer; a code-only reading is
+`read-verified` and the Architect treats it as `changing` until proven. §2: on brownfield the schema
+is **captured from the live catalogue** (columns, constraints, policies, functions, migration list)
+as a precondition, never reconstructed from handler code; the reconstruction stays only as the drift
+comparison. `agents/architect.md` and `agents/security.md`: the rule this build recorded as ADR 0005
+— *the database constrains shape, the rulebook constrains values* — as the default for any value list
+the code already owns.
+
+---
+
+## WH-14. workshop-hub — tool availability changed three times during one run — HIGH
+
+**What happened.** Preflight probed the Supabase and Vercel MCP servers at 10:52Z and they answered.
+At 11:00Z, when the session left auto mode, every MCP call returned "requires approval", which a
+non-interactive runner cannot grant; Stages 3–5a ran with the migration written but unapplied and
+the advisors unrun. At 21:30Z the MCP servers reconnected under new names and answered again; the
+migration was applied and 5b ran. Separately, Preflight recorded `vercel` CLI as *absent* because
+`command -v vercel` failed, yet `npx vercel@latest` with the `VERCEL_TOKEN` already in the
+environment deployed first time.
+
+**Why it is systemic.** Preflight tests **binaries at one moment**. On a remote runner a capability
+is a function of the binary, the credential in the environment, the package fetcher, and the
+approval mode — and the last of those changes without notice. A stage that assumes Preflight's answer
+still holds will halt on a capability that is present, or plan around one that has gone.
+
+**The change.** `agents/preflight.md`: probe **capabilities, not binaries** — `npx <tool> --version`
+and the presence of the credential by name (`VERCEL_TOKEN`, never its value) count as present; record
+the runner's approval mode as a row. `CLAUDE.md` context-loading/stage rules: any stage that depends
+on an MCP write re-probes immediately before relying on it and records `cause: environment` on a
+refusal rather than halting. `ERRORS.md` template gains the fact: MCP calls succeed in auto mode and
+are denied outside it in a non-interactive session.
+
+---
+
+## WH-15. workshop-hub — the contract asserted a host-shell mechanic the host's own test forbids — MEDIUM
+
+**What happened.** The Architect wrote `sections: ['choose']` for three new stages. The host shell's
+`roomRender` toggles every stage's sections in order, so a section claimed by three stages ends up
+hidden whenever the visible stage is not the last claimant — and the host already had a test, "no two
+stages claim the same section", that encodes exactly that. It failed on the Engineer's first run and
+became the run's one contract amendment.
+
+**Why it is systemic.** In brownfield mode the contract makes structural claims about code the
+Architect has read but not executed. The cheapest validator of those claims already exists: the
+host's own test suite. The survey's §8 listed conventions from `CLAUDE.md` and ADRs but not the
+invariants the host's tests enforce, so the Architect never saw this one.
+
+**The change.** `agents/surveyor.md` §8: list the invariants the host's tests encode, one row per
+test that guards a structural rule (not per assertion), as host constraints. `agents/architect.md`
+brownfield mode: before validation, run the host's existing test suite against any rulebook or
+config change the contract prescribes — a red host test is a contract defect, not an Engineer task.
+
+---
+
+## WH-16. workshop-hub — QA's harness section assumes a stack the contract may not have — MEDIUM
+
+**What happened.** `agents/qa.md` mandates a local Supabase stack (`supabase start`, `db reset`) and a
+Playwright `webServer` of `npm run build && npm start`. This build had no Docker daemon, no CLI, a
+free tier with no branching, and a host constraint forbidding a build step. The Architect had to
+design the test harness in the contract: a zero-dependency dev server with an in-memory PostgREST
+double that enforces the migration's checks and RLS, plus one-shot live SQL assertions after the
+migration. It worked — 40/40 through the UI — but it was invented mid-build.
+
+**Why it is systemic.** The harness prescription is greenfield-and-Next.js-specific. Every brownfield
+build, and any greenfield build whose plan tier or runner lacks Docker, hits the same gap at Stage 4,
+after the contract is written.
+
+**The change.** `agents/qa.md`: the `webServer` command is **whatever the contract names** as the
+build-and-serve equivalent (§4 gains that field); the local-stack section becomes one of three
+sanctioned strategies — local stack, in-memory double with post-migration live assertions, or cloud
+branch — chosen in the contract with the reason. `agents/architect.md` §4 gains "Test strategy" as a
+mandatory subsection whenever Preflight reports the local stack degraded.
+
+---
+
+## WH-17. workshop-hub — deploy verification writes production data and nothing says who deletes it — LOW
+
+**What happened.** The deploy sequence requires "one write path verified in the database" on preview
+and on production. Doing it created three sessions, nine candidates, ten votes and twenty-four
+choose rows in the only database the app has. Deleting them needed a service-role SQL statement
+across seven tables that no brief mentions.
+
+**Why it is systemic.** Every verified deploy creates test data in production by definition; the
+sequence names the write but not its removal, so it accumulates or gets removed ad hoc.
+
+**The change.** `skills/deploy-sequence.md` §5 and §7: smoke sessions carry a fixed prefix
+(`squad-smoke-`), and the sequence ends with a recorded delete of every row keyed to them, listed in
+the deploy record. `agents/devops.md` deploy record gains `SMOKE DATA REMOVED: <counts>`.
+
+---
+
+## WH-18. workshop-hub — the rollback target can be a month old — LOW
+
+**What happened.** Production had been pointing at a deployment from 6 August while nine later
+commits existed only as un-promoted previews. Promoting this build made the rollback target a build
+that predates the stage machine, the shared rulebook and the ADRs — a rollback would restore a month-
+old app, not yesterday's.
+
+**Why it is systemic.** Brownfield repos deployed by hand accumulate previews nobody promotes. The
+survey records the gap (§7 did), but the deploy sequence assumes the previous production deployment
+is a safe near-past.
+
+**The change.** `skills/deploy-sequence.md` §6: record the rollback target's **commit and age**, and
+when it is behind the base branch by more than the build's own commits, say so in the deploy record
+as a caveat — the rollback is a regression, not a recovery, and Joel decides in advance whether that
+is acceptable.
+
+---
+
+## WH-19. workshop-hub — the Retro's own file lives in two places — LOW
+
+**What happened.** On a `/squad` run the pipeline is stamped into the host repo's `.squad/`, so this
+file is a copy pinned to one template commit. Stage 7 appends here; the template repository, which
+the next `/squad` run will stamp from, does not see it unless someone ports it.
+
+**Why it is systemic.** Every brownfield run produces learnings into a copy. Without a return path the
+template stops learning exactly when it is used most.
+
+**The change.** `.claude/skills/squad/SKILL.md`: the run ends with a "port learnings" step — the
+Retro's new entries are added to the template repository's `LEARNINGS.md` and listed under its
+`CLAUDE.md` *Known gaps* until the stage files absorb them. Done by hand for this run.
+
+---
+
+## WH-20. workshop-hub-end — the deploy CLI invents a project when the link is missing — HIGH
+WHAT HAPPENED: The first `npx vercel --yes` from `app/` did not deploy to `methodworks-workshop-hub`.
+  It created a **new Vercel project called `app`**, named after the directory, linked it to the
+  GitHub repo, and deployed there. The command reported success. Nothing in the deploy sequence
+  checks which project it is about to deploy to, so the step passed its own check and the outcome
+  was wrong — the exact failure class this file exists for.
+WHY IT IS SYSTEMIC: `.vercel/` is git-ignored (correctly — it holds an OIDC token), so the project
+  link never survives into a fresh container. Every run in a new container starts unlinked, and
+  `--yes`, which the pipeline needs for non-interactive use, converts "which project?" from a prompt
+  into a silent creation. Build 2 missed it only because its container happened to still hold a link
+  from an earlier interactive run. Left alone this recurs on every first deploy of every session.
+  **And the artefact it leaves does not stay still:** the CLI links the new project to the GitHub
+  repository, so the stray project auto-deployed on every subsequent push to the branch — three more
+  builds before anyone looked at it, silently shadowing the real project. A mistake that keeps
+  building itself is worth catching at the first command rather than the fourth.
+THE CHANGE: `skills/deploy-sequence.md` §3 gains a mandatory first step before any deploy —
+  `npx vercel link --yes --project <name> --scope <team>` — and a verification line: read back
+  `.vercel/project.json` and confirm `projectName` matches the contract's C14 project before
+  deploying. `agents/devops.md` platform notes carry the same rule.
+SEVERITY: high
+
+## WH-21. workshop-hub-end — Preflight records a tool as absent and nobody ever tries to get it — HIGH
+WHAT HAPPENED: Preflight recorded `semgrep` absent on this runner, for the second build running, and
+  Security inherited "1 of 3 scanners" as a degraded capability. At Stage 5a, installing it took
+  under five minutes (`python3 -m pip install --ignore-installed PyJWT semgrep`), and it then scanned
+  29 files and produced a real result. Two builds had accepted a permanent-looking gap that was five
+  minutes of work.
+WHY IT IS SYSTEMIC: `agents/preflight.md` asks "does the binary resolve?" and the answer feeds a
+  Degraded table. There is no step that asks whether an absent tool is *cheaply obtainable*, and the
+  word "degraded" reads as a settled fact rather than an open question. A stage that inherits a
+  degradation has every incentive to accept it, because accepting is one line and fixing is unbudgeted
+  work. The same logic had kept `gitleaks` unrun for three builds, each recording it as
+  unavoidable because Homebrew and the Docker image were both out of reach. **Asked for it directly,
+  it took one `curl` of the vendor's release binary** — the same lesson, twice in one day, on two
+  different tools. Neither gap was ever real; both were merely unexamined.
+THE CHANGE: `agents/preflight.md`, *What you check* — every absent tool gets a one-line acquisition
+  attempt and its result recorded next to it: `absent — install tried: <command> → succeeded |
+  failed: <reason>`. A tool recorded absent with no attempt line is an incomplete probe, and the
+  probe must try the vendor's own release binary before treating a package manager's absence as
+  decisive. The Degraded table then carries only what genuinely cannot be had.
+SEVERITY: high
+
+## WH-22. workshop-hub-end — time-derived state cannot be tested by rewinding one record — MEDIUM
+WHAT HAPPENED: The lock is derived from a close timestamp plus twenty minutes. Testing the locked
+  state means stamping a close time in the past. Three separate attempts failed the same way — twice
+  against the dev server, once against the live project — because the "current" state is the newest
+  row **by `created_at`**, so a row stamped 21 minutes ago and inserted after a row stamped a moment
+  ago simply loses. Each failure looked like a broken lock and was actually correct behaviour.
+WHY IT IS SYSTEMIC: this pipeline now recommends append-only logs as a default (ADR 0005 in build 2,
+  ADR 0006 here), and "current = newest by timestamp" is intrinsic to that pattern. Any build that
+  derives state from elapsed time inherits the property, and `agents/qa.md` says nothing about how to
+  drive a clock. Three repetitions inside one build, by an agent that had already diagnosed it once,
+  is the signature of a missing written rule rather than carelessness.
+THE CHANGE: `agents/qa.md`, *Test data*, gains a paragraph: when state is derived from elapsed time,
+  test it by controlling the stored timestamp, never by waiting, and **use a fresh fixture for each
+  position in the window** — a single record cannot be walked backwards through it. Note that the
+  arithmetic itself belongs in a pure unit test, where the clock is an argument.
+SEVERITY: medium
+
+## WH-23. workshop-hub-end — `vercel promote` cannot promote a preview built with preview variables — MEDIUM
+WHAT HAPPENED: `skills/deploy-sequence.md` §6 says to capture the rollback target and then promote
+  the tested preview. `vercel promote <preview-id>` refused: a preview built with preview environment
+  variables cannot be promoted directly, and the CLI offers to rebuild with production variables
+  instead. The sequence had no branch for that, so the step had to be improvised mid-deploy.
+WHY IT IS SYSTEMIC: the two environments have different variables in every project that has any
+  secrets at all, which is every project this pipeline will deploy. Build 2's promote succeeded only
+  because its preview had been produced in a way that made the artifacts interchangeable. The written
+  step is therefore wrong more often than it is right.
+THE CHANGE: `skills/deploy-sequence.md` §6 states both paths: promote when the preview and production
+  environments match, and otherwise deploy `--prod` from the identical tree and **prove equivalence**
+  — for a repo with no build step, by diffing the served page against the tested preview and
+  accounting for every difference (Vercel injects a preview feedback script). Record which path was
+  taken in the deploy record.
+SEVERITY: medium
+
+## WH-24. workshop-hub-end — the loop-cause vocabulary has no word for a defective test — LOW
+WHAT HAPPENED: QA's first suite run had two failures, both in the tests rather than the build: one
+  expected a phase value to be refused that the handler has always lower-cased, and one hit the
+  ordering trap in WH-22. Neither was a gap against the contract and neither should consume a
+  fix-loop iteration, but `cause: code | environment` has no third value, so the honest label had to
+  be invented in the record (`cause: test-authoring`).
+WHY IT IS SYSTEMIC: tests are written from the contract before or alongside the build, so a test
+  defect found before the suite is ever green is a normal event, not an exception. With only two
+  labels available the pressure is to record it as `code` (which wrongly consumes a cap and implicates
+  the Engineer) or to say nothing (which makes a suite that went green on its second run look like it
+  went green on its first).
+THE CHANGE: `agents/qa.md` and `agents/security.md` extend the diagnosis line to
+  `cause: code | environment | test-defect`, with `test-defect` explicitly not consuming the cap and
+  required to be recorded rather than silently fixed. `CLAUDE.md`'s *Loop caps* section carries the
+  same three values.
+SEVERITY: low
+
+**Still open from build 2, second consecutive manual port.** WH-19 (learnings from `/squad` runs
+have no return path) is unchanged: this build's entries were again carried to the template by hand.
+Two builds is enough evidence that the port step will not happen by itself.
+
+## WH-25. workshop-hub-room-runner — "additive migration" was read as "order does not matter" — HIGH
+
+**What broke.** Build 4 took production down by applying a migration that removed a policy its
+still-deployed handler depended on. The lesson taken from that was *make migrations additive*, and
+this build's contract, build notes and commit message all said so. They then went further and said
+the migration and the deploy could therefore land **in either order**. That was wrong, and it was
+caught at Stage 6 by reading the handler rather than by any test.
+
+`create` writes `expected_headcount` into `workshop_sessions`. Against a database without that
+column PostgREST answers `PGRST204` and the insert fails, so a deploy landing before its migration
+would not have degraded the head count — it would have made it impossible to create a session at
+all. Build 4's incident, in mirror image, from a rule written to prevent build 4's incident.
+
+**Why it is systemic.** "Additive" describes the *migration's* effect on running code: nothing is
+taken away, so the old deployment keeps working. It says nothing about the *new* code's dependence
+on the new schema, which is the other direction entirely. Every build that adds a column a write
+path populates has this property, and the vocabulary the squad inherited has one word covering two
+independent questions.
+
+**The fix.** `agents/architect.md` §2 needs both questions asked and answered separately in the
+contract, and `agents/devops.md`'s record needs the answer carried:
+
+| Question | Answer decides |
+|---|---|
+| Does the migration break the **currently deployed** code? | whether it may be applied early |
+| Does the **new** code fail against the **old** schema? | whether it *must* be applied early |
+
+Two "no"s mean either order. This build was no / yes: safe to apply early, and required to.
+Build 4 was yes / yes, which is the only genuinely dangerous combination and needs one window.
+
+---
+
+## WH-26. workshop-hub-room-runner — the `[hidden]` guard is a hand-maintained list, so it stops guarding — HIGH
+
+**What broke.** Host constraint C2 — any class with a `display:` rule that is also toggled by the
+`hidden` property needs a matching `[hidden]{display:none}` override — has now shipped as a bug
+**four times** in this repository, twice before the squad arrived. `app/test/page.test.js` exists to
+catch it. It did not catch either of this build's two occurrences.
+
+The guard iterates a hardcoded array of eleven class names. `.btn` and `.joinpanel` were not in it,
+because nothing had ever toggled them with `hidden` before this build did. The test passed on a
+page carrying two live instances of the exact bug it was written for. Both were found by a browser
+assertion in QA's suite instead.
+
+**Why it is systemic.** A guard whose scope is a manually maintained list only ever covers what
+someone remembered to add, and the failures it exists to catch are by definition the ones nobody
+anticipated. It reads as coverage and is a checklist. The same shape appears anywhere a test
+enumerates rather than derives.
+
+**The fix.** `agents/qa.md` needs a rule: a guard against a class of defect must **derive its
+subjects from the artefact**, not from a list beside it. Here that means parsing the stylesheet for
+every selector carrying a `display:` rule and asserting an override for each, so a new class is
+covered the moment it is written. Where derivation is genuinely impossible, the test must assert
+the size of its own list so that adding a subject without adding a case fails.
+
+---
+
+## WH-27. workshop-hub-room-runner — a shared enumeration is indexed by suites nobody runs — MEDIUM
+
+**What happened, and what stopped it.** This build removed one entry from `ROOM_STAGES`, the running
+order every screen and all three Playwright suites index into. The pipeline runs only the current
+build's suite, which is how build 2's suite sat red across two builds (WH-19's neighbour).
+
+This time it did not break, and the reason is worth keeping: the **Surveyor** recorded in §6 that
+three suites index into that enumeration, and the **Architect** turned that into a mandatory clause
+in the contract's §4 test strategy — *QA runs all three*. QA found four coupled assertions in build
+2's suite and one shared helper that every spec in two suites depends on, and fixed them as
+`changing` bindings.
+
+**Why it is worth a rule anyway.** It worked because one survey happened to look. Nothing required
+it to. `agents/surveyor.md` §6 should require naming any enumeration or fixture **more than one
+test suite depends on**, and `agents/architect.md` §4 should require the test strategy to say which
+suites run when a named shared dependency changes. Otherwise the next build's survey may not think
+of it, and the failure is silent — a red suite nobody executes.
+
+---
+
+## WH-28. workshop-hub-ink-actions — a rule with no executable form is a rule that drifts — HIGH
+
+**What broke.** The host's `CLAUDE.md` carried a non-negotiable rule for months: *red, amber and
+green are reserved for score encoding*. Every build read it. Every build obeyed it as it understood
+it. And the rule was violated in **30 declarations**, including by the two builds that quoted it
+most carefully — `workshop-hub-end` put the session lock in amber, and `workshop-hub-room-runner`
+put the accent green on the Initiate pill and wrote a contract decision justifying it on a claim
+about token separation that was false.
+
+The claim was checkable in one grep. Nobody grepped, because the rule lived only in prose and prose
+does not fail.
+
+**Why it is systemic.** A constraint stated in a brief is enforced by whoever last read the brief.
+A constraint with a test is enforced by the runner. This repository already knew that — `C2`, the
+`[hidden]` rule, has a test — and still got it wrong, because that test iterates a hand-written list
+(WH-26) rather than deriving its subjects. Both failures are the same failure at different
+depths: **the enforcement was narrower than the rule.**
+
+**The fix.** `agents/architect.md` needs a mandatory field on brownfield builds: for every host
+constraint the contract binds, state **how it is enforced** — `test: <path>`, or `manual`, and if
+manual, say who checks it and when. A constraint bound in a contract with no executable form is a
+constraint the next build will break while citing it.
+
+And `agents/qa.md` needs the corollary: a test written for a *rule* derives its subjects from the
+artefact. `tokens.test.js` in this build parses every rule out of the stylesheet and holds each
+against an allow-list of the three legitimate instruments; a new violation written next month fails
+without anyone updating the test. It was verified by reintroducing the original defect and watching
+two assertions fail.
+
+---
+
+## WH-29. workshop-hub-ink-actions — a documented assertion that was never written — MEDIUM
+
+**What happened.** `workshop-hub-end`'s `test-results.md` states: *"C3 / C9 — the closing states'
+computed colours contain neither `--red` nor `--accent`."* No such assertion exists in
+`flows.end.spec.ts`. It was prose describing an intention.
+
+That sentence is why the lock kept its amber through two subsequent builds: anyone auditing the
+colour rule would read the test record, see the check claimed, and move on. **A false claim of
+coverage is worse than no coverage**, because it stops the next person looking.
+
+**The fix.** `agents/qa.md`'s output section should require every coverage claim in `test-results.md`
+to name the spec file and the assertion that makes it. A claim without a citation is a plan, and
+should be written as one.
+
+---
+
+## What worked in workshop-hub Phase 2 and should not be changed
+
+- **Capturing the live schema before the Architect ran** found the month-old stage-machine failure
+  that no amount of code reading had. Intake item 3 was Joel's call; it should be the default.
+- **The contract's verbatim-copy clause (C13)** kept every deck string identical across rulebook, page,
+  handler and tests. Nothing was paraphrased and nothing had to be reconciled.
+- **The in-memory PostgREST double** enforced the migration's checks and RLS locally, so the test
+  that proves an attendee cannot write a choose row ran forty times before the live one ran once.
+- **The Engineer's own smoke run** caught the clock-skew defect in the handler's optimistic
+  re-derivation before QA saw it, and the fix (the database returns its own `created_at`) is now the
+  pattern for any append-only log the client re-derives.
+- **PIN authority inside the database** (`choose_record` as SECURITY DEFINER with no anon INSERT
+  policy) was cheaper than the handler-only gating it replaced and gave the advisors exactly one
+  class of warning to accept. The eight existing tables still carry the older pattern.
+- **Preview first, promote the tested deployment, verify production with one real write path**
+  worked exactly as written, first attempt, including the migration-before-preview ordering.
+
+---
+
+## What worked in workshop-hub-end and should not be changed
+
+- **A prior decision made this build nearly free.** ADR 0005 (the database constrains shape, the
+  rulebook constrains values) was written in build 2 to repair the stage machine. Because of it, this
+  build needed **no migration, no table, no column and no policy** — the lifecycle rode the existing
+  append-only log. The Architect checking whether an existing decision removes work, before designing
+  new storage, is worth more than any process step in this file.
+- **Deriving rather than storing.** The lock is `close_time + 20 minutes`, computed identically on the
+  server and in the page, with nothing stored and no scheduled job to flip a flag. One constant in the
+  rulebook is the whole configuration surface.
+- **Failing open, deliberately and in writing.** The gate returns "not locked" on any read failure,
+  and both the ADR and the security review state why: the cost of failing closed is a room of fifteen
+  people locked out mid-workshop. QA asserts the fail-open path explicitly, so it cannot be
+  "tidied up" later by someone who reads it as a bug.
+- **Translating one status code once, at the fetch layer.** Six write paths show the right sentence
+  for a locked session without any of them learning what 403 means.
+- **The security review naming what the feature does *not* enforce.** The lock reads like a security
+  boundary but is enforced by the routes, not the database; saying so plainly in 5a and again in 5b
+  is what stops the next reader trusting it further than it deserves.
+
+---
+
+## What worked in workshop-hub-room-runner and should not be changed
+
+- **Preflight deferring a known blocker instead of halting.** The Vercel block was recorded at
+  Stage 0.5 as *blocking, deferred by Orchestrator decision*, and the run continued to
+  security-green. The block then cleared on its own before Stage 6. Halting at 0.5 would have
+  produced nothing while waiting on something outside the repository.
+- **Making the new state a phase rather than a column.** The lobby cost one array entry and no
+  migration, because `roomStageIndex` returns -1 for it and every guard already written as *nobody
+  gets ahead of the facilitator* refused every stage for free. Second build running to get a whole
+  feature out of ADR 0005.
+- **Keeping the default for a room with no rows.** `firstPhase('room')` deliberately did not move to
+  the new first phase, so sessions created before the build behaved exactly as before. The
+  temptation to let array order decide it would have locked live workshops out of their own day.
+- **Deciding two things in the contract and saying "made not asked".** The review-moves-the-projector
+  rule and the never-disabled Initiate were written into `/state/tasks.md` at intake with their
+  reasons. No later stage re-opened either.
+
+---
+
+# B2: client-portal, first harvest (2026-09-11), brownfield via `/squad`
+
+client-portal's first end-to-end run.
+Deployed to `methodworks-portal.vercel.app`. One high-severity latent bug
 reached production and was caught in the Stage 6 smoke test; the rest is tooling reality.
 
 ## B2-1. An admin-client RPC in a non-exposed schema is unreachable, and fails closed — HIGH
@@ -280,7 +983,7 @@ record carry it as a remaining item until confirmed.
 
 ---
 
-# Build 2, second harvest — client-portal v1, amendment set 2 to the close (2026-09-28)
+# B3: client-portal, second harvest (2026-09-28), and v2 (2026-10-26)
 
 Stage 7's second pass over `client-portal`, whose first harvest is B2 above. It covers everything
 after deploy 1: amendment sets 2 to 7 (A14 to A81), QA passes 2 to 7, 5a's second to fourth passes,
@@ -909,7 +1612,7 @@ SEVERITY: low
 
 ## B3-24. client-portal: Nothing compared a built screen with its drawing (CRITICAL)
 
-Found in build 2 (client-portal v2, a brownfield build), 2026-10-26, by Joel on the live site.
+Found in client-portal v2 (a brownfield build), 2026-10-26, by Joel on the live site.
 
 **What happened.** The Designer drew every screen in Figma at 2 widths, including a 240-wide left
 sidebar shell for staff and another for clients. The Engineer built every route, rule and string to
