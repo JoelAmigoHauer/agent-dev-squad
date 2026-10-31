@@ -74,6 +74,13 @@ leave a TODO and carry on.
 Continue work on the unambiguous parts while the clarification is pending. Blocking the whole build
 on one open question is its own failure.
 
+**An unverified premise is checked before you build on it** (B3-5). The contract's *Unverified
+premises* table names the stage that owns each one. For yours: read the docs and make one probe
+before building on it, and route a mismatch as a `CLARIFICATION`, never an approximation.
+client-portal built an invite on `signInWithOtp` with `shouldCreateUser: false`, which sends
+nothing to a new address while the route answered `{ sent: true }`; the flow "never worked and
+could not have worked".
+
 The clarification request goes to the Orchestrator in this shape:
 
 ```
@@ -83,6 +90,35 @@ THE AMBIGUITY: <what two or more things it could mean>
 BLOCKED: <which specific files/routes are waiting>
 PROCEEDING ON: <what you are building meanwhile>
 ```
+
+### 6. One door per caller class, and statuses that say what happened
+
+One shared entry point per caller class (signed-in member, staff, service) owns the checks, in the
+contract's order: **401, 400, 403, 404**, then **500 with no detail** for any database error the
+route does not translate (B3-12).
+
+- `forbidden()` is never a fall-through. A route that reaches the end of its checks without a
+  decision has a bug, not a 403.
+- Every update and delete checks its affected row count. **Zero is 404, never success.**
+- The client reads the same error union through a type-only import, so the two cannot drift.
+
+In client-portal, handlers ending in `return forbidden()` answered 403 to a malformed id on
+twelve routes; one staff helper returned null for both "no session" and "not staff", so none of 31
+staff routes could return the 401 the contract specified; and a config route answered
+`200 { saved: true }` having written nothing.
+
+### 7. Every tenant reference ships with its guard
+
+Multi-tenant contracts carry a tenant-reference register (contract §2). A new column that
+references a tenant-scoped table ships **in one migration** with its register row, its guard and a
+refusal test (B3-9):
+
+- The guard is one register-driven function that checks anchor and reference belong to the same
+  tenant, **in both directions**, so a row cannot be moved out from under a reference either.
+- The refusal test has a matched same-tenant control that passes.
+
+A foreign key proves a row exists, never that it is yours. client-portal met the same defect eight
+times, one column at a time, and the first guards it built fired in one direction only.
 
 ---
 
@@ -100,6 +136,22 @@ Current as at 2026-08-15. These correct assumptions that are commonly out of dat
   `vercel.json`.
 - Default function timeout is 300s; request bodies up to 100MB.
 
+Supabase, added from later builds:
+
+- **Revoke the default grants in the first migration** (as at 2026-09-28, B3-8). Supabase grants
+  table-level privileges to `anon` and `authenticated` and repeats them for every new table through
+  a default ACL. The first migration revokes them and alters `postgres`'s default privileges; each
+  table then grants only what its policies need. **A column revoke is void under a table grant**,
+  and RLS never filters TRUNCATE. One Postgres role serves every signed-in person, staff included,
+  so staff writes to client-locked columns go through a `security definer` function that checks the
+  contract's staff predicate. client-portal let any signed-in user make themselves staff through
+  `/rest/v1/profiles` after two migrations "revoked" the column.
+- **An RPC the admin client calls lives in an exposed schema** (as at 2026-09-11, B2-1): `public`,
+  locked to `service_role` by grant, never hidden in `private`. The admin client reaches Postgres
+  only through PostgREST, which exposes `public` and `graphql_public`. `bypassrls` skips policies;
+  it is not schema `USAGE` or function `EXECUTE`. client-portal's rate limiter sat in `private`,
+  answered `PGRST106`, failed closed, and made sign-in impossible.
+
 If any of this conflicts with what the contract specifies, the contract wins and you raise it as a
 clarification. Do not silently substitute.
 
@@ -113,14 +165,21 @@ clarification. Do not silently substitute.
    frame-index row your round touched is recorded `matches` or explained (guardrail 3a).
 3. Types are generated from the schema, not hand-written.
 4. Type check and lint pass locally.
-5. **`build` and `start` scripts work against a production build.** QA's Playwright harness boots
-   the app with `npm run build && npm start` — not `dev` — so a project that only runs in dev mode
-   fails QA for a reason that has nothing to do with the tests, and burns an iteration of a
-   3-iteration cap doing it.
+5. **The contract's `BUILD-AND-SERVE` command works.** QA's Playwright harness boots the app with
+   it (on the default stack, `npm run build && npm start`, not `dev`), so a project that only runs
+   in dev mode fails QA for a reason that has nothing to do with the tests.
 6. No secrets in the repo. Environment variables are referenced, never inlined.
-7. Your output is written to `/builds/<app-name>/build-notes.md`: what you built, what you
+7. **Migrations go to the contract's test target**, never to the project production reads (B3-3).
+   Production gets them at Stage 6, with the code that expects them. client-portal had no test
+   environment, and every migration ran on production first.
+8. **A guard is proven beside a matched control** (B3-7). A refusal proves a guard only when the
+   legitimate write passes in the same test, and a privilege is proven by attempting the write as
+   the role, never by `has_*_privilege`.
+9. Your output is written to `/builds/<app-name>/build-notes.md`: what you built, what you
    generated, which clarifications you raised and how they were answered. **Record the package
-   manager** — QA and Security both shell out to it.
+   manager** — QA and Security both shell out to it. **Write it as the evidence is produced, never
+   at the end** (B3-18): a container restart killed client-portal's fix loop with its code on disk
+   and its notes not, because the notes were written last.
 
 "It runs" is not done. Done is the list above.
 
@@ -135,5 +194,5 @@ happens:
   offence in this pipeline.
 - If the test is genuinely wrong because the contract is wrong, say so and route it to the
   Architect. Do not patch around it.
-- Cap is 3 iterations. On the third failure the build halts and goes to Joel with the diff history,
-  so a fix that is really a guess costs the whole run.
+- Cap is 3 iterations. If the suite is still red after your third fix, the build halts and goes to
+  Joel with the diff history, so a fix that is really a guess costs the whole run.

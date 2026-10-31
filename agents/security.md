@@ -8,17 +8,26 @@ and QA does not wait for you.
 
 ## You run twice — v0.2
 
-**5a, pre-deploy.** Everything that works against a local stack: dependency audit, secret scan,
-static analysis, manual checks, and hand-written substitutes for anything hosted-only.
+**Run every check as soon as its target exists** (TH-17). The split is by when a check *can* run,
+not by where it runs.
 
-**5b, post-deploy.** Everything that can only run against the real project — Supabase advisors
-first among them. **Stage 6 is not complete until 5b passes** or its findings are accepted in
-writing in the deploy record.
+**5a, pre-deploy.** Every check whose target exists before deploy: dependency audit, secret scan,
+static analysis, manual checks, and the platform settings of the test target. If the contract's
+test target is a hosted project or branch, its **advisors run here**. Where nothing hosted exists
+yet, use hand-written substitutes for the hosted-only checks.
 
-Why: advisors are a hosted-project feature and Stage 5 is pre-deploy. Those two facts are
-incompatible. In build 1 that meant advisors ran for the first time at deploy and found seven
-issues, two of them created by a `grant execute … to anon` written during Stage 3. Running only 5a
-means shipping with an entire layer unchecked while a green review says otherwise.
+**5b, post-deploy.** Everything that could not run earlier, plus everything that only becomes true
+once real data and real users exist: the production project's advisors, the seeded first user, the
+deployed client bundle, the live environment variables, production's platform settings, and the
+deployed function bodies. **Stage 6 is not complete until 5b passes** or its findings are accepted
+in writing in the deploy record.
+
+Why: in build 1 advisors could run only against the hosted project and Stage 5 ran against a local
+stack, so they ran for the first time at deploy and found seven issues, two of them created by a
+`grant execute … to anon` written during Stage 3. Running only 5a means shipping with an entire
+layer unchecked while a green review says otherwise. thelma had no local stack at all, worked
+against a hosted project from Stage 3, ran advisors at 5a and fixed 14 warnings before deploy: the
+outcome the split exists for, reached by running each check when its target existed.
 
 ---
 
@@ -36,6 +45,10 @@ Check for:
   tenant-scoped table).
 
 Record the advisor output verbatim in `/builds/<app-name>/security-review.md`.
+
+**The SQL advisors are never the auth check** (B3-10). The SQL-scoped advisor route drops the auth
+lint, and in client-portal its absence read as a fix. Auth settings are read from the platform
+directly (*Platform settings*, below).
 
 ---
 
@@ -69,6 +82,24 @@ Static analysis on application code. Catches injection, unsafe redirects, missin
 handlers and the React/Next-specific patterns the other two cannot see.
 
 Record all three outputs in `security-review.md`.
+
+**The scanners are a floor** (B3-10). `npm audit`, semgrep and gitleaks were clean on every
+client-portal pass, including the passes that found an open redirect and an unbuilt tenancy
+register. The verdict names which findings came from a scanner and which came by attempt.
+
+### When a scanner is degraded
+
+Preflight records a degraded scanner with its substitute and what the substitute misses. This is
+the substitute (TH-18), so it is doctrine rather than improvised at 5a:
+
+| Tool | If unavailable, substitute | Substitute does NOT cover |
+|---|---|---|
+| `gitleaks` | `semgrep --config p/secrets` over the tree, plus greps for assigned credential literals, JWT-shaped strings and `sb_secret_` values, plus a check that `.env*` files are untracked | **git history**: a key committed, then removed |
+| Supabase advisors | Catalogue queries: RLS enabled on every `public` table (`pg_class.relrowsecurity`), every policy listed (`pg_policies`), and the privilege query under *Auth* | Every other advisor lint |
+| `semgrep`, `npm audit` | None | Not degraded: blocking, after Preflight's install attempt |
+
+Record the gap in `security-review.md` beside the substitute's result. thelma's 5a had to reason
+out at the time that its gitleaks substitute could not see history.
 
 ### Install status as at 2026-08-15
 
@@ -129,6 +160,49 @@ not a verdict.
 - Session handling matches the contract's auth requirements — who can sign in, what they can see,
   what they can change.
 - No route trusts a user-supplied `org_id`, `user_id`, or role claim from the request body.
+- **Prove privileges by attempting the write** (B3-7). A refusal proves a guard only beside a
+  matched control that the legitimate write passes, and a privilege is proven by attempting the
+  write as the role, never by `has_*_privilege`. In client-portal `has_column_privilege` answered
+  true for columns two migrations claimed to revoke, and a self-promotion to staff survived both.
+- **Run the standing privilege query** (B3-8): every role's privileges on every `public` table,
+  plus a table created *after* the migrations, which must come out without TRUNCATE. 5b runs both
+  against production.
+
+  ```sql
+  select grantee, table_name, string_agg(privilege_type, ', ')
+  from information_schema.role_table_grants
+  where table_schema = 'public' and grantee in ('anon', 'authenticated')
+  group by grantee, table_name order by table_name, grantee;
+  ```
+
+  Supabase grants table-level privileges to `anon` and `authenticated`, and a default ACL repeats
+  them for every new table. A column revoke is void under a table grant, and RLS never filters
+  TRUNCATE. client-portal found `anon` and `authenticated` holding TRUNCATE on 27 of 30 tables.
+- **Re-derive the tenant-reference register from the database** (B3-9), from `pg_constraint`, not
+  from the contract, and attack each row: write a cross-tenant reference as an ordinary user, beside
+  a matched same-tenant control, in both directions. client-portal's 5a wrote a cross-tenant
+  `seat_requests.seat_id` as a client; building the guard showed the two earlier ones fired in one
+  direction only.
+- **Service-role paths ran with a real key** (B2-1). Confirm QA drove every admin-client path
+  against the test target with its real service-role key. A path that "still needs the service
+  key" is unverified, not deferred, and is a finding.
+- **A value list held in code and in the database is compared** (WH-13). Where the code owns a list
+  of values that a check constraint also enumerates, diff the two. The default is that the database
+  constrains shape and the rulebook constrains values; a check constraint repeating the rulebook's
+  values is a non-blocking finding. workshop-hub's two copies of the phase list had diverged a
+  month before anyone saw the database refusing every press.
+
+### Platform settings
+
+Read each setting the contract's *Platform settings* table binds **from the platform's own API**,
+and compare it with the required value (B3-10). 5a reads the test target; 5b reads production. A
+mismatch on a setting a clause depends on is blocking. 5b also hashes the deployed database
+function bodies against the migration files, so a function edited by hand on the platform shows
+up.
+
+client-portal's contract made the absence of public signup a clause, and the app complied while
+the project's `disable_signup` was false. Two more such findings came from reading the platforms'
+settings beside the code, and neither was visible to any advisor or scanner.
 
 ### Secrets
 
@@ -166,7 +240,8 @@ FINDINGS: <one block per finding, below>
 
 FINDING <n> — <title>
 SEVERITY: blocking | non-blocking
-LOCATION: <file:line or route>
+FOUND BY: <scanner name> | attempt
+LOCATION: <file:line, route, or platform setting>
 ISSUE: <what is wrong>
 IMPACT: <what an attacker or a mistake gets>
 FIX: <the specific change required>
@@ -232,6 +307,8 @@ Three layers, and knowing which one caught something tells you how much to trust
 | Dependencies | `npm audit` | Known CVEs in the tree | Your own code |
 | Secrets | `gitleaks` | Keys in tree and history | Keys held in env only |
 | App code | `semgrep` | Injection, unsafe patterns | Business-logic authorisation |
+| Privileges | The standing privilege query, writes attempted as each role | Table and column grants, TRUNCATE, default ACLs | Policy logic |
+| Platform settings | The platform's own API, against the contract's table | Auth and protection settings that default open | Code |
 | Business logic | You, manually | Tenancy, contract auth rules | Nothing — this is the backstop |
 
 A clean automated run means the known-pattern layer is clean. It does not mean the app is safe, and
