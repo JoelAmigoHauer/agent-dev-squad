@@ -64,7 +64,7 @@ no dependency manifest here — the code lives in the repos generated *from* thi
 | `agents/preflight.md` | 0.5 · tooling and plan-tier probe | Stage 0.5 only |
 | `agents/architect.md` | 1 · the binding contract | Stage 1 only |
 | `agents/designer.md` | 2 · fidelity modes, 21st.dev, Figma | Stage 2 only |
-| `agents/RETIRED-copywriter.md` | 2a · **retired 20 Sep 2026.** Copy runs through `/anthropic-skills:full-rewrite` | Read before writing any copy |
+| `agents/copywriter.md` | 1.5 · the copy deck: every string, rewrite passes embedded, every figure marked | Stage 1.5 only |
 | `agents/engineer.md` | 3 · guardrails, type generation, ambiguity ban | Stage 3 only |
 | `agents/qa.md` | 4 · contract-derived tests, Playwright harness | Stage 4 only |
 | `agents/security.md` | 5a/5b · pre- and post-deploy review | Stages 5a and 5b |
@@ -144,8 +144,8 @@ pipeline mechanics, caps or halt triggers.
 | 0.25 | **Surveyor** | [agents/surveyor.md](agents/surveyor.md) | **Brownfield only.** Before Preflight. Reads the existing codebase into the contract's shapes; drafts the intake. `skipped` on greenfield |
 | 0.5 | **Preflight** | [agents/preflight.md](agents/preflight.md) | **v0.2.** Before Stage 1. Probes tooling, records plan tiers, halts cheaply |
 | 1 | Architect | [agents/architect.md](agents/architect.md) | Sequential. Gate. |
-| 2 | Designer | [agents/designer.md](agents/designer.md) | Sequential, after Stage 1 clears |
-| 2a | ~~Copywriter~~ | [agents/RETIRED-copywriter.md](agents/RETIRED-copywriter.md) | **Retired 20 Sep 2026.** No copy agent. The stage owning a surface writes its words, runs `/anthropic-skills:full-rewrite` over them, and the Orchestrator checks every figure against its primary source before the stage hands back |
+| 2 | Designer | [agents/designer.md](agents/designer.md) | Sequential, after Stage 1.5 and its figure check |
+| 1.5 | **Copywriter** | [agents/copywriter.md](agents/copywriter.md) | **Revived 2026-10-31.** After Stage 1 clears, before the Designer, so screens are designed with real words. Writes `copy.md`. **You verify every figure it marks** against its primary source before firing Stage 2 (WS-1) |
 | 3 | Engineer | [agents/engineer.md](agents/engineer.md) | Sequential, after Stage 2 |
 | 4 | QA | [agents/qa.md](agents/qa.md) | Parallel with Stage 5a |
 | 5a | Security (pre-deploy) | [agents/security.md](agents/security.md) | Parallel with Stage 4 |
@@ -158,6 +158,12 @@ platform settings, the deployed bundle, the seeded first user. In build 1 adviso
 first time at deploy and found seven issues, two of them caused by a grant written during Stage 3.
 So Security runs each check as soon as its target exists (TH-17): 5a covers everything that exists
 before deploy, including a hosted test target's advisors, and 5b covers what only production has.
+
+**The figure check is yours, not the Copywriter's** (WS-1). Before firing Stage 2, check every
+figure the copy deck marks `[source: …]` against the source it names, and remove every
+`[NEEDS SOURCE]` figure or have the sentence rewritten without it. Record each in the build's
+`log.md` as verified, corrected or removed. Ask Joel for a missing figure only if the copy cannot
+stand without it, and only alongside a halt you already have; a missing figure is not a halt.
 
 Stage 0 has no separate parsing agent. Transcribe and interpret the voice note and read the sketch
 in the same turn that kicks off the Architect.
@@ -272,7 +278,8 @@ Progress lives in the build's state file, `/state/<build-name>.md`. Never in the
   matched twice, the commit ran anyway, and the commit claims a change it does not carry.
 - **Every amendment set gets stage lines** (B3-2). When the Architect appends an amendment set, copy
   its `Routes to` table into the state file as one `pending` line per stage, naming the set:
-  Designer if it adds or changes a surface or control, Engineer always, QA if it moves the data
+  Copywriter if it adds or changes a surface, control or string, Designer if it adds or changes a
+  surface or control, Engineer always, QA if it moves the data
   model or an API shape. Status lives only in the block; a note may explain a line, never stand in
   for one. client-portal's amendment set 6 had no lines, nothing showed it unbuilt, and v1 reached
   `main` without it.
@@ -416,6 +423,7 @@ conversation exports.
 | `survey.md` | Surveyor | 0.25 — brownfield only |
 | `preflight.md` | Preflight | 0.5 |
 | `contract.md` | Architect | 1 |
+| `copy.md` | Copywriter | 1.5 — the copy deck |
 | `design.md` | Designer | 2 |
 | `build-notes.md` | Engineer | 3 |
 | `tests/` | QA | 4 |
@@ -451,6 +459,7 @@ is deliberately repeated for a stage that reads cold, one copy binds:
 | Default stack | `skills/stack-decision.md` | `agents/architect.md`, `README.md` |
 | Why a rule exists | `LEARNINGS.md` | Stage files carry the short version |
 | What a pipeline term means | `GLOSSARY.md` | — no stage loads it; stage files use its words |
+| The rewrite passes | `agents/copywriter.md`, embedded from Joel's `/anthropic-skills:full-rewrite` (2026-10-31) | — re-sync it when Joel's skill changes |
 
 If you change a binding copy, change every repeat in the same commit. If the two already disagree,
 the binding copy wins and the repeat is the bug.

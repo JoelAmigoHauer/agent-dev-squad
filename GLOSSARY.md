@@ -121,6 +121,16 @@ The survey's status for a flow found in the codebase. Working needs runtime evid
 means only that both ends read as correct.
 _Avoid_: done, verified, broken, as unqualified statuses
 
+**Copy deck**:
+The Copywriter's `copy.md`: every string a user of the build reads, by id, written before any
+screen is drawn and shipped verbatim.
+_Avoid_: copy doc, content, microcopy file
+
+**Figure**:
+Any number, percentage, price, date, count, ranking, quote, named client, named source or claimed
+result in copy. Always marked `source`, `bound` or `NEEDS SOURCE`.
+_Avoid_: stat, data point
+
 **Writer**:
 Whatever creates, changes or ends a row or column: a flow, a trigger, a seed or an external owner.
 _Avoid_: producer, source

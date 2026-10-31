@@ -27,6 +27,7 @@ started:             —
 stage-0.25-surveyor: idle
 stage-0.5-preflight: idle
 stage-1-architect:   idle
+stage-1.5-copywriter: idle
 stage-2-designer:    idle
 stage-3-engineer:    idle
 stage-4-qa:          idle
@@ -47,6 +48,7 @@ names, added when the set is appended (B3-2):
 
 ```
 amendment-set-2 (A14–A20):
+  stage-1.5-copywriter: pending
   stage-2-designer:  pending
   stage-3-engineer:  pending
   stage-4-qa:        pending
@@ -93,6 +95,7 @@ started: 2026-08-15T14:02
 stage-0.25-surveyor: skipped (greenfield)
 stage-0.5-preflight: done    (/builds/invoice-chaser/preflight.md — Figma degraded, Stage 2 carries it)
 stage-1-architect:   done    (/builds/invoice-chaser/contract.md — class B, escalation no)
+stage-1.5-copywriter: done   (/builds/invoice-chaser/copy.md — 0 NEEDS SOURCE, 4 figures verified)
 stage-2-designer:    done    (mode B, tokens derived, 21st.dev components logged)
 stage-3-engineer:    done    (/builds/invoice-chaser/build-notes.md)
 stage-4-qa:          loop 2/3 (2 failing tests, detail in log.md)

@@ -11,6 +11,7 @@ conversation exports.
 | `survey.md` | Surveyor | 0.25 — brownfield only |
 | `preflight.md` | Preflight | 0.5 |
 | `contract.md` | Architect | 1 |
+| `copy.md` | Copywriter | 1.5 |
 | `design.md` | Designer | 2 |
 | `build-notes.md` | Engineer | 3 |
 | `test-results.md` | QA | 4 |

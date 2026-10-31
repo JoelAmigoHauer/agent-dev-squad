@@ -19,6 +19,7 @@ One entry per screen from the contract, named by its path. A number is a label l
 ### `/<path>`
 - Layout:
 - Components:
+- Strings: <copy deck ids used on this screen>
 - States: empty / loading / error / success
 - Reached by: <the navigation control, matching the contract's Reached from; never only from an
   error state>

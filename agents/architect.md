@@ -383,7 +383,7 @@ you:
 
    | Amendment | Changes | Routes to |
    |---|---|---|
-   | A<n> | `<clause or table>` | Designer if it adds or changes a surface or control; Engineer always; QA if it moves the data model or an API shape |
+   | A<n> | `<clause or table>` | Copywriter if it adds or changes a surface, control or string; Designer if it adds or changes a surface or control; Engineer always; QA if it moves the data model or an API shape |
 
 5. If the question reveals that a stack escalation trigger was missed, say that too. It is late,
    but late is cheaper than never.

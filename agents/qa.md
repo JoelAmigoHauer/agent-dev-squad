@@ -46,7 +46,7 @@ Cover, at minimum:
    | Shell | Navigation in the same place (sidebar, top bar, drawer), the same items in the same order, the same account area |
    | Layout | The same regions and columns, in the same order, with the primary blocks aligned as drawn |
    | Components | Every component in the frame is present and none is added; each in the variant drawn (a Primary button is not a Quiet one) |
-   | Words | Headings, labels and buttons as drawn, unless the contract words them differently (the contract wins; say so) |
+   | Words | Every string the copy deck gives the surface, verbatim, by id; the contract wins over the deck, and the deck over the frame (say which one decided) |
    | Tokens | Colours and type styles from the design's tokens, not near neighbours |
    | Narrow width | The narrow frame's arrangement (drawer, stacked columns), not the wide one squeezed |
 
