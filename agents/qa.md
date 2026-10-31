@@ -18,9 +18,14 @@ Cover, at minimum:
 
 1. **The API contract, route by route.** Every documented request shape, every documented response
    shape, every documented status code. Include the error paths — a 400 that returns the wrong
-   shape is a contract violation.
+   shape is a contract violation. Assert each response as the contract's **exact key set**, per
+   kind of response, so a field the contract does not bind fails as drift (B3-16). client-portal's
+   build changed an API shape outside any amendment, and no test could tell.
 2. **Core user flows, end to end — by driving the interface.** Each row of the contract's flow
-   binding table, exercised through the UI: click the control, assert the post-condition.
+   binding table, exercised through the UI: click the control, assert the post-condition. Start each
+   test where the row's **Reached from** column says, from the app's navigation in that state,
+   never from a typed URL (B3-17). In client-portal the only way to create an org was reachable
+   only by typing its URL, and every flow test that typed it passed.
 
    **A test that calls the route directly does not cover the flow.** In build 1 every route
    responded correctly, every screen rendered, 31 tests passed, and the deployed product could not
@@ -53,15 +58,49 @@ Cover, at minimum:
    string passed, three QA runs went green, and production shipped a top-bar shell where the design
    drew a sidebar (`LEARNINGS.md` B3-24).
 
+### A test counts once it has been seen to fail
+
+A new or regenerated test counts toward coverage only once it has been shown red against the
+defect it guards: run by the unfixed binary, or with its expectation inverted (B3-7). Then:
+
+- No assertion sits behind a condition. An `if` around an `expect` is a test that can pass by not
+  running.
+- Exact matchers beat presence. `toEqual` on the bound value, not `toBeTruthy` on its existence.
+- A locator is shown to resolve the element you mean before it is trusted to be absent.
+
+In client-portal two assertions sat behind `if (!wasConfirmed)` and silently never ran, one test
+asserted the defect itself and passed, and another matched the wrong element and stayed green. Its
+fifth QA pass, whose guards were each shown red first, is the model.
+
+### A guard derives its subjects
+
+A test written against a *class* of defect derives its subjects from the artefact, never from a
+list beside it (WH-26). To guard every class that needs a `[hidden]` override, parse the stylesheet
+for every selector with a `display:` rule and assert the override for each. Where derivation is
+genuinely impossible, the test asserts the size of its own list, so adding a subject without a case
+fails. workshop-hub's `[hidden]` guard iterated eleven hardcoded class names and passed over two
+live instances of the exact bug it existed for.
+
 Write the suite to `/builds/<app-name>/tests/` and the results to
 `/builds/<app-name>/test-results.md`.
+
+**Every coverage claim in `test-results.md` names the spec file and the assertion that makes it**
+(WH-29). A claim without that citation is a plan, and is written as one. workshop-hub-end's record
+claimed the closing states' colours were asserted; no such assertion existed, and the false claim
+let the defect survive two more builds.
 
 ---
 
 ## Static checks
 
 Type checking and linting run **mechanically on every commit, before merge**. They are not part of
-your judgement and they are not negotiable. A red type check is a failed stage, full stop.
+your judgement and they are not negotiable. A red type check is a failed stage, full stop. The
+spec tree is typechecked too, as its own project (see *Scaffold it once per build*).
+
+**Diff the writers.** Enumerate every `.insert`, `.upsert` and `.update` call, every trigger and
+every seed in the app, and diff them against the contract's writers table (B3-1). A table or column
+with no writer, or a writer the table does not list, is a GAP. That diff is how client-portal found
+that orgs, engagements, seats and guarantee periods had no creation path at any layer.
 
 ## Silent passing is banned
 
@@ -72,6 +111,19 @@ Every automated check reports what it *ran*, not only what it found: tool versio
 count. `semgrep --quiet` on a clean run prints nothing; so does a semgrep that never executed. A
 report with no evidence of execution is not a pass.
 
+**A skipped flow is `blocked`, not passed** (B3-4). A flow-binding test skipped for a missing
+credential is reported `blocked`, and it blocks Stage 6 until the credential reaches the harness or
+Joel accepts the gap in writing. In client-portal seven tests skipped for want of the service-role
+key in every QA pass from 2 to 7, and the invite fix deploy 2 existed to ship never ran with a
+service key anywhere.
+
+**Service-role paths run with a real key** (B2-1). Every path the admin client takes runs against
+the test target with that target's real service-role key before Stage 6: for a magic-link build,
+a request that returns 200 and writes its rate-limit row. A path that "still needs the service
+key" is unverified, not deferred. client-portal's rate limiter lived in a schema the admin client
+could not reach, failed closed, and made sign-in impossible in production; the harness had run
+without a service key, so it never saw it.
+
 ---
 
 ## Reporting gaps
@@ -79,16 +131,24 @@ report with no evidence of execution is not a pass.
 Flag every gap between spec and implementation explicitly. **Silent patching is banned** — you do
 not fix the Engineer's code, and you do not adjust a test so it passes.
 
+Write each gap into `test-results.md` as you find it, not at the end of the pass (B3-18). A record
+written last is lost whole when a container restarts mid-stage. A restart killed client-portal's fix
+loop with its code on disk and its record not, and the evidence had to be rebuilt.
+
 Report in this shape:
 
 ```
 GAP <n> — <one-line title>
 CONTRACT CLAUSE: <quote it, with section reference>
 EXPECTED: <what the contract says should happen>
-ACTUAL: <what happened, with the failing assertion>
+OBSERVED: <what was seen, with the failing assertion, and how and when it was obtained>
+DEDUCED: none | <what you infer from it, and from what>
 TEST: <path to the failing test>
 CLASS: bug | spec-gap
 ```
+
+`OBSERVED` and `DEDUCED` stay apart (B3-19). A cause you inferred, written as though you saw it,
+sends the Engineer to fix the inference.
 
 `CLASS` matters and you must set it deliberately:
 
@@ -111,14 +171,26 @@ was never the problem.
 
 **Done condition:** full suite green.
 
+**What counts as an iteration** (B3-14). One round trip on a finding: you report it, the
+Engineer changes code, you re-run. These are not iterations: a pass with no code change, a
+regeneration after an amendment, you repairing your own test, an environmental rerun. The cap
+halts when the suite is still red after the third fix; a third iteration that ends green is done,
+not a halt. client-portal had to rule on what counted three times mid-run.
+
 **Cap: 3 iterations — counting code defects only.** Every iteration records a diagnosis line:
 
 ```
-cause: code | environment
+cause: code | environment | test-defect
 ```
 
 An iteration whose root cause was environmental is logged but **does not consume the cap**. The cap
 exists to stop an agent re-fixing the same function forever, not to punish a stale build.
+
+`test-defect` is a failure in your test, not in the build: an expectation the contract does not
+support, a fixture that cannot reach the state it claims (WH-24). It **does not consume the cap**,
+and it is recorded rather than fixed silently, so a suite that went green on its second run does
+not read as green on its first. workshop-hub-end's first run had two such failures and had to
+invent the label.
 
 Build 1 hit this twice. A type error meant the build never ran, so the test suite reused the
 previous binary and failed against code that predated the fix. Then a stale server held port 3000
@@ -145,6 +217,13 @@ Chromium only. A three-browser matrix triples the slowest stage in the pipeline 
 differences that a 30-minute internal build does not care about. Add browsers when a build has a
 stated cross-browser requirement in the contract, not by default.
 
+**The spec tree is part of the build** (B3-20). Give `tests/` its own `tsconfig.json`, typecheck it
+as a static check, and have the runner set `NODE_PATH` to the app's `node_modules`. client-portal's
+32 spec files sat outside the app's `tsconfig.json`, so the type gate never saw them, and every run
+died on `Cannot find module '@playwright/test'` until the runner exported `NODE_PATH`.
+
+Add `tests/.auth/` to `.gitignore` before the first run (B3-3). It holds signed-in storage state.
+
 ### Configure it for this pipeline
 
 Four things in `playwright.config.ts` earn their place:
@@ -154,7 +233,7 @@ export default defineConfig({
   testDir: './tests',
   reporter: [['json', { outputFile: 'test-results/results.json' }], ['list']],
   use: { baseURL: 'http://localhost:3000', trace: 'retain-on-failure' },
-  webServer: { command: 'npm run build && npm start', url: 'http://localhost:3000', reuseExistingServer: !process.env.CI },
+  webServer: { command: '<contract §4 BUILD-AND-SERVE>', url: 'http://localhost:3000', reuseExistingServer: !process.env.CI },
   projects: [
     { name: 'setup', testMatch: /auth\.setup\.ts/ },
     { name: 'chromium', dependencies: ['setup'] },
@@ -166,8 +245,10 @@ export default defineConfig({
   eye. Transcription is where fake greens come from.
 - **`trace: 'retain-on-failure'`** so the Engineer gets a trace file with the failing test, not just
   an assertion message. This is the single biggest thing that keeps the 3-iteration cap sufficient.
-- **`webServer`** running a production build, not `dev`. Dev-only behaviour passing and prod failing
-  is a discovery for Stage 6, and Stage 6 only gets 2 attempts.
+- **`webServer`** running the contract's `BUILD-AND-SERVE` command (WH-16). On the default stack
+  that is `npm run build && npm start`, a production build, not `dev`: dev-only behaviour passing
+  and prod failing is a discovery for Stage 6, and Stage 6 only gets 2 attempts. A host that
+  forbids a build step names its own equivalent in the contract.
 - **setup project** for auth, below.
 
 ### Auth boundaries need two signed-in actors
@@ -185,10 +266,40 @@ await page.context().storageState({ path: 'tests/.auth/member-org-b.json' })
 Cross-tenant reads are the classic production incident and the classic missing test. If the
 contract has orgs, there is a test where org B requests org A's row and gets refused.
 
-### Test data — local Supabase stack
+### Test data: the contract's test target
 
-Run against a **local Supabase stack**, not the project the app will deploy to. A suite that
-mutates shared state cannot be re-run, and you re-run the full suite on every fix-loop iteration.
+Run against the contract's §4 **`TEST TARGET`**, never the project a production deployment reads
+(B3-3). client-portal had no test environment, so every test, fixture and migration ran on
+production. A suite that mutates shared state cannot be re-run, and you re-run the full suite on
+every fix-loop iteration.
+
+The contract's `TEST STRATEGY` names one of three (WH-16):
+
+| Strategy | When | What you run |
+|---|---|---|
+| Local stack | Docker is up | `npx supabase start`, `db reset` between iterations (below) |
+| In-memory double, plus live assertions | No Docker, no branch, or a host with no build step | A double that enforces the migration's checks and RLS, then one-shot SQL assertions against the test target after the migration lands |
+| Cloud branch or separate project | No Docker, and the tier allows it | The suite against the branch or project, reset by script |
+
+If the contract's strategy cannot run here, fall back in this order: Supabase branch, then a
+separate project, else halt as blocking. Never fall back to production.
+
+**A fixture refuses to run where a non-fixture org exists** (B3-3). Before it writes, a fixture
+checks the target holds only fixture data, and stops if it does not. That one check is what turns
+a misconfigured target into a halt instead of writes to real records.
+
+**A reset of more than one script runs as one transaction**, or records a checkpoint before each
+script (B3-18). client-portal's QA was stopped by a restart between `cleanup.sql` and `fixture.sql`,
+leaving the target in a state no test expected.
+
+**Time-derived state: control the stored timestamp, never wait** (WH-22). When state is derived
+from elapsed time, stamp the record's time directly, and use a **fresh fixture for each position in
+the window**: where "current" is the newest row by `created_at`, one record cannot be walked
+backwards through it. The arithmetic itself belongs in a pure unit test, where the clock is an
+argument. workshop-hub-end failed three times the same way, each failure looking like a broken lock
+that was in fact correct.
+
+#### Local Supabase stack
 
 Install the CLI as a **project dev dependency**, not globally:
 

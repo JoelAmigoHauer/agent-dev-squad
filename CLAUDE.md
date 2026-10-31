@@ -194,14 +194,24 @@ usually signals a design problem, and design problems belong with Joel at the Ar
 Uncapped loops are where agents burn hours re-fixing the same function. Count every iteration in
 `/state/tasks.md` as it happens, not retrospectively.
 
-**Caps count code defects only — v0.2.** Every loop iteration records `cause: code | environment`.
-An iteration whose root cause was environmental — a stale build, a stale server, a missing
-dependency — is logged but does not consume the cap. Build 1 hit two such failures in a single fix
-loop; under a naive cap they would have burned two of three iterations and escalated a build that
-was working. Before diagnosing any post-fix failure, confirm the binary under test contains the fix.
+**Caps count code defects only — v0.2.** Every loop iteration records
+`cause: code | environment | test-defect`. An iteration whose root cause was environmental — a
+stale build, a stale server, a missing dependency — is logged but does not consume the cap. Build 1
+hit two such failures in a single fix loop; under a naive cap they would have burned two of three
+iterations and escalated a build that was working. Before diagnosing any post-fix failure, confirm
+the binary under test contains the fix.
+
+Nor does a `test-defect` consume the cap: a fault in the checking stage's own test or rule rather
+than in the build. It is recorded, never fixed silently (WH-24).
 
 A red CI on a **preview** deploy does not consume a DevOps attempt either — nothing was promoted.
 Fix and re-preview.
+
+**What counts as an iteration** (B3-14). One round trip on a finding: the stage reports it, the
+Engineer changes code, the stage re-checks. Not an iteration: a review pass with no code change, a
+regeneration after an amendment, QA repairing its own test, an environmental rerun. A cap halts when
+the finding is still open after the Nth fix; an Nth iteration that ends green is done. client-portal
+had to rule on this three times mid-run.
 
 ---
 
@@ -398,30 +408,29 @@ Mode 2 work. These are conventions for the prose, since prose is all there is.
 Audited against `LEARNINGS.md`. Recorded so a stage does not trust this repo to be level with its
 own learnings.
 
-**43 open.** thelma's, workshop-hub's and client-portal's learnings were written into separate
+**35 open.** thelma's, workshop-hub's and client-portal's learnings were written into separate
 copies of this file on separate branches and consolidated on 2026-10-31 without their changes being
-applied. They are being closed a file at a time: `preflight.md` and `architect.md` are done, and a
-row below names only the files still to change. The backlog is WH-19 (no return path for `/squad`
-learnings) happening at scale, which is why WH-19 is listed here despite its low severity.
+applied. They are being closed a file at a time: `preflight.md`, `architect.md` and `qa.md` are
+done, and a row below names only the files still to change. The backlog is WH-19 (no return path
+for `/squad` learnings) happening at scale, which is why WH-19 is listed here despite its low
+severity.
 
 Ordered by severity, then by ID. The entry in `LEARNINGS.md` carries the full change; this column
 names only where it lands. Files are in `agents/` unless a path is given.
 
 | ID | Gap | Change lands in |
 |---|---|---|
-| B3-1 | The contract binds how state is used, never how it comes to exist | `qa.md` |
 | B3-2 | An amendment set gets no stage lines, so an unbuilt set is invisible | `CLAUDE.md`, `devops.md` |
-| B3-3 | No test environment, so tests, fixtures and migrations ran on production | `qa.md`, `engineer.md`, `skills/deploy-sequence.md` |
-| B3-4 | A retro's changes cannot reach the rest of the same build | `CLAUDE.md`, `retro.md`, `qa.md`, `devops.md` |
+| B3-3 | No test environment, so tests, fixtures and migrations ran on production | `engineer.md`, `skills/deploy-sequence.md` |
+| B3-4 | A retro's changes cannot reach the rest of the same build | `CLAUDE.md`, `retro.md`, `devops.md` |
 | WH-13 | `working` is not runtime-verified; brownfield schema is not captured live | `surveyor.md` §2, §5, `security.md` |
 | WH-14 | No rule that a stage re-probes an MCP write before relying on it | `CLAUDE.md` |
 | WH-20 | The deploy never confirms its target project | `skills/deploy-sequence.md` §3, `devops.md` |
 | WH-25 | Migration ordering is one question where there are two | `devops.md` |
-| WH-26 | A guard over a hand-written list stops guarding | `qa.md` |
-| B2-1 | Admin-client RPCs hidden in a non-exposed schema fail closed | `engineer.md`, `qa.md`, `security.md`, `devops.md` |
+| B2-1 | Admin-client RPCs hidden in a non-exposed schema fail closed | `engineer.md`, `security.md`, `devops.md` |
 | B3-5 | Contract premises about code, consumers and third parties go unread | `engineer.md`, `skills/deploy-sequence.md` |
 | B3-6 | The contract grows by appending until no stage can read it whole | `CLAUDE.md` |
-| B3-7 | Checks that cannot fail are read as evidence | `qa.md`, `security.md`, `engineer.md`, `devops.md` |
+| B3-7 | Checks that cannot fail are read as evidence | `security.md`, `engineer.md`, `devops.md` |
 | B3-8 | Supabase default grants undo column revokes and hand out TRUNCATE | `engineer.md`, `security.md` |
 | B3-9 | A foreign key proves a row exists, never that it is yours | `engineer.md`, `security.md` |
 | B3-10 | Platform settings contradict contract clauses, unseen by any scanner | `security.md` |
@@ -429,26 +438,20 @@ names only where it lands. Files are in `agents/` unless a path is given.
 | TH-17 | The 5a/5b split is by stage, not by when a check's target exists | `security.md` |
 | TH-18 | Security has no per-tool fallback table for a degraded scanner | `security.md` |
 | WH-15 | Invariants the host's tests enforce are not host constraints | `surveyor.md` §8 |
-| WH-16 | QA's harness is greenfield-specific; no test-strategy field | `qa.md` |
-| WH-22 | No rule for driving a clock in tests | `qa.md` |
 | WH-23 | The promote step has one path, refused when environments differ | `skills/deploy-sequence.md` §6 |
 | WH-27 | The survey does not name dependencies several suites share | `surveyor.md` §6 |
-| WH-29 | A coverage claim needs a spec and assertion citation | `qa.md` |
 | B2-2 | A new Vercel project's first deploy is production | `skills/deploy-sequence.md` |
 | B3-12 | Status codes and bodies do not say what happened | `engineer.md` |
 | B3-13 | Builds share one state file | `CLAUDE.md`, `state/tasks.md` |
-| B3-14 | What counts as a loop iteration is undefined | `CLAUDE.md`, `qa.md`, `security.md` |
 | B3-15 | Stages share one working tree and the Orchestrator commits under them | `CLAUDE.md` |
-| B3-16 | An API shape can change outside an amendment with no test to tell | `CLAUDE.md`, `qa.md` |
-| B3-17 | The flow binding table has no column for how a screen is reached | `qa.md`, `designer.md` |
-| B3-18 | Container restarts lose evidence | `engineer.md`, `qa.md` |
-| B3-19 | Findings and briefs do not say how a claim was known | `qa.md`, `CLAUDE.md` |
+| B3-16 | An API shape can change outside an amendment with no test to tell | `CLAUDE.md` |
+| B3-17 | The flow binding table has no column for how a screen is reached | `designer.md` |
+| B3-18 | Container restarts lose evidence | `engineer.md` |
+| B3-19 | Findings and briefs do not say how a claim was known | `CLAUDE.md` |
 | WH-17 | Smoke data written to production has no owner | `skills/deploy-sequence.md`, `devops.md` |
 | WH-18 | The rollback target's age is not recorded | `skills/deploy-sequence.md` §6 |
 | WH-19 | Learnings from `/squad` runs have no return path | `.claude/skills/squad/SKILL.md` |
-| WH-24 | The loop-cause vocabulary has no `test-defect` | `qa.md`, `security.md`, `CLAUDE.md` |
 | B2-3 | Magic-link sign-in needs Auth URL config no connector exposes | `skills/deploy-sequence.md` |
-| B3-20 | The spec tree sits outside the app's typecheck | `qa.md` |
 | B3-21 | The contract and the design number screens differently | `designer.md` |
 | B3-22 | Residency is bound for the data store, not the functions | `skills/deploy-sequence.md` |
 | B3-23 | The survey does not list other writers to shared hosted resources | `surveyor.md` |
