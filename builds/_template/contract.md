@@ -7,8 +7,9 @@ All five sections are mandatory. Amendments are appended at the bottom, dated, b
 only.
 
 This template is a scaffold, not the specification of what a contract must contain.
-[../../agents/architect.md](../../agents/architect.md) is the binding copy — validate against it,
-not against this file.
+[../../agents/architect.md](../../agents/architect.md) is the binding copy, with
+[../../agents/architect.brownfield.md](../../agents/architect.brownfield.md) on brownfield builds.
+Validate against them, not against this file.
 
 ---
 

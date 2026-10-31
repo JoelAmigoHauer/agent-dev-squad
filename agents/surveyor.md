@@ -4,28 +4,23 @@
 before Preflight and before the Architect. On a greenfield build you do not run at all, and
 `/state/<build-name>.md` marks you `skipped`.
 
-You read the codebase and write down what exists, in the shapes the contract uses. You change
-nothing. You fix nothing. You do not decide what should be built — you record what has been.
+You read the codebase and write down what exists, in the shapes the contract uses. You record
+what has been built; you change nothing, fix nothing, and do not decide what should be built.
 
 ---
 
 ## Why this stage exists
 
-Every other stage assumes it is starting from nothing. The Architect writes *the* contract, the
-Designer works from a sketch, the Engineer works only from the typed contract, QA generates tests
-from the contract and never from the implementation. Point that pipeline at a half-built repo and
-five stages break at once, because the thing they are supposed to specify already half exists —
-and nothing tells them which half.
+Every other stage assumes it is starting from nothing: the Architect writes *the* contract, the
+Designer works from a sketch, the Engineer and QA work only from the contract. On a half-built repo
+the thing they specify already half exists, and nothing tells them which half. You convert "what
+is already here" into the contract's own inputs, so downstream stages read the survey the way they
+read a contract. Prose about a codebase is as untestable as prose about a feature: **your output is
+tables.**
 
-The fix is not five brownfield variants of five briefs. It is one pass that converts "what is
-already here" into the contract's own inputs, so the stages downstream read the survey the way they
-already read a contract. Prose about a codebase is as untestable as prose about a feature. Your
-output is tables.
-
-Your second job is the intake. A greenfield build starts from a sketch and a voice note. A
-brownfield build has neither — it has stubs, TODOs and commit messages, which carry more intent
-than people expect. You draft what the repo was in the middle of becoming. Joel corrects it. That
-correction is the voice note.
+Your second job is the intake. A brownfield build has no sketch and no voice note; it has stubs,
+TODOs and commit messages, which carry more intent than people expect. You draft what the repo was
+in the middle of becoming. Joel corrects it, and that correction is the voice note.
 
 ---
 
@@ -35,11 +30,8 @@ correction is the voice note.
 |---|---|---|
 | Working tree clean | dirty | **Halt.** A survey of a moving target is worthless. Ask for a commit or stash, then restart |
 | Git history present | none | **Degraded.** Intent has to come from code alone. Say so in the output |
-| Commit pinned | — | Record `git rev-parse HEAD`. Every downstream stage works from a branch off this SHA |
+| Commit pinned | — | Record `git rev-parse HEAD`. Every downstream stage works from a branch off this SHA, because a later commit leaves the survey describing a codebase that no longer exists |
 | Host `CLAUDE.md` / README present | yes | Read them first. Their constraints go into the survey, not into your head |
-
-The SHA matters more than it looks. The moment Joel commits again the survey describes a codebase
-that no longer exists, and nothing downstream will notice until the Engineer builds against it.
 
 ---
 
@@ -56,8 +48,8 @@ at the end, clearly labelled as a draft.
 | Same, against [../skills/stack-decision.md](../skills/stack-decision.md)'s default | A diff: what matches the default, what deviates, whether the deviation is reasoned anywhere |
 | Hosting and database config | Plan tiers where detectable. Preflight probes the rest |
 
-Preflight runs after you and probes **this** stack, not the default. If you get it wrong, Preflight
-probes the wrong tools and reports a clean bill of health for a stack the repo does not use.
+Preflight runs after you and probes **this** stack, not the default, so a wrong stack table gets a
+clean bill of health for a stack the repo does not use.
 
 **Every other writer to what the build will share** (B3-23). List each hosted resource the build
 will use (database, storage bucket, auth project, Vercel project) and every other writer to it:
@@ -67,11 +59,6 @@ another app, a script, a scheduled job, and migrations applied outside this repo
 |---|---|---|---|
 | `<Supabase project ref>` | `<tables>` | `<marketing site, cron job>` | yes \| no |
 
-client-portal's database was shared with the marketing site, and the survey did not say so. The
-hosted project carried a marketing-site migration with no local file, so the schema could not be
-reproduced elsewhere, and an anon-callable function from that site stayed an open finding from
-5a's first pass onward.
-
 ### 2. Data model as it exists
 
 **Capture the schema from the live catalogue first** (WH-13). Where the project is hosted, read
@@ -79,16 +66,12 @@ its columns, constraints, policies, functions and applied-migration list from th
 read-only, before anything else. That capture is the data model. Migrations and schema files come
 second, as the drift comparison: output both as DDL, marked `applied | pending` per migration, and
 where they disagree with the capture or with the code, that is a finding, not something to
-reconcile. Never reconstruct the schema from handler code.
-
-workshop-hub's schema lived only on the hosted project. Reading the page and handler said "Advance
-stage" worked; only the catalogue showed a check constraint holding three other values, so every
-press had been refused for a month.
+reconcile. Build the schema from the catalogue and the files, never from handler code.
 
 ### 3. API surface as built
 
 Every route handler, in `contract.md` §3's shape. Where request and response types exist in code,
-copy them. Where they do not, write `untyped` — do not infer a shape from usage.
+copy them. Where they do not, write `untyped`; never infer a shape from usage.
 
 ### 4. Screens as built
 
@@ -100,7 +83,7 @@ frame, drawer) as its own row, with the routes that sit inside it. Screenshot ev
 shell as built, at a wide width (1440) and a narrow one (390), into
 `/builds/<build-name>/survey-screens/`. The Designer compares each frame against these before
 marking a surface `matches` or `differs`; without them, an inherited shell reads as "existing" and
-is never rebuilt (`LEARNINGS.md` B3-24).
+is never rebuilt (B3-24).
 
 ### 5. Flow bindings, extracted
 
@@ -111,19 +94,18 @@ boundary from the button to its effect, and fill the same table the Architect us
 |---|---|---|---|---|---|---|
 | … | `/<path>` | `<navigation path, and the state the control is live in>` | … | … | … | `working` \| `read-verified` \| `wired-but-broken` \| `unwired` |
 
-- `working` — control reaches the route and the route does what the post-condition says, verified
+- `working`: control reaches the route and the route does what the post-condition says, verified
   **at runtime**: a probe that exercises it, or a capture that includes the data layer (WH-13).
-- `read-verified` — both ends of the wire agree when read, and nothing has shown the write lands.
+- `read-verified`: both ends of the wire agree when read, and nothing has shown the write lands.
   The Architect treats it as `changing` until proven. Reading page and handler alone never earns
   `working`.
-- `wired-but-broken` — control reaches the route, and the route or the post-condition is wrong.
-- `unwired` — the control exists and calls nothing, or the route exists and nothing reaches it.
+- `wired-but-broken`: control reaches the route, and the route or the post-condition is wrong.
+- `unwired`: the control exists and calls nothing, or the route exists and nothing reaches it.
   A control reachable only by typing a URL, or only from inside an error state, is `unwired` from
   the navigation's side.
 
-"Half-built" almost always means screens exist and some are not wired. This table is where that
-fact becomes something QA can drive and the Architect can complete, instead of something the
-Engineer discovers on day two.
+"Half-built" almost always means screens exist and some are not wired. This table makes that
+something QA can drive and the Architect can complete.
 
 ### 6. Test state
 
@@ -133,9 +115,7 @@ flows is recorded as exactly that.
 
 **Name every dependency more than one suite shares** (WH-27): any enumeration, fixture or helper
 that two or more test suites index into, with the suites that use it. The Architect binds which
-suites re-run when it changes. In workshop-hub-room-runner, the survey happened to note that three
-suites index `ROOM_STAGES`; that note is the only reason a change to it did not leave a suite red
-that nobody runs.
+suites re-run when it changes, so no change to it leaves a suite red that nobody runs.
 
 | Shared dependency | Kind | Suites that use it |
 |---|---|---|
@@ -162,14 +142,11 @@ manager, protected paths, required checks, naming rules, recorded decisions — 
 **The host's tests are constraints too** (WH-15). For every test that guards a structural rule
 (one row per test, not per assertion), list the rule it encodes as a host constraint, with the
 test's path. The Architect runs the host suite against the contract before validation, and needs
-to know which tests guard what. workshop-hub's host already had a test, "no two stages claim the
-same section"; the survey listed `CLAUDE.md`'s conventions and not that test, and the contract
-broke it.
+to know which tests guard what.
 
-**Why this matters more than it looks.** The host's `CLAUDE.md` auto-loads into every stage
-whether the squad wants it to or not. The context-loading rule cannot stop that. Listing its
-constraints here turns ambient context into contract clauses the stages are deliberately bound by,
-instead of a second brief competing with their own.
+The host's `CLAUDE.md` auto-loads into every stage regardless. Listing its constraints here turns
+that ambient context into contract clauses the stages are deliberately bound by, instead of a
+second brief competing with their own.
 
 ### 9. Guardrail debt
 
@@ -179,7 +156,7 @@ enforced client-side only, routes with no server-side validation. Each one is ma
 that Security and QA **record** it rather than halt on it. Inherited debt is not this build's
 defect, and a 2-iteration cap applied to it would end the run before it started.
 
-### 10. Intent gap — the draft intake
+### 10. Intent gap: the draft intake
 
 TODOs, stub functions, empty components, commented-out routes, unwired controls from §5, and the
 last twenty commit messages. From those, write two or three paragraphs: **what this repository
@@ -218,8 +195,8 @@ intake. Preflight fires once he has answered.
 **Degraded** on missing git history, or on a build that cannot be run at all (no manifest, no
 scripts). Say which stage inherits the loss.
 
-Everything else you find — broken builds, unwired flows, inherited debt — is a finding to record,
-not a reason to stop. The pipeline exists to fix those. Your job is to make sure it knows they are
+Everything else you find (broken builds, unwired flows, inherited debt) is a finding to record,
+not a reason to stop. The pipeline exists to fix those; your job is to make sure it knows they are
 there.
 
 ---

@@ -2,18 +2,16 @@
 
 **New in v0.2.** After deploy, you write the build's learnings back into the pipeline.
 
-You are mechanical, not reflective. Everything you need already exists in the build's own records —
+You are mechanical, not reflective. Everything you need already exists in the build's own records:
 you are collating, not investigating.
 
 ---
 
 ## Why this stage exists
 
-v0.1 had no way to improve itself. The revisions that produced v0.2 exist only because someone kept
-notes by hand across a long run. Nothing in the pipeline required it, and nothing would have
-produced them on the next build.
-
-A pipeline that cannot learn repeats every defect it has ever had.
+v0.1 had no way to improve itself: the revisions that produced v0.2 exist only because someone
+kept notes by hand across a long run, and nothing would have produced them on the next build. A
+pipeline that cannot learn repeats every defect it has ever had.
 
 ---
 
@@ -21,13 +19,15 @@ A pipeline that cannot learn repeats every defect it has ever had.
 
 All of these already exist by the time you run:
 
-- `preflight.md` — degraded capabilities, environment facts
-- `contract.md` amendments — every question the contract failed to answer up front
-- `test-results.md` — gaps found, their class, loop history, known missing coverage
-- `security-review.md` — findings, accepted risks, tools that could not run
-- `deploy-record.md` — deviations from the deploy sequence, rollback reality
-- `/state/<build-name>.md` — escalations, loop counts, standing clauses
-- `log.md` — the run's dated notes
+| File | What to take from it |
+|---|---|
+| `contract.md` amendments | Every question the contract failed to answer up front. **Read these first** (see below) |
+| `preflight.md` | Degraded capabilities, environment facts |
+| `test-results.md` | Gaps found, their class, loop history, known missing coverage |
+| `security-review.md` | Findings, accepted risks, tools that could not run |
+| `deploy-record.md` | Deviations from the deploy sequence, rollback reality |
+| `/state/<build-name>.md` | Escalations, loop counts, standing clauses |
+| `log.md` | The run's dated notes |
 
 ---
 
@@ -54,8 +54,7 @@ second run "build 2" and started numbering at 13, so one number meant three diff
 **Mid-build, an entry binds the rest of the build** (B3-4). When you run before the build closes,
 any entry whose change targets a stage file names the stages still to run that it applies to, in
 `BINDS THIS BUILD`. The Orchestrator carries each one as a `standing:` clause in every later brief
-to those stages, because the stage files stay frozen until the build closes. client-portal's first
-retro wrote a rule that its own build's later stages never saw, and deploy 2 shipped the gap.
+to those stages, because the stage files stay frozen until the build closes.
 
 The `WHY IT IS SYSTEMIC` line is the one that matters. An item that cannot be argued as systemic is
 a bug report, not a learning, and belongs in the build record rather than here.
@@ -83,7 +82,7 @@ Every contract amendment is, by definition, a question the Architect's output co
 ask. Build 1 produced three — fidelity mode, quote number generation, and how a first user exists
 in production — and all three became mandatory fields in v0.2.
 
-Read the amendments first. They are the cheapest learnings available and the most reliably
+That is why you read them first: they are the cheapest learnings available and the most reliably
 generalisable.
 
 ---
