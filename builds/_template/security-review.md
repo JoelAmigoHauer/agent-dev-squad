@@ -15,12 +15,15 @@ ITERATION: <n>/2
 |---|---|---|---|
 | Database | Supabase advisors | | |
 | Dependencies | `npm audit --audit-level=high` | | |
-| Secrets | `gitleaks detect` (incl. history) | | |
+| Secrets | `gitleaks git` (incl. history), or its substitute and what it misses | | |
 | App code | `semgrep --config auto` | | |
+| Privileges | standing privilege query, writes attempted as each role | | |
+| Platform settings | read from the platform's API, against the contract's table | | |
 | Business logic | manual checks below | | |
 
-A clean automated run means the known-pattern layers are clean. It is not a verdict on its own —
-no scanner knows what the contract's auth rules say.
+A clean automated run means the known-pattern layers are clean. It is not a verdict on its own:
+no scanner knows what the contract's auth rules say. Each finding names whether a scanner or an
+attempt found it.
 
 ---
 
@@ -46,6 +49,15 @@ Specifically checked:
 - [ ] Every tenant-data route checks caller identity, not just session existence
 - [ ] Session handling matches the contract's auth requirements
 - [ ] No route trusts a user-supplied `org_id` / `user_id` / role claim
+- [ ] Privileges proven by attempting the write as the role, beside a matched control
+- [ ] Standing privilege query run; a table created after the migrations has no TRUNCATE
+- [ ] Tenant-reference register re-derived from `pg_constraint`, each row attacked both ways
+- [ ] Service-role paths ran with a real key against the test target
+- [ ] Value lists held in code and in the database compared
+
+### Platform settings
+- [ ] Each bound setting read from the platform's API and matched (5a: test target; 5b: production)
+- [ ] 5b: deployed function bodies hashed against the migration files
 
 ### Secrets
 - [ ] None in repo, client bundles, or error messages
@@ -71,7 +83,8 @@ Specifically checked:
 ```
 FINDING <n> — <title>
 SEVERITY: blocking | non-blocking
-LOCATION: <file:line or route>
+FOUND BY: <scanner name> | attempt
+LOCATION: <file:line, route, or platform setting>
 ISSUE: 
 IMPACT: <what an attacker or a mistake gets>
 FIX: <the specific change required>
