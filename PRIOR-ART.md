@@ -150,6 +150,43 @@ strength of a README.
 
 ---
 
+## 5. Claude Code `/security-review`: built-in diff security review
+
+**Read 2026-10-31**, from the prompt bundled in Claude Code 2.1.314. Unlike the entries above, this
+was read in full, not at README level. It reviews a branch's diff for high-confidence, exploitable
+vulnerabilities: a three-phase method (learn the codebase's security patterns, compare the change
+against them, trace data flow from input to sensitive operation), a category list, a confidence
+threshold, an independent per-finding false-positive pass, and a list of hard exclusions and
+precedents.
+
+**Why it matters here.** `agents/security.md` had scanners, a checklist and attempted attacks, and
+no pass that read the build's own changes for what they introduced. Two of client-portal's worst
+findings (an open redirect, an unbuilt tenancy register) were missed by every scanner on every pass
+(B3-10).
+
+**Taken** into `agents/security.md` § Third pass and § Before a finding is reported: the three
+phases, scoped to this build's diff; the categories not already covered, restated for the default
+stack; independent verification of reading-based findings, reported at 8/10 or above, with the
+rest recorded as `considered, not reported`; most of the exclusions; `CATEGORY`, `CONFIDENCE` and
+`EXPLOIT SCENARIO` in the `FINDING` block.
+
+**Not taken, with the evidence:**
+
+- Its read-only rule ("do not run commands"). This stage attacks by attempt, and its best findings
+  came that way (B3-7, B3-9, B3-10). An attempted finding needs no confidence score.
+- Rate limiting as a blanket exclusion. A limiter that fails closed made sign-in impossible
+  (B2-1); that case goes to QA as a GAP.
+- Hardening as a blanket exclusion. A platform setting the contract binds is a clause, not
+  hardening (B3-10).
+- Open redirects as near-excluded. A sign-in redirect was a real finding (B3-10, B3-11).
+- Test files as excluded. A fixture that writes to a real target is in scope (B3-3).
+- Outdated dependencies and secrets on disk as excluded. This stage is the process that handles
+  both.
+
+**Status:** adopted 2026-10-31.
+
+---
+
 ## Deliberately not adopted
 
 Recorded so the same evaluation is not repeated in six months.
@@ -166,8 +203,9 @@ idea as this repo, built differently. Worth reading once as a comparison. Nothin
 
 ## Adoption log
 
-One line per mechanism actually taken, appended, never overwritten. Empty until something is.
+One line per mechanism actually taken, appended, never overwritten.
 
 ```
 <date>  <mechanism>  from <source>  →  <file and section>
+2026-10-31  diff trace, verified findings, exclusions  from Claude Code /security-review 2.1.314  →  agents/security.md § Third pass, § Before a finding is reported
 ```
