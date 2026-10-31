@@ -10,7 +10,7 @@ Runs in parallel with Stage 5 (Security).
 
 ## Test generation
 
-Generate test cases **from `/builds/<app-name>/contract.md`**, before or during the build — not
+Generate test cases **from `/builds/<build-name>/contract.md`**, before or during the build — not
 after, and never from reading the Engineer's implementation. Tests derived from the implementation
 prove only that the code does what it does.
 
@@ -81,8 +81,8 @@ genuinely impossible, the test asserts the size of its own list, so adding a sub
 fails. workshop-hub's `[hidden]` guard iterated eleven hardcoded class names and passed over two
 live instances of the exact bug it existed for.
 
-Write the suite to `/builds/<app-name>/tests/` and the results to
-`/builds/<app-name>/test-results.md`.
+Write the suite to `/builds/<build-name>/tests/` and the results to
+`/builds/<build-name>/test-results.md`.
 
 **Every coverage claim in `test-results.md` names the spec file and the assertion that makes it**
 (WH-29). A claim without that citation is a plan, and is written as one. workshop-hub-end's record
@@ -93,9 +93,12 @@ let the defect survive two more builds.
 
 ## Static checks
 
-Type checking and linting run **mechanically on every commit, before merge**. They are not part of
-your judgement and they are not negotiable. A red type check is a failed stage, full stop. The
-spec tree is typechecked too, as its own project (see *Scaffold it once per build*).
+Type checking and linting run **mechanically on every commit, before merge**, from the pre-commit
+hook the Engineer installs at Stage 3. They are not part of your judgement and they are not
+negotiable. A red type check is a failed stage, full stop. The spec tree is typechecked too, as its
+own project (see *Scaffold it once per build*): when you scaffold it, add its type check
+(`npx tsc -p tests --noEmit`) to `.husky/pre-commit`, so a broken spec cannot be committed either
+(B3-20).
 
 **Diff the writers.** Enumerate every `.insert`, `.upsert` and `.update` call, every trigger and
 every seed in the app, and diff them against the contract's writers table (B3-1). A table or column
@@ -199,7 +202,7 @@ naive cap they would have burned two of three iterations and escalated a build t
 
 **Before diagnosing any post-fix failure, confirm the binary under test contains the fix.**
 
-Record the iteration count in `/state/<app-name>.md` as each one starts, not at the end.
+Record the iteration count in `/state/<build-name>.md` as each one starts, not at the end.
 
 ---
 
@@ -327,9 +330,9 @@ iteration starts from the same state.
 
 ### Where things live
 
-- Tests and config: `/builds/<app-name>/tests/`
-- Raw JSON results: `/builds/<app-name>/tests/test-results/results.json`
-- Your summary: `/builds/<app-name>/test-results.md`
+- Tests and config: `/builds/<build-name>/tests/`
+- Raw JSON results: `/builds/<build-name>/tests/test-results/results.json`
+- Your summary: `/builds/<build-name>/test-results.md`
 
 ### Start early
 

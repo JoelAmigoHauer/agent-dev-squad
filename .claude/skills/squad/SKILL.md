@@ -13,21 +13,25 @@ brief is `.squad/CLAUDE.md`, and this file does not restate it.
 
 If the current directory has `agents/preflight.md` and a `CLAUDE.md` whose first line is
 `# Orchestrator brief`, you are inside the agent-dev-squad template itself. Stop. Builds run in
-generated repos, never in the template — a `builds/<name>/` folder committed here pollutes every
+host repos, never in the template — a `builds/<name>/` folder committed here pollutes every
 future build.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
-| `/squad init` | Stamp the pipeline into `.squad/` at a pinned version |
+| `/squad init` | Stamp the pipeline into `.squad/` at a pinned version, and install the git guard |
 | `/squad survey` | Brownfield only. Run Stage 0.25 and put the intent draft to Joel |
 | `/squad run` | Load `.squad/CLAUDE.md` as your brief and fire the next stage |
-| `/squad status` | Print `.squad/state/<change-name>.md`, or "no build in progress" if none exists |
+| `/squad status` | Print `.squad/state/<build-name>.md`, or "no build in progress" if none exists |
 | `/squad port` | Carry this repo's new `LEARNINGS.md` entries back to the template. After every Stage 7 |
 | `/squad upgrade` | Re-stamp from a newer template version. **Between builds only**, and only once `port` has run |
 
-`/squad` with no argument: if `.squad/` is absent run `init`; if a `.squad/state/<change-name>.md`
+**`/squad` is the only way to start a build**, greenfield or brownfield. A new app starts as an
+empty private GitHub repo that Joel creates and opens; `/squad` never creates a repository.
+
+`/squad` with no argument: if the current directory is not a git repository, refuse and say so; if
+`.squad/` is absent run `init`; if a `.squad/state/<build-name>.md`
 exists, a build is in progress, so run `run` (the state protocol resumes from the first stage not
 `done`); if `.squad/LEARNINGS.md` holds entries the template does not, run `port`; otherwise ask
 whether this is greenfield or brownfield and route accordingly.
@@ -40,10 +44,14 @@ it would happen the first time a rule was fixed in one place.
 
 ```bash
 set -euo pipefail
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
+  echo "Not a git repository. Create the app's private GitHub repo, open it, then /squad init." >&2
+  exit 1; }
+[ -z "$(git status --porcelain)" ] || { echo "Working tree is dirty. Commit or stash first." >&2; exit 1; }
 SRC="https://github.com/JoelAmigoHauer/agent-dev-squad"
 REF="${SQUAD_REF:-v0.3}"                # the current release; SQUAD_REF=main for unreleased work
 TMP="$(mktemp -d)"
-git clone --quiet --depth 1 --branch "$REF" "$SRC" "$TMP"
+git -c advice.detachedHead=false clone --quiet --depth 1 --branch "$REF" "$SRC" "$TMP"
 SHA="$(git -C "$TMP" rev-parse HEAD)"
 mkdir -p .squad
 for p in CLAUDE.md LEARNINGS.md agents skills state builds; do
@@ -52,31 +60,57 @@ done
 rm -f .squad/builds/_template/README.md    # describes the template, not a build
 printf 'template: %s\nref: %s\ncommit: %s\nstamped: %s\n' \
   "$SRC" "$REF" "$SHA" "$(date -u +%Y-%m-%dT%H:%MZ)" > .squad/VERSION
+
+# The git guard: a PreToolUse hook in the host's own .claude/, merged with any existing settings.
+GUARD=".claude/hooks/squad-git-guard.sh"
+if [ -f "$TMP/$GUARD" ]; then
+  mkdir -p .claude/hooks && cp "$TMP/$GUARD" "$GUARD" && chmod +x "$GUARD"
+  node -e '
+    const fs = require("fs"), p = ".claude/settings.json";
+    const s = fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf8")) : {};
+    const command = "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/squad-git-guard.sh";
+    s.hooks ??= {}; s.hooks.PreToolUse ??= [];
+    const present = s.hooks.PreToolUse.some(e => (e.hooks || []).some(h => h.command === command));
+    if (!present) s.hooks.PreToolUse.push({ matcher: "Bash", hooks: [{ type: "command", command }] });
+    fs.writeFileSync(p, JSON.stringify(s, null, 2) + "\n");'
+fi
 rm -rf "$TMP"
+git add .squad .claude/settings.json "$GUARD" 2>/dev/null || git add .squad
+git commit --quiet -m "Stamp the agent development squad at $SHA"
 echo "squad stamped at $SHA"
 ```
 
-Not copied, on purpose: `README.md`, `BLUEPRINT.md`, `PRIOR-ART.md` and this skill. None of them
-is loaded by any stage, and `BLUEPRINT.md` is excluded from stage context by design.
+Not copied, on purpose: `README.md`, `BLUEPRINT.md`, `PRIOR-ART.md`, `GLOSSARY.md` and this skill.
+None of them is loaded by any stage, and `BLUEPRINT.md` is excluded from stage context by design.
 
-**Halt if the working tree is dirty before stamping.** The Surveyor will refuse a dirty tree
-anyway, and a stamp on top of uncommitted work confuses whose changes are whose.
+**The script refuses a folder that is not a git repository, and a dirty working tree.** The
+Surveyor would refuse a dirty tree anyway, and a stamp on top of uncommitted work confuses whose
+changes are whose.
 
-Commit `.squad/` to the host repo. It is the audit trail, and it is meant to be read in six months.
+It commits `.squad/` and the git guard to the host repo. `.squad/` is the audit trail, meant to be
+read in six months.
+
+**The git guard** (`.claude/hooks/squad-git-guard.sh`) blocks `git add -A`, `git add .`,
+`reset --hard`, `clean -f`, `checkout .`, `restore .` and any force-push, in every Claude session in
+the host repo. Plain `git push` stays allowed. It turns the brief's rule (commit by explicit path,
+never sweep the tree; B3-15) into something a stage cannot skip. A command it blocks has no
+bypass: the stage records it in the build's `log.md` and halts, and Joel runs it if it is right.
+Adapted from mattpocock/skills `git-guardrails-claude-code`, read 2026-10-31. A template version
+older than the guard (`v0.3`) stamps without it.
 
 ## Three rules the brief cannot state for itself
 
 The brief was written for a repo where it sits at the root. Here it sits in `.squad/`.
 
 1. **Every path in `.squad/CLAUDE.md` and in `.squad/agents/*` resolves relative to `.squad/`.**
-   `/state/<app-name>.md` means `.squad/state/<change-name>.md`, copied from
+   `/state/<build-name>.md` means `.squad/state/<build-name>.md`, copied from
    `.squad/state/tasks.md` at build start. `/builds/<name>/` means
    `.squad/builds/<name>/`. `/ERRORS.md` means `.squad/ERRORS.md`.
 2. **The host repository's own `CLAUDE.md` is not the brief.** It auto-loads and you cannot stop
    that. Treat its contents as constraints to be recorded — the Surveyor folds them into
    `survey.md` §8 and the Architect binds them in the contract — never as instructions that
    override pipeline mechanics, caps or halt triggers.
-3. **The pipeline works on its own branch.** `squad/<change-name>`, cut from the commit the survey
+3. **The pipeline works on its own branch.** `squad/<build-name>`, cut from the commit the survey
    pinned. Never on the host's default branch.
 
 ## Brownfield routing
@@ -95,7 +129,7 @@ the context-loading rule applies to it as to every other.
 sketch and no voice note. Put `survey.md` §10 to Joel, record his answer in the same section, and
 only then fire Preflight. That is not an invented check-in — it is the intake.
 
-Set `mode: brownfield` in `.squad/state/<change-name>.md` and `MODE: brownfield` in the contract. On
+Set `mode: brownfield` in `.squad/state/<build-name>.md` and `MODE: brownfield` in the contract. On
 a greenfield repo set both to `greenfield` and mark `stage-0.25-surveyor: skipped (greenfield)`.
 
 ## `port`: learnings go back to the template (WH-19)
@@ -126,7 +160,7 @@ Run `port` as the last step of every `/squad run` that reached Stage 7:
 
 Re-runs the stamp against a newer ref and rewrites `.squad/VERSION`. **Never mid-build.** A stage's
 rules changing underneath a running build makes the run unauditable, and the brief forbids it. If
-any `.squad/state/<change-name>.md` exists, a build is in progress: refuse.
+any `.squad/state/<build-name>.md` exists, a build is in progress: refuse.
 
 **Never over unported learnings.** The stamp replaces `.squad/LEARNINGS.md` with the template's
 copy, so an entry not yet ported is deleted by the upgrade. If `.squad/LEARNINGS.md` holds an entry

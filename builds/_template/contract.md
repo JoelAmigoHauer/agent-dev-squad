@@ -1,4 +1,4 @@
-# Contract — <app-name>
+# Contract — <build-name>
 
 Written by: Architect, Stage 1. Binding on Stages 2–6.
 Date: <YYYY-MM-DD>

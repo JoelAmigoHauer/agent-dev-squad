@@ -26,7 +26,7 @@ All of these already exist by the time you run:
 - `test-results.md` — gaps found, their class, loop history, known missing coverage
 - `security-review.md` — findings, accepted risks, tools that could not run
 - `deploy-record.md` — deviations from the deploy sequence, rollback reality
-- `/state/<app-name>.md` — escalations, loop counts, standing clauses
+- `/state/<build-name>.md` — escalations, loop counts, standing clauses
 - `log.md` — the run's dated notes
 
 ---
@@ -36,7 +36,7 @@ All of these already exist by the time you run:
 Append to `/LEARNINGS.md`. One entry per item, in this shape:
 
 ```
-## <CODE>-<n>. <app-name> — <short title>
+## <CODE>-<n>. <build-name> — <short title>
 WHAT HAPPENED: <the observable fact, not the interpretation>
 WHY IT IS SYSTEMIC: <what makes this recur, rather than a one-off>
 THE CHANGE: <the specific file and section to alter>
@@ -90,7 +90,7 @@ generalisable.
 
 ## Output
 
-Update the build's state file, `/state/<app-name>.md`:
+Update the build's state file, `/state/<build-name>.md`:
 
 ```
 stage-7-retro:  done  (N learnings appended to /LEARNINGS.md)

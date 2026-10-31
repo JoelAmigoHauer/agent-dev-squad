@@ -164,7 +164,7 @@ no pass that read the build's own changes for what they introduced. Two of clien
 findings (an open redirect, an unbuilt tenancy register) were missed by every scanner on every pass
 (B3-10).
 
-**Taken** into `agents/security.md` § Third pass and § Before a finding is reported: the three
+**Taken** into `agents/security.md` § Layer 3 and § Before a finding is reported: the three
 phases, scoped to this build's diff; the categories not already covered, restated for the default
 stack; independent verification of reading-based findings, reported at 8/10 or above, with the
 rest recorded as `considered, not reported`; most of the exclusions; `CATEGORY`, `CONFIDENCE` and
@@ -184,6 +184,42 @@ rest recorded as `considered, not reported`; most of the exclusions; `CATEGORY`,
   both.
 
 **Status:** adopted 2026-10-31.
+
+---
+
+## 6. `mattpocock/skills`: engineering skills served over MCP
+
+**Read 2026-10-31**, the skills' own text, via the skillsovermcp.com MCP server (ref `main`). About
+thirty skills for coding agents: git safety hooks, pre-commit setup, domain modelling, writing for
+agents, spec and ticket workflows, TDD, code review, handoff.
+
+**Taken:**
+
+- **`git-guardrails-claude-code`** → `.claude/hooks/squad-git-guard.sh`, installed by
+  `/squad init`. It fits two documented failures: a swept `git add -A` checkpoint and a commit
+  that ran after a failed edit (B3-15, B3-13). Changed from the source: plain `git push` stays
+  allowed, because Stage 6 needs it; `git add -A` and `git add .` are blocked, because the sweep
+  was the failure; force-push is blocked in every spelling; and a block halts rather than asking
+  for authority, which made it a halt trigger in `CLAUDE.md`.
+- **`setup-pre-commit`** → `agents/engineer.md` definition of done, item 4, and `agents/qa.md`
+  § Static checks. It fits B3-11, where lint never ran, and B3-20, where the spec tree was outside
+  the type check. Changed: no test suite in the hook (client-portal's took about 17 minutes),
+  Prettier only where the host already uses it, and QA adds the spec-tree type check.
+- **`domain-modeling`** → ADRs in `agents/architect.md` § Decision records (all three conditions,
+  the one-paragraph format), and the format of `GLOSSARY.md`. ADRs fit workshop-hub's ADR 0005,
+  the single most valuable decision any build recorded; the glossary fits the term collisions
+  behind WH-13, B3-14, B3-21 and the 2026-10-31 renumbering. Changed: the glossary is never loaded
+  by a stage, because stages read one file cold.
+
+**Pending:** `writing-for-agents`, for an audit of the agent files' length and structure, as its
+own pull request.
+
+**Not taken:** `handoff` and `claude-handoff` (the state protocol does this), `to-spec`,
+`to-tickets` and `implement-spec` (the Architect's contract does this; two vocabularies for one
+idea), `code-review` and `tdd` (QA and Security do this), `retro` (Stage 7 does this). Revisit any
+of them only when a build produces a failure one of them would have prevented.
+
+**Status:** adopted 2026-10-31, apart from the pending item.
 
 ---
 
@@ -207,5 +243,8 @@ One line per mechanism actually taken, appended, never overwritten.
 
 ```
 <date>  <mechanism>  from <source>  →  <file and section>
-2026-10-31  diff trace, verified findings, exclusions  from Claude Code /security-review 2.1.314  →  agents/security.md § Third pass, § Before a finding is reported
+2026-10-31  diff trace, verified findings, exclusions  from Claude Code /security-review 2.1.314  →  agents/security.md § Layer 3, § Before a finding is reported
+2026-10-31  git guard hook  from mattpocock/skills git-guardrails-claude-code  →  .claude/hooks/squad-git-guard.sh, installed by /squad init
+2026-10-31  pre-commit type check and lint  from mattpocock/skills setup-pre-commit  →  agents/engineer.md done item 4, agents/qa.md § Static checks
+2026-10-31  ADRs and glossary format  from mattpocock/skills domain-modeling  →  agents/architect.md § Decision records, GLOSSARY.md
 ```

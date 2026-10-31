@@ -1,4 +1,4 @@
-# Test results — <app-name>
+# Test results — <build-name>
 
 Written by: QA, Stage 4. Tests generated from `contract.md`, never from the implementation.
 

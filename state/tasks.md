@@ -1,9 +1,9 @@
 # Pipeline state — template
 
 **This file is the template, never a build's live state** (B3-13). At build start the Orchestrator
-copies the block below to `/state/<app-name>.md` (on brownfield, `<change-name>`), and that file is
-the build's state from then on. One build per state file: a second build gets its own file, never
-a block in another's. client-portal's single state file absorbed two more builds, grew to 1,029
+copies the block below to `/state/<build-name>.md`, and that file is the build's state from then
+on. One build per state file: a second build gets its own file, never a block in another's.
+client-portal's single state file absorbed two more builds, grew to 1,029
 lines, and stopped being safe to edit.
 
 The Orchestrator owns each build's state file. Every stage writes its status and output location
@@ -13,12 +13,12 @@ Progress lives in the state file, never in the conversation. On a fresh session 
 first and resume from the first stage not marked `done`. A state file that exists is a build in
 progress.
 
-When a build finishes, copy its block into `/builds/<app-name>/run-record.md` and delete
-`/state/<app-name>.md`.
+When a build finishes, copy its block into `/builds/<build-name>/run-record.md` and delete
+`/state/<build-name>.md`.
 
 ---
 
-## Idle block — copy to `/state/<app-name>.md`
+## Idle block — copy to `/state/<build-name>.md`
 
 ```
 build:               none
@@ -39,7 +39,7 @@ escalations:         none
 ```
 
 **The state file holds this block and nothing else.** Notes, validation results and loop detail go
-to the append-only `/builds/<app-name>/log.md`, dated. Edit the state file by a unique anchor and
+to the append-only `/builds/<build-name>/log.md`, dated. Edit the state file by a unique anchor and
 chain the commit to the edit, so a failed edit never ships a commit message.
 
 **Amendment sets get their own lines**, one `pending` line per stage the set's `Routes to` table
@@ -56,7 +56,7 @@ amendment-set-2 (A14–A20):
 entry, naming the stages it binds, until the build closes (B3-4).
 
 **Tooling blockers do not live here.** Preflight records them at Stage 0.5 in
-`/builds/<app-name>/preflight.md`, as `BLOCKING` or `DEGRADED`, and durable machine facts go to
+`/builds/<build-name>/preflight.md`, as `BLOCKING` or `DEGRADED`, and durable machine facts go to
 `/ERRORS.md`. Do not keep a second list in this file for them to disagree with.
 
 ---

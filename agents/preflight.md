@@ -58,7 +58,7 @@ do not let a later stage read it as a guarantee.
 
 On a **greenfield** build the contract does not exist yet, so you probe the default stack below.
 On a **brownfield** build the Surveyor ran before you: probe the stack recorded in
-`/builds/<change-name>/survey.md` §1 instead, and drop any row below the repo does not use. Probing
+`/builds/<build-name>/survey.md` §1 instead, and drop any row below the repo does not use. Probing
 the default against a repo that deviates from it reports a clean bill of health for tools the build
 will never touch.
 | Tool | Probe | Blocks |
@@ -146,10 +146,10 @@ For every service, record the tier and its operative limits — not just that th
 
 ## Output
 
-Write to `/builds/<app-name>/preflight.md`:
+Write to `/builds/<build-name>/preflight.md`:
 
 ```
-PREFLIGHT — <app-name>, <date>, approval mode: <mode>
+PREFLIGHT — <build-name>, <date>, approval mode: <mode>
 BLOCKING: none | <list>
 DEGRADED: none | <capability> | carried by: <stage> | substitute: <named> | not covered: <gap>
 

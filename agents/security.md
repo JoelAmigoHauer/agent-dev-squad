@@ -31,7 +31,7 @@ outcome the split exists for, reached by running each check when its target exis
 
 ---
 
-## First pass — Supabase advisors
+## Layer 1: Supabase advisors
 
 Free, automated, and it runs **after every schema change**. Do this before any manual review; it
 catches the expensive-and-obvious class of problem in seconds.
@@ -44,7 +44,7 @@ Check for:
 - Policies that exist but are permissive to the point of being decorative (`using (true)` on a
   tenant-scoped table).
 
-Record the advisor output verbatim in `/builds/<app-name>/security-review.md`.
+Record the advisor output verbatim in `/builds/<build-name>/security-review.md`.
 
 **The SQL advisors are never the auth check** (B3-10). The SQL-scoped advisor route drops the auth
 lint, and in client-portal its absence read as a fix. Auth settings are read from the platform
@@ -52,7 +52,7 @@ directly (*Platform settings*, below).
 
 ---
 
-## Second pass — automated scanners
+## Layer 2: automated scanners
 
 The advisors see the database and nothing else. These three cover the layers they cannot:
 
@@ -137,7 +137,7 @@ reasoning, so the next run does not re-litigate them.
 
 **Check before you report.** A tool that is not installed produces no findings, which reads
 identically to a tool that found nothing. Confirm each binary resolves before recording a clean
-second pass, and record `not installed` rather than a blank when it does not.
+Layer 2, and record `not installed` rather than a blank when it does not.
 
 ### What no scanner can see
 
@@ -149,11 +149,11 @@ not a verdict.
 
 ---
 
-## Third pass: trace this build's changes
+## Layer 3: trace this build's changes
 
 Adapted from Claude Code's built-in `/security-review` command (version 2.1.314, read 2026-10-31;
 logged in `PRIOR-ART.md`). The scanners match patterns and the manual checks below work through a
-list. This pass reads the build's own changes the way an attacker would.
+list. This layer reads the build's own changes the way an attacker would.
 
 **Scope:** everything this build adds or changes, from `git diff` against the commit the build
 started on. On a brownfield build that is the code behind `changing` and `new` bindings; `existing`
@@ -271,8 +271,8 @@ injection against the test target is settled by trying it (B3-7). The result is 
 attempted finding needs no confidence score: mark it `FOUND BY: attempt`.
 
 **A finding from reading code alone is verified independently first** (adapted from
-`/security-review`). Give it to a second pass: a fresh sub-agent where the runner allows one,
-otherwise a separate read that has only the finding, the code and this section. That pass scores it
+`/security-review`). Give it to a verification read: a fresh sub-agent where the runner allows one,
+otherwise a separate read that has only the finding, the code and this section. That read scores it
 1 to 10 for how sure it is that the vulnerability can be exploited here. Report it at 8 or above.
 Below 8, list it under `considered, not reported` with its score and the reason, so the record of
 what was examined survives and a clean review cannot read as an unexamined one.
@@ -304,7 +304,7 @@ excluded here: this stage is the process that handles both (`npm audit`, `gitlea
 
 ## Output
 
-Write to `/builds/<app-name>/security-review.md`:
+Write to `/builds/<build-name>/security-review.md`:
 
 ```
 VERDICT: pass | fail
@@ -315,7 +315,7 @@ FINDING <n> — <title>
 SEVERITY: blocking | non-blocking
 CATEGORY: <e.g. sql_injection, authz_bypass, data_exposure, platform_setting>
 FOUND BY: <scanner name> | attempt | trace
-CONFIDENCE: attempt | <8–10, from the verification pass>
+CONFIDENCE: attempt | <8–10, from the verification read>
 LOCATION: <file:line, route, or platform setting>
 ISSUE: <what is wrong>
 EXPLOIT SCENARIO: <who does what, and what they get>
@@ -387,7 +387,7 @@ Three layers, and knowing which one caught something tells you how much to trust
 | App code | `semgrep` | Injection, unsafe patterns | Business-logic authorisation |
 | Privileges | The standing privilege query, writes attempted as each role | Table and column grants, TRUNCATE, default ACLs | Policy logic |
 | Platform settings | The platform's own API, against the contract's table | Auth and protection settings that default open | Code |
-| Changed code | The third-pass trace, each finding verified | Injection, authorisation drift, exposure in what this build changed | Code this build did not touch |
+| Changed code | The Layer 3 trace, each finding verified | Injection, authorisation drift, exposure in what this build changed | Code this build did not touch |
 | Business logic | You, manually | Tenancy, contract auth rules | Nothing — this is the backstop |
 
 A clean automated run means the known-pattern layer is clean. It does not mean the app is safe, and

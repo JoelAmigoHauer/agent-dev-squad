@@ -1,7 +1,7 @@
-# Agent development squad — v0.2
+# Agent development squad — v0.3
 
-A template repository. Generate a new repo from it, drop in a sketch, and a seven-role agent
-pipeline turns it into a deployed application.
+A template repository. Point `/squad` at a repo, give it a sketch, and a seven-role agent pipeline
+turns it into a deployed application.
 
 Intake is a hand-drawn sketch, an app name and a voice note. Output is a running app with a
 binding technical contract, a test suite generated from that contract, a security review and a
@@ -11,30 +11,44 @@ deploy record.
 
 ## Using it
 
-1. **Use this template** → create a private repo for your build.
-2. Open it with Claude Code. `CLAUDE.md` is the orchestrator's brief and loads automatically.
-3. Give it the sketch, the app name and the voice note in one turn.
+`/squad` is the only way in. The template's own "Use this template" button makes a fork that records
+no version, cannot upgrade and never sends its learnings back, so it is not used.
+
+1. **New app:** create an empty private GitHub repo and open it in Claude Code. **Existing app:**
+   open its repo, with a clean working tree.
+2. Run `/squad`. It stamps the pipeline into `.squad/` at the current release, installs the git
+   guard, and commits both.
+3. **New app:** give it the sketch, the app name and the voice note in one turn. **Existing app:**
+   it surveys the code first and puts what it found to you as a draft intake.
 4. It runs. It pings you only when a halt trigger fires.
+5. After the build, `/squad port` sends that repo's new learnings back here.
 
 ```
-your-build/
-├── CLAUDE.md              Orchestrator brief — run order, halt triggers, caps
-├── BLUEPRINT.md           Original design document. History, not instruction
-├── LEARNINGS.md           Why each version differs from the last. Read before changing rules
-├── agents/                One file per role — each is that agent's entire world
-│   ├── surveyor.md        0.25 · brownfield audit      (v0.3)
-│   ├── preflight.md       0.5 · tooling probe          (v0.2)
-│   ├── architect.md       1   · the binding contract
-│   ├── designer.md        2   · UI, tokens, components
-│   ├── engineer.md        3   · implementation
-│   ├── qa.md              4   · tests generated from the contract
-│   ├── security.md        5a/5b · pre- and post-deploy (v0.2)
-│   ├── devops.md          6   · deploy and rollback
-│   └── retro.md           7   · writes learnings back  (v0.2)
-├── skills/                Invoked by path during a build, never auto-triggered
-├── state/tasks.md         State-file template. Each build copies it to state/<app-name>.md
-└── builds/<app-name>/     One folder per build — the audit trail
+your-app/                      the host repo
+├── .squad/                    the pipeline, stamped at a pinned version
+│   ├── CLAUDE.md              Orchestrator brief — run order, halt triggers, caps
+│   ├── LEARNINGS.md           Why each version differs from the last
+│   ├── VERSION                template, ref, commit and stamp time
+│   ├── agents/                One file per role — each is that agent's entire world
+│   │   ├── surveyor.md        0.25 · brownfield audit
+│   │   ├── preflight.md       0.5  · tooling probe
+│   │   ├── architect.md       1    · the binding contract
+│   │   ├── designer.md        2    · UI, tokens, components
+│   │   ├── engineer.md        3    · implementation
+│   │   ├── qa.md              4    · tests generated from the contract
+│   │   ├── security.md        5a/5b · pre- and post-deploy
+│   │   ├── devops.md          6    · deploy and rollback
+│   │   └── retro.md           7    · writes learnings back
+│   ├── skills/                Invoked by path during a build, never auto-triggered
+│   ├── state/                 tasks.md template; <build-name>.md while a build runs
+│   └── builds/<build-name>/   One folder per build — the audit trail
+├── .claude/hooks/             the git guard
+├── docs/adr/                  decisions the Architect records
+└── …                          the app itself
 ```
+
+The template repository also holds `BLUEPRINT.md`, `PRIOR-ART.md` and `GLOSSARY.md`. No stage
+loads them, so `/squad` does not stamp them.
 
 ---
 
@@ -49,7 +63,7 @@ file. Never the whole repo. It keeps each agent sharp and cheap.
 
 **Loops are capped, and state lives in a file.** Every fix loop has an iteration limit, and hitting
 it halts with full context rather than retrying forever. Progress lives in the build's own
-`state/<app-name>.md`, so a run survives a dropped session, a model swap or a restart.
+`state/<build-name>.md`, so a run survives a dropped session, a model swap or a restart.
 
 ---
 

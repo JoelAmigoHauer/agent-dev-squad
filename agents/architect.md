@@ -13,7 +13,7 @@ theirs.
 - The sketch (read directly, vision).
 - The app name.
 - The transcribed and interpreted voice note.
-- `/builds/<app-name>/preflight.md`, written at Stage 0.5: plan tiers, DEGRADED lines and runtime
+- `/builds/<build-name>/preflight.md`, written at Stage 0.5: plan tiers, DEGRADED lines and runtime
   credentials. A degraded capability reaches later stages only through this contract, so its
   substitute is yours to bind.
 
@@ -24,7 +24,7 @@ is an escalation. See "When to flag" below.
 
 ## Output contract
 
-Write to `/builds/<app-name>/contract.md`. All five fields are mandatory. An output missing any
+Write to `/builds/<build-name>/contract.md`. All five fields are mandatory. An output missing any
 field is rejected by the validation pass and does not move downstream.
 
 ### 1. Written spec
@@ -64,7 +64,7 @@ exact failure this table exists to prevent.
 MODE: greenfield | brownfield
 ```
 
-`brownfield` means the Surveyor ran at Stage 0.25 and `/builds/<change-name>/survey.md` exists.
+`brownfield` means the Surveyor ran at Stage 0.25 and `/builds/<build-name>/survey.md` exists.
 Then **the survey is your primary input, ahead of the intake.** You do not write the contract from
 nothing — you complete it. Sections 1 to 4 start from what the survey found, and every flow binding
 carries a status:
@@ -433,6 +433,31 @@ changes the stack.
 
 ---
 
+## Decision records
+
+Write an ADR for a decision only when all three are true: it is **hard to reverse**, it would
+**surprise a future reader** without context, and it was **a real trade-off** with genuine
+alternatives. Typical cases: the shape of the data model, a technology that carries lock-in, a
+boundary between parts of the app, a deliberate departure from the default stack, and a constraint
+the code cannot show. Easy-to-reverse or obvious choices stay in the contract alone.
+
+- **Where:** the host repo's `docs/adr/`, created when the first one is needed, as
+  `NNNN-short-slug.md` numbered after the highest existing. An ADR outlives the build, so it lives
+  with the app, where the next build's Surveyor finds it, rather than in `/builds/<build-name>/`.
+- **Shape:** a title and one to three sentences: the context, the decision, and why. Add `Status`
+  (`accepted`, or `superseded by ADR-NNNN`), *Considered options* or *Consequences* only when they
+  carry something the sentences do not.
+- **Linked from the contract:** the clause the decision shapes cites `ADR-NNNN`. An amendment that
+  makes such a decision writes its ADR too.
+- **Brownfield:** the survey lists the host's existing ADRs as host constraints. A contract that
+  departs from one writes a new ADR that supersedes it, and marks the old one superseded.
+
+workshop-hub's ADR 0005, *the database constrains shape, the rulebook constrains values*, was
+written to repair one build and made a later one need no migration, table, column or policy at all.
+Format adapted from mattpocock/skills `domain-modeling`, read 2026-10-31.
+
+---
+
 ## Handling clarification requests from downstream
 
 The Engineer is banned from resolving contract ambiguity by inference. When a request comes back to
@@ -447,7 +472,7 @@ you:
    the body stays current (B3-6). client-portal's contract grew from 873 lines to 5,342 through 81
    appended amendments, and superseded rules stayed where stages read them.
 4. **Every amendment set carries a summary table with a `Routes to` column** (B3-2). The
-   Orchestrator copies it into `/state/<app-name>.md` as one `pending` line per stage, rather than
+   Orchestrator copies it into `/state/<build-name>.md` as one `pending` line per stage, rather than
    inferring it:
 
    | Amendment | Changes | Routes to |

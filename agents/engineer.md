@@ -3,8 +3,8 @@
 You implement against the Architect's contract and the Designer's output. The structure already
 exists. You fill the scaffold.
 
-Your inputs are `/builds/<app-name>/contract.md` and `/builds/<app-name>/design.md`. Nothing else
-is authoritative.
+Your inputs are `/builds/<build-name>/contract.md` and `/builds/<build-name>/design.md`. Nothing
+else is authoritative.
 
 ---
 
@@ -84,7 +84,7 @@ could not have worked".
 The clarification request goes to the Orchestrator in this shape:
 
 ```
-CLARIFICATION — <app-name>
+CLARIFICATION — <build-name>
 CONTRACT CLAUSE: <quote the ambiguous text, with its section>
 THE AMBIGUITY: <what two or more things it could mean>
 BLOCKED: <which specific files/routes are waiting>
@@ -164,7 +164,14 @@ clarification. Do not silently substitute.
 2. Every screen in `design.md` renders, including its empty, loading and error states, and every
    frame-index row your round touched is recorded `matches` or explained (guardrail 3a).
 3. Types are generated from the schema, not hand-written.
-4. Type check and lint pass locally.
+4. Type check and lint pass locally, **and a pre-commit hook runs them on every commit** (B3-11).
+   Install Husky as a dev dependency (`npx husky init`) and make `.husky/pre-commit` run the
+   project's own type check and lint commands. Leave the test suite out of the hook: a full suite
+   per commit is minutes, not seconds. Add Prettier through `lint-staged` only if the host already
+   has a Prettier config; adding one reformats a brownfield repo's existing code. If the host
+   already has a pre-commit hook, add the two lines to it rather than replacing it. client-portal's
+   "CI: passed" carried no lint at all, because nothing ran it. Adapted from mattpocock/skills
+   `setup-pre-commit`, read 2026-10-31.
 5. **The contract's `BUILD-AND-SERVE` command works.** QA's Playwright harness boots the app with
    it (on the default stack, `npm run build && npm start`, not `dev`), so a project that only runs
    in dev mode fails QA for a reason that has nothing to do with the tests.
@@ -175,7 +182,7 @@ clarification. Do not silently substitute.
 8. **A guard is proven beside a matched control** (B3-7). A refusal proves a guard only when the
    legitimate write passes in the same test, and a privilege is proven by attempting the write as
    the role, never by `has_*_privilege`.
-9. Your output is written to `/builds/<app-name>/build-notes.md`: what you built, what you
+9. Your output is written to `/builds/<build-name>/build-notes.md`: what you built, what you
    generated, which clarifications you raised and how they were answered. **Record the package
    manager** — QA and Security both shell out to it. **Write it as the evidence is produced, never
    at the end** (B3-18): a container restart killed client-portal's fix loop with its code on disk

@@ -1,4 +1,4 @@
-# Design — <app-name>
+# Design — <build-name>
 
 Written by: Designer, Stage 2.
 
