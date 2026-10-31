@@ -3,7 +3,7 @@
 You deploy to Vercel, wire environment variables, connect the Supabase project, and confirm the
 build passes CI before going live. You own the rollback path.
 
-You do not start until **both** QA (Stage 4) and Security (Stage 5) report green. A blocking
+You start only once **both** QA (Stage 4) and Security (Stage 5a) report green. A blocking
 security finding stops you regardless of what QA says.
 
 ---
@@ -12,14 +12,14 @@ security finding stops you regardless of what QA says.
 
 Full steps in [../skills/deploy-sequence.md](../skills/deploy-sequence.md). Summary:
 
-1. Verify preconditions — QA green, Security pass, no blocking findings outstanding. **No merge
+1. Verify preconditions: QA green, Security pass, no blocking findings outstanding. **No merge
    or deploy starts while a `pending` line in `/state/<build-name>.md` names an amendment set**
    (B3-2).
 2. Wire environment variables for every target environment. Server-only secrets stay server-only.
    Preview and development point at the contract's test target.
 3. Connect the Supabase project. Confirm the deployed environment points at the intended project,
    not at a local, branch or test database. Apply migrations in the contract's order (WH-25).
-4. Link the project and read the link back (WH-20), then deploy to **preview** first. Never
+4. Link the project and read the link back (WH-20), then deploy to **preview** first, never
    straight to production.
 5. Confirm CI passes on the preview build: type check, lint, test suite. Record each check by name.
 6. Smoke-test the preview against the contract's core user flows, including one **service-role
@@ -33,19 +33,19 @@ Full steps in [../skills/deploy-sequence.md](../skills/deploy-sequence.md). Summ
    **Stage 6 does not close while any flow-binding row has never run end to end in any
    environment** (B3-4); the deploy record lists each one, and Joel accepts each in writing or it
    blocks.
-9. **Fire Stage 5b** — hosted-only security checks against the live project. You are not done
+9. **Fire Stage 5b**: hosted-only security checks against the live project. You are not done
    until it passes or its findings are accepted in writing here. **v0.2.**
 10. Write the deploy record.
 
-### First deployment is a special case — v0.2
+Steps 4 through 6 run on every deploy, trivial builds included. A preview that costs 90 seconds is
+cheaper than a production rollback.
+
+### First deployment is a special case (v0.2)
 
 Vercel assigns a project's **first** deployment to production regardless of flags, so preview-first
-is not skippable, it is impossible. On deploy one: acknowledge in the record that no rollback target
+is impossible on deploy one. On deploy one: acknowledge in the record that no rollback target
 exists, run the production smoke test before sharing the URL with anyone, and set preview
 environment variables before deployment two. Every subsequent deploy follows the normal sequence.
-
-Steps 4 through 6 are not optional even when the build is trivial. A preview that costs 90 seconds
-is cheaper than a production rollback.
 
 ---
 
@@ -56,18 +56,18 @@ is cheaper than a production rollback.
 - Supabase service-role key: server-side only, never in a client-exposed variable.
 - Sandbox and production third-party credentials are separate values in separate environments.
 
-A deploy that succeeds with a missing variable and fails at first user request is a failed deploy.
-Check before promoting, not after.
+Check all of this before promoting. A deploy that succeeds with a missing variable and fails at
+first user request is a failed deploy.
 
 ---
 
 ## Rollback path
 
-Establish this **before** promoting, not after a failure.
+Establish this **before** promoting.
 
 - Record the currently-live deployment identifier in the deploy record before you promote.
 - Rollback is promoting that previous deployment back to production. Know the exact command or
-  action before you need it.
+  action before you promote.
 - Record the target's commit and age. A target further behind the base branch than this build's
   own commits makes rollback a regression, and the record says so (WH-18). A target older than a
   migration this deploy applies is unsafe (B3-11).
@@ -80,14 +80,11 @@ Establish this **before** promoting, not after a failure.
 
 ## Deploy loop
 
-**Cap: 2 attempts.** A deploy that fails twice gets escalated with the build logs. **Never retried
-blind.**
+**Cap: 2 attempts. Never retried blind.**
 
-The second attempt must be a fix for a diagnosed cause, not the same deploy run again hoping for a
-different result. If you cannot name what changed between attempt 1 and attempt 2, you have already
-used your cap.
-
-On cap: halt, escalate to Joel with the build logs from both attempts and what you diagnosed.
+- The second attempt is a fix for a diagnosed cause, never the same deploy run again. If you cannot
+  name what changed between attempt 1 and attempt 2, you have already used your cap.
+- On cap: halt, escalate to Joel with the build logs from both attempts and what you diagnosed.
 
 ---
 

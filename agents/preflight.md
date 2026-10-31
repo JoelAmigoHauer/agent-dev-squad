@@ -18,10 +18,6 @@ while reporting success.
 
 None of those were code problems. All of them were discoverable in advance.
 
-Later builds found holes in the probe itself. It checked binaries and not credentials, a tool's
-tier and not whether this machine could invoke it, and it recorded absence without trying to fix
-it. Each rule below that carries a `LEARNINGS.md` ID closes one of those holes.
-
 ---
 
 ## What you check
@@ -35,17 +31,17 @@ those can change mid-run without notice. So:
 
 - A tool is present when it can be invoked by any route: on `PATH`, through `npx <tool>@latest`,
   as the vendor's release binary, or as an MCP server that answers. `command -v` failing proves
-  only that one route is closed. workshop-hub Phase 2 recorded `vercel` absent while
-  `npx vercel@latest` deployed first time.
+  only that one route is closed.
 - A credential is present when its variable is set. Check it by name (`test -n "$VERCEL_TOKEN"`).
   Never print, log or record the value.
 - Record the runner's approval mode. Outside auto mode, a non-interactive runner is refused every
-  MCP call that needs approval, so a server that answered at 10:52 can refuse at 11:00.
+  MCP call that needs approval, so a server that answered at the probe can refuse minutes later.
 
-Every row you write is true at the moment of the probe and no later. Say so by dating the file;
-do not let a later stage read it as a guarantee.
+Every row you write is true at the moment of the probe and no later. Date the file so a later stage
+reads it as a snapshot, not a guarantee.
 
 ### Always
+
 | Tool | Probe | Blocks |
 |---|---|---|
 | Node + package manager | `node -v`, `npm -v` | everything |
@@ -56,11 +52,13 @@ do not let a later stage read it as a guarantee.
 
 ### Per the stack this build will use
 
-On a **greenfield** build the contract does not exist yet, so you probe the default stack below.
-On a **brownfield** build the Surveyor ran before you: probe the stack recorded in
+On a **greenfield** build the contract does not exist yet, so probe the default stack below.
+
+**Brownfield:** the Surveyor ran before you. Probe the stack recorded in
 `/builds/<build-name>/survey.md` §1 instead, and drop any row below the repo does not use. Probing
 the default against a repo that deviates from it reports a clean bill of health for tools the build
 will never touch.
+
 | Tool | Probe | Blocks |
 |---|---|---|
 | Supabase MCP | `list_projects`, record **plan tier** | Stages 3–6 |
@@ -70,28 +68,22 @@ will never touch.
 | `semgrep`, `gitleaks` | invocable by any route; if not, see *Acquiring an absent tool* | Stage 5 |
 | Playwright | scaffolded per build, not global; browser build matches the pinned package (TH-19) | Stage 4 |
 
-**Tier is not invocability** (TH-16). thelma's Preflight recorded 21st.dev as `paid, unmetered`,
-correctly, and Stage 2 then found every `installCommand` the catalogue returns embeds
-`$API_KEY_21ST`, which was not set. The tool answered and could not be used. Every row carries an
-**Invocable?** answer separate from its status and tier: can this machine, now, do the thing the
-stage needs, by the route the stage will use?
+**Tier is not invocability** (TH-16). A tool can answer, on a paid tier, and still be unusable
+here. Every row carries an **Invocable?** answer separate from its status and tier: can this
+machine, now, do the thing the stage needs, by the route the stage will use?
 
 **Playwright: compare versions, not presence** (TH-19). A pre-installed browser and a pinned
 `@playwright/test` are two facts that drift apart on a clock. Read the Chromium revision the pinned
 package expects from `playwright-core/browsers.json` and compare it with the revision directory
 under the installed browser path (`/opt/pw-browsers` on Claude Code remote runners, as at
-2026-08-24). A mismatch is DEGRADED for Stage 4, not OK. thelma's suite had every page test fail
-and every API test pass, and it cost a loop iteration to learn the browser never launched.
-Where the environment forbids `npx playwright install`, say so in the row; the fix is pinning the
-package to the installed build, not installing a browser.
+2026-08-24). A mismatch is DEGRADED for Stage 4, not OK. Where the environment forbids
+`npx playwright install`, say so in the row; the fix is pinning the package to the installed
+build, not installing a browser.
 
 ### Runtime credentials
 
 Build tooling is half the probe. The application also needs secrets at runtime, and a missing one
-breaks nothing until the first real request, which is after every gate has passed (TH-13). thelma
-passed this stage clean, went green through Stage 5a with 113 assertions, and could not deploy
-because `SUPABASE_SERVICE_ROLE_KEY` could not be obtained. The same missing key had blocked every
-end-to-end test, so the write path had never once run.
+breaks nothing until the first real request, which is after every gate has passed (TH-13).
 
 List every secret the app will need at runtime:
 
@@ -115,11 +107,13 @@ for that secret before Stage 3 starts.
 
 ### Acquiring an absent tool
 
-Before you record any tool absent, try once to get it (WH-21). Try the vendor's own release
-binary first (one `curl` of the release asset), then the language's package route (`pipx`,
-`pip --user`, `npx`). A package manager that cannot install is not decisive while the vendor
-binary has not been tried. Skip any route the environment forbids, and record the rule as the
-reason.
+Before you record any tool absent, try once to get it (WH-21):
+
+1. The vendor's own release binary (one `curl` of the release asset).
+2. The language's package route (`pipx`, `pip --user`, `npx`).
+
+A package manager that cannot install is not decisive while the vendor binary has not been tried.
+Skip any route the environment forbids, and record the rule as the reason.
 
 Record the attempt in the row's Notes:
 
@@ -127,10 +121,8 @@ Record the attempt in the row's Notes:
 absent: install tried: <command> → succeeded | failed: <reason>
 ```
 
-A tool recorded absent with no attempt line is an incomplete probe. `semgrep` was accepted as
-absent for two builds and took five minutes to install on the third; `gitleaks` was called
-unavoidable for three builds and took one `curl`. Neither gap was real. The DEGRADED list carries
-only what genuinely cannot be had.
+A tool recorded absent with no attempt line is an incomplete probe. The DEGRADED list carries only
+what genuinely cannot be had.
 
 ---
 
@@ -140,7 +132,7 @@ A service's **plan** changes what later stages can do, and plan limits are invis
 bite. Build 1's Supabase free tier had no cloud branching, which invalidated QA's per-build
 database-branch design after it was written.
 
-For every service, record the tier and its operative limits — not just that the tool answered.
+For every service, record the tier and its operative limits, not just that the tool answered.
 
 ---
 
@@ -162,7 +154,7 @@ DEGRADED: none | <capability> | carried by: <stage> | substitute: <named> | not 
 
 One DEGRADED line per capability lost.
 
-Also append anything machine-specific and durable to `/ERRORS.md` — the shell that sets
+Also append anything machine-specific and durable to `/ERRORS.md`: the shell that sets
 `NODE_ENV=production`, the package manager that refuses third-party taps, the `npx` that resolves
 the wrong binary, a pre-installed browser build that a pinned test package does not match. Those
 are facts about this machine, not this build, and rediscovering them every time is pure waste.
@@ -173,10 +165,10 @@ while every page test fails means the browser never launched.
 
 ## Halt rules
 
-**Blocking** — a tool a stage cannot proceed without, or a runtime credential this environment
+**Blocking:** a tool a stage cannot proceed without, or a runtime credential this environment
 cannot supply. Halt and escalate before Stage 1.
 
-**Degraded** — a capability is unavailable but a stated fallback exists. Do not halt. A DEGRADED
+**Degraded:** a capability is unavailable but a stated fallback exists. Do not halt. A DEGRADED
 line names three things (TH-18), and a line missing any of them is incomplete:
 
 1. **The stage that carries the loss**, and what it must say in its output, so a partial run never

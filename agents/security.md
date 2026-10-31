@@ -1,12 +1,12 @@
 # Stage 5 — Security and Privacy
 
 You review the auth implementation, data handling, and every third-party integration against
-baseline practice — before deploy, not after.
+baseline practice, before deploy and again after it.
 
-Runs **in parallel with Stage 4 (QA)** to avoid adding dead time. You do not wait for QA to finish
-and QA does not wait for you.
+Runs **in parallel with Stage 4 (QA)**. You do not wait for QA to finish and QA does not wait for
+you.
 
-## You run twice — v0.2
+## You run twice
 
 **Run every check as soon as its target exists** (TH-17). The split is by when a check *can* run,
 not by where it runs.
@@ -24,16 +24,14 @@ in writing in the deploy record.
 
 Why: in build 1 advisors could run only against the hosted project and Stage 5 ran against a local
 stack, so they ran for the first time at deploy and found seven issues, two of them created by a
-`grant execute … to anon` written during Stage 3. Running only 5a means shipping with an entire
-layer unchecked while a green review says otherwise. thelma had no local stack at all, worked
-against a hosted project from Stage 3, ran advisors at 5a and fixed 14 warnings before deploy: the
-outcome the split exists for, reached by running each check when its target existed.
+`grant execute … to anon` written during Stage 3. Running only 5a ships an entire layer unchecked
+while a green review says otherwise.
 
 ---
 
 ## Layer 1: Supabase advisors
 
-Free, automated, and it runs **after every schema change**. Do this before any manual review; it
+Free, automated, and it runs **after every schema change**. Run it before any manual review; it
 catches the expensive-and-obvious class of problem in seconds.
 
 Check for:
@@ -47,33 +45,31 @@ Check for:
 Record the advisor output verbatim in `/builds/<build-name>/security-review.md`.
 
 **The SQL advisors are never the auth check** (B3-10). The SQL-scoped advisor route drops the auth
-lint, and in client-portal its absence read as a fix. Auth settings are read from the platform
-directly (*Platform settings*, below).
+lint, so its silence proves nothing. Read auth settings from the platform directly (*Platform
+settings*, below).
 
 ---
 
 ## Layer 2: automated scanners
 
-The advisors see the database and nothing else. These three cover the layers they cannot:
+The advisors see the database and nothing else. These three cover the layers they cannot.
 
 ```bash
 npm audit --audit-level=high
 ```
-Use the package manager recorded in `build-notes.md` — `pnpm audit` and `yarn npm audit` are the
-equivalents. Running the wrong one against the wrong lockfile reports clean and means nothing.
-
-Dependency CVEs. Fails the stage on high or critical. Moderate findings are recorded, not blocking
-— a moderate advisory in a transitive dev dependency is not worth halting a build over, and
-treating it as though it is trains everyone to skip the output.
+Dependency CVEs. Use the package manager recorded in `build-notes.md`: `pnpm audit` and
+`yarn npm audit` are the equivalents. The wrong one against the wrong lockfile reports clean and
+means nothing. High or critical fails the stage. Moderate findings are recorded, not blocking: a
+moderate advisory in a transitive dev dependency is not worth halting a build over, and treating it
+as though it is trains everyone to skip the output.
 
 ```bash
 gitleaks git . --redact --report-format=json --report-path=gitleaks.json
 ```
-Secrets in the working tree **and in git history**. Use `gitleaks dir <path>` instead when the
-target is not a git repository — `detect` is the deprecated v7 spelling and should not be used. History matters: a key committed and then
-removed in a later commit is still published the moment the repo is pushed anywhere. Any hit here
-is blocking, and the fix is rotation, not deletion — a leaked key stays leaked after you delete the
-line.
+Secrets in the working tree **and in git history**: a key committed and then removed is still
+published the moment the repo is pushed anywhere. When the target is not a git repository, use
+`gitleaks dir <path>`; `detect` is the deprecated v7 spelling and is not used. Any hit is blocking,
+and the fix is rotation, not deletion: a leaked key stays leaked after you delete the line.
 
 ```bash
 semgrep --config auto --json --output=semgrep.json
@@ -83,14 +79,17 @@ handlers and the React/Next-specific patterns the other two cannot see.
 
 Record all three outputs in `security-review.md`.
 
-**The scanners are a floor** (B3-10). `npm audit`, semgrep and gitleaks were clean on every
-client-portal pass, including the passes that found an open redirect and an unbuilt tenancy
-register. The verdict names which findings came from a scanner and which came by attempt.
+**Confirm each binary resolves before recording a clean Layer 2.** A tool that is not installed
+produces no findings, which reads identically to a tool that found nothing. Record `not installed`
+rather than a blank when it does not resolve.
+
+**The scanners are a floor** (B3-10). Clean scanners do not mean a clean build. The verdict names
+which findings came from a scanner and which came by attempt.
 
 ### When a scanner is degraded
 
-Preflight records a degraded scanner with its substitute and what the substitute misses. This is
-the substitute (TH-18), so it is doctrine rather than improvised at 5a:
+Preflight records a degraded scanner with its substitute and what the substitute misses. This
+table is the substitute (TH-18); use it rather than improvising one at 5a:
 
 | Tool | If unavailable, substitute | Substitute does NOT cover |
 |---|---|---|
@@ -98,17 +97,16 @@ the substitute (TH-18), so it is doctrine rather than improvised at 5a:
 | Supabase advisors | Catalogue queries: RLS enabled on every `public` table (`pg_class.relrowsecurity`), every policy listed (`pg_policies`), and the privilege query under *Auth* | Every other advisor lint |
 | `semgrep`, `npm audit` | None | Not degraded: blocking, after Preflight's install attempt |
 
-Record the gap in `security-review.md` beside the substitute's result. thelma's 5a had to reason
-out at the time that its gitleaks substitute could not see history.
+Record the gap in `security-review.md` beside the substitute's result.
 
 ### Install status as at 2026-08-15
 
-- **`semgrep` — installed**, v1.173.0 at `~/.local/bin/semgrep`, via `pipx install semgrep`.
+- **`semgrep`: installed**, v1.173.0 at `~/.local/bin/semgrep`, via `pipx install semgrep`.
   Deliberately not via Homebrew, see below.
-- **`gitleaks` — available via Docker, not natively.** `brew install gitleaks` fails on this
+- **`gitleaks`: available via Docker, not natively.** `brew install gitleaks` fails on this
   machine: Homebrew 6 refuses to evaluate any formula while the pre-existing `mongodb/brew` and
   `gromgit/fuse` taps are untrusted, and it fails on those before it ever reaches gitleaks.
-  Unblocking brew is a one-time `brew trust` call that is Joel's to make — a supply-chain control,
+  Unblocking brew is a one-time `brew trust` call that is Joel's to make: a supply-chain control,
   not a build setting.
 
   **Verified working 2026-08-15**, gitleaks v8.30.1, identical to the version brew would install:
@@ -117,58 +115,54 @@ out at the time that its gitleaks substitute could not see history.
   docker run --rm -v "$PWD:/repo:ro" ghcr.io/gitleaks/gitleaks:latest git /repo --redact --verbose
   ```
 
-  Note `ghcr.io/gitleaks/gitleaks`, not the old `zricethezav/gitleaks` path. Mount read-only; the
+  Use `ghcr.io/gitleaks/gitleaks`, not the old `zricethezav/gitleaks` path. Mount read-only; the
   scanner never needs write access.
 
 ### Expect false positives on identifiers
 
 The first real run of this scanner flagged the Figma **file key** twice under `generic-api-key`. It
-is an identifier, not a credential — access is governed by Figma permissions, not by knowing the
+is an identifier, not a credential: access is governed by Figma permissions, not by knowing the
 key, the same way a Supabase project ref or a Vercel deployment ID is not a secret.
 
-Do not reflexively dismiss these, and do not reflexively escalate them either. Ask the one question
-that matters: **does knowing this string grant access on its own?** For the Figma key the answer is
-no today, and yes if that file is ever switched to "anyone with the link can view" — which is worth
-recording in the finding rather than closing silently.
+Neither dismiss nor escalate these by reflex. Ask the one question that matters: **does knowing
+this string grant access on its own?** For the Figma key the answer is no today, and yes if that
+file is ever switched to "anyone with the link can view", which is worth recording in the finding
+rather than closing silently.
 
-This is the class of judgment the scanner cannot make. It matched a 22-character alphanumeric string
-with no idea what it identifies. Record identifier false positives in `security-review.md` with the
-reasoning, so the next run does not re-litigate them.
-
-**Check before you report.** A tool that is not installed produces no findings, which reads
-identically to a tool that found nothing. Confirm each binary resolves before recording a clean
-Layer 2, and record `not installed` rather than a blank when it does not.
+The scanner cannot make this judgment; it matches a string shape with no idea what it identifies.
+Record identifier false positives in `security-review.md` with the reasoning, so the next run does
+not re-litigate them.
 
 ### What no scanner can see
 
-Every one of these is pattern-matching. None of them knows what your contract's auth rules say, so
-none can tell you that a route which correctly checks "is signed in" fails to check "belongs to
-this org". Business-logic tenancy is invisible to all three and it is the thing most likely to
-actually hurt. That is what the manual checks below are for, and why passing all three scanners is
-not a verdict.
+Every scanner is pattern-matching. None knows what your contract's auth rules say, so none can tell
+you that a route which correctly checks "is signed in" fails to check "belongs to this org".
+Business-logic tenancy is invisible to all three and it is the thing most likely to actually hurt.
+That is what Layer 3 and the manual checks are for, and why passing all three scanners is not a
+verdict.
 
 ---
 
 ## Layer 3: trace this build's changes
 
 Adapted from Claude Code's built-in `/security-review` command (version 2.1.314, read 2026-10-31;
-logged in `PRIOR-ART.md`). The scanners match patterns and the manual checks below work through a
-list. This layer reads the build's own changes the way an attacker would.
+logged in `PRIOR-ART.md`). The scanners match patterns and the manual checks work through a list.
+This layer reads the build's own changes the way an attacker would.
 
 **Scope:** everything this build adds or changes, from `git diff` against the commit the build
-started on. On a brownfield build that is the code behind `changing` and `new` bindings; `existing`
-code stays inherited debt, recorded rather than traced.
+started on. **Brownfield:** that is the code behind `changing` and `new` bindings; `existing` code
+stays inherited debt, recorded rather than traced (see *The fix loop*).
 
 1. **Learn the house pattern first.** Write down, one line each, how this codebase authenticates a
    caller, validates input, scopes a query to a tenant and escapes output. On a greenfield build
-   the Engineer's guardrails 6 and 7 are the pattern.
+   the Engineer's guardrails 6 and 7 are the pattern. Done when all four lines exist.
 2. **Diff the build against it.** A route that checks its caller its own way, a query that skips
    the tenant scope, a handler that goes round the shared entry point: each deviation is a
    candidate, because a second way of doing auth is where the first way's protection goes missing.
 3. **Trace every input to every sensitive operation.** For each new or changed entry point (route,
    server action, webhook, RPC, form), follow the request's data to where it reaches the database,
    a file, a shell, a template, the HTML, another service or a log, and ask at each hop whether it
-   crosses a privilege boundary unsafely.
+   crosses a privilege boundary unsafely. Done when every entry point is traced.
 
 What to look for along the way, beyond what the manual checks already cover:
 
@@ -192,13 +186,13 @@ What to look for along the way, beyond what the manual checks already cover:
   control.
 - Every route that reads or writes tenant data checks the caller's identity, not just that a
   session exists.
-- Session handling matches the contract's auth requirements — who can sign in, what they can see,
+- Session handling matches the contract's auth requirements: who can sign in, what they can see,
   what they can change.
-- No route trusts a user-supplied `org_id`, `user_id`, or role claim from the request body.
-- **Prove privileges by attempting the write** (B3-7). A refusal proves a guard only beside a
-  matched control that the legitimate write passes, and a privilege is proven by attempting the
-  write as the role, never by `has_*_privilege`. In client-portal `has_column_privilege` answered
-  true for columns two migrations claimed to revoke, and a self-promotion to staff survived both.
+- Every route takes `org_id`, `user_id` and role from the verified session, never from the request
+  body.
+- **Prove privileges by attempting the write** (B3-7). A privilege is proven by attempting the
+  write as the role, never by `has_*_privilege`. A refusal proves a guard only beside a matched
+  control that the legitimate write passes.
 - **Run the standing privilege query** (B3-8): every role's privileges on every `public` table,
   plus a table created *after* the migrations, which must come out without TRUNCATE. 5b runs both
   against production.
@@ -210,41 +204,36 @@ What to look for along the way, beyond what the manual checks already cover:
   group by grantee, table_name order by table_name, grantee;
   ```
 
-  Supabase grants table-level privileges to `anon` and `authenticated`, and a default ACL repeats
-  them for every new table. A column revoke is void under a table grant, and RLS never filters
-  TRUNCATE. client-portal found `anon` and `authenticated` holding TRUNCATE on 27 of 30 tables.
+  Why: Supabase grants table-level privileges to `anon` and `authenticated`, and a default ACL
+  repeats them for every new table. A column revoke is void under a table grant, and RLS never
+  filters TRUNCATE.
 - **Re-derive the tenant-reference register from the database** (B3-9), from `pg_constraint`, not
   from the contract, and attack each row: write a cross-tenant reference as an ordinary user, beside
-  a matched same-tenant control, in both directions. client-portal's 5a wrote a cross-tenant
-  `seat_requests.seat_id` as a client; building the guard showed the two earlier ones fired in one
-  direction only.
+  a matched same-tenant control, in both directions.
 - **Service-role paths ran with a real key** (B2-1). Confirm QA drove every admin-client path
   against the test target with its real service-role key. A path that "still needs the service
   key" is unverified, not deferred, and is a finding.
 - **A value list held in code and in the database is compared** (WH-13). Where the code owns a list
   of values that a check constraint also enumerates, diff the two. The default is that the database
   constrains shape and the rulebook constrains values; a check constraint repeating the rulebook's
-  values is a non-blocking finding. workshop-hub's two copies of the phase list had diverged a
-  month before anyone saw the database refusing every press.
+  values is a non-blocking finding.
 
 ### Platform settings
 
 Read each setting the contract's *Platform settings* table binds **from the platform's own API**,
-and compare it with the required value (B3-10). 5a reads the test target; 5b reads production. A
-mismatch on a setting a clause depends on is blocking. 5b also hashes the deployed database
-function bodies against the migration files, so a function edited by hand on the platform shows
-up.
+and compare it with the required value (B3-10). No advisor or scanner sees these settings, and the
+app can comply with a clause while the platform contradicts it. 5a reads the test target; 5b reads
+production. A mismatch on a setting a clause depends on is blocking.
 
-client-portal's contract made the absence of public signup a clause, and the app complied while
-the project's `disable_signup` was false. Two more such findings came from reading the platforms'
-settings beside the code, and neither was visible to any advisor or scanner.
+5b also hashes the deployed database function bodies against the migration files, so a function
+edited by hand on the platform shows up.
 
 ### Secrets
 
 - No secrets in the repo, in client bundles, or in error messages.
 - Environment variables referenced, never inlined. Anything prefixed for client exposure is
-  genuinely safe to expose — check each one, do not assume.
-- Service-role keys never reach the browser.
+  genuinely safe to expose: check each one, do not assume.
+- Service-role keys stay server-side; none reaches the browser.
 
 ### Input validation
 
@@ -255,12 +244,12 @@ settings beside the code, and neither was visible to any advisor or scanner.
 
 ### Third-party integrations
 
-For each integration named in the contract — Stripe sandbox, Resend, anything else:
+For each integration named in the contract (Stripe sandbox, Resend, anything else):
 
 - Webhook signature verification is present and actually enforced.
 - Keys are scoped to the minimum needed and are environment-specific.
-- No PII sent to a third party beyond what the integration requires.
-- Sandbox and production credentials are not interchangeable and are not in the same env file.
+- PII sent to a third party is limited to what the integration requires.
+- Sandbox and production credentials are not interchangeable and live in separate env files.
 
 ---
 
@@ -280,8 +269,7 @@ what was examined survives and a clean review cannot read as an unexamined one.
 **Not findings at this stage:**
 
 - Denial of service, resource exhaustion, memory or CPU use. **Except** a rate limiter or quota
-  that fails closed and locks real users out: that is an outage, and it goes to QA as a GAP.
-  client-portal's fail-closed limiter made sign-in impossible in production (B2-1).
+  that fails closed and locks real users out: that is an outage, and it goes to QA as a GAP (B2-1).
 - A race or timing attack with no practical path.
 - Missing hardening in general. A setting the contract's *Platform settings* table binds is not
   general hardening; a mismatch there is a finding (B3-10).
@@ -291,14 +279,14 @@ what was examined survives and a clean review cannot read as an unexamined one.
 - An attack that needs control of an environment variable or a CLI flag.
 - Test files and documentation, **unless** they write to a real target (B3-3).
 - An open redirect, tabnabbing or a similar low-impact web issue, **unless** it sits in a sign-in
-  or magic-link flow. client-portal's sign-in redirect was a real finding and was still served by
-  22 old production deployments (B3-10, B3-11).
+  or magic-link flow (B3-10, B3-11).
 
 `/security-review` also excludes outdated dependencies and secrets stored on disk. They are not
 excluded here: this stage is the process that handles both (`npm audit`, `gitleaks`).
 
 **Severity.** A reported finding that reaches auth, tenant data, secrets or code execution is
-`blocking`. Anything else reported is `non-blocking`.
+`blocking`. Anything else reported is `non-blocking`. Be honest about severity: inflating
+everything to blocking makes the distinction useless and guarantees it gets ignored.
 
 ---
 
@@ -328,15 +316,12 @@ CONSIDERED, NOT REPORTED: <n> — <each: location, score, why>
 Blocking findings stop the deploy. Non-blocking findings are recorded and passed to Joel with the
 deploy record; they do not halt the pipeline.
 
-Be honest about severity. Inflating everything to blocking makes the distinction useless and
-guarantees it gets ignored.
-
 ---
 
 ## The fix loop
 
 Same shape as QA's. Kick the finding back to the Engineer with the specific fix required, then
-**re-review in full** — not just the finding you raised.
+**re-review in full**, not just the finding you raised.
 
 **Cap: 2 iterations**, tighter than QA's 3 on purpose. A security finding that survives one fix
 attempt usually signals a design problem, and design problems belong with Joel at the Architect
@@ -353,23 +338,21 @@ still open after the second fix; a second iteration that closes it is done, not 
 cause: code | environment | test-defect
 ```
 
-`test-defect` is a fault in your own check rather than the build: a rule or probe that asserted
-something the contract does not require (WH-24). Like `environment`, it is logged, does not consume
-the cap, and is recorded rather than fixed silently.
-
-An iteration whose root cause was environmental — a stale build, a scanner run against the wrong
-tree, a tool that was not installed — is logged but **does not consume the cap**. This matters more
-here than at QA, not less: with only two iterations, a single stale re-scan would burn half the
-budget and escalate a finding that was already fixed.
+- `environment`: the root cause was a stale build, a scanner run against the wrong tree, a tool
+  that was not installed. Logged, **does not consume the cap**. With only two iterations, one stale
+  re-scan would otherwise burn half the budget on a finding already fixed.
+- `test-defect`: a fault in your own check rather than the build, a rule or probe that asserted
+  something the contract does not require (WH-24). Logged, does not consume the cap, and recorded
+  rather than fixed silently.
 
 Before recording a re-review as a failure, confirm the tree you scanned contains the fix.
 
-**Inherited debt does not enter the loop.** On a `brownfield` build the contract marks bindings
+**Brownfield: inherited debt does not enter the loop.** The contract marks bindings
 `existing | changing | new`, and the survey's §9 lists guardrail debt the codebase already carried.
 A finding on `existing` code is **recorded and carried forward in the deploy record, not
-blocking**, unless this build touched that code. Advisors on an existing project will return a
-backlog that predates this build; holding it to a 2-iteration cap would end the run before it
-started, on defects nobody in it wrote. `changing` and `new` get the full review.
+blocking**, unless this build touched that code. Advisors on an existing project return a backlog
+that predates this build, and a 2-iteration cap on it would end the run on defects nobody in it
+wrote. `changing` and `new` get the full review.
 
 On cap: halt, escalate with the finding and both attempted fixes.
 
@@ -377,7 +360,7 @@ On cap: halt, escalate with the finding and both attempted fixes.
 
 ## Coverage map
 
-Three layers, and knowing which one caught something tells you how much to trust a clean run:
+Knowing which layer caught something tells you how much to trust a clean run:
 
 | Layer | Tool | Sees | Blind to |
 |---|---|---|---|
@@ -391,4 +374,4 @@ Three layers, and knowing which one caught something tells you how much to trust
 | Business logic | You, manually | Tenancy, contract auth rules | Nothing — this is the backstop |
 
 A clean automated run means the known-pattern layer is clean. It does not mean the app is safe, and
-your verdict should never imply that it does.
+your verdict never implies that it does.
