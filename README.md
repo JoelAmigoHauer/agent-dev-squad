@@ -20,7 +20,7 @@ deploy record.
 your-build/
 ├── CLAUDE.md              Orchestrator brief — run order, halt triggers, caps
 ├── BLUEPRINT.md           Original design document. History, not instruction
-├── LEARNINGS.md           Why v0.2 differs from v0.1. Read before changing rules
+├── LEARNINGS.md           Why each version differs from the last. Read before changing rules
 ├── agents/                One file per role — each is that agent's entire world
 │   ├── surveyor.md        0.25 · brownfield audit      (v0.3)
 │   ├── preflight.md       0.5 · tooling probe          (v0.2)
@@ -50,6 +50,30 @@ file. Never the whole repo. It keeps each agent sharp and cheap.
 **Loops are capped, and state lives in a file.** Every fix loop has an iteration limit, and hitting
 it halts with full context rather than retrying forever. Progress lives in the build's own
 `state/<app-name>.md`, so a run survives a dropped session, a model swap or a restart.
+
+---
+
+## What v0.3 changed
+
+v0.2 then ran on three more apps, two of them brownfield builds through `/squad`, and their
+learnings piled up on three branches unapplied. v0.3 consolidates all 51 into
+[LEARNINGS.md](LEARNINGS.md), under IDs by app, and applies every one. The load-bearing ones:
+
+**Every screen is compared with its drawing.** A build passed every test and shipped the wrong
+navigation shell, because no stage looked at a screen. The Designer now indexes a frame per
+surface, and the Engineer and QA each check the built screen against it.
+
+**Nothing tests on production.** The contract names a test target that is never the project
+production reads, and previews point at it too.
+
+**The contract binds how state comes to exist.** A writers table names what creates, changes and
+ends every table and column; one build could manage clients it had no way to create.
+
+**Evidence has to be able to fail.** A test counts only once seen red, a smoke check is shown
+failing on the previous deployment, and a privilege is proven by attempting the write.
+
+**One state file per build, and learnings go home.** Each build keeps its own state file, and
+`/squad port` carries a host run's learnings back to this template, with a gap row for each.
 
 ---
 

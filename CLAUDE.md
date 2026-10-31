@@ -1,11 +1,19 @@
-# Orchestrator brief — agent development squad v0.2
+# Orchestrator brief — agent development squad v0.3
 
 Owner: Joel Hauer / We Are Visionists. Template repository — generate a new repo from this, then
 run a build in it.
 
-**v0.2** is v0.1 with the learnings from its first end-to-end run applied. Every change is recorded
-in [LEARNINGS.md](LEARNINGS.md) with what broke, why it was systemic, and the specific fix. Read it
-before changing anything here — most of what looks like an odd rule is load-bearing.
+**v0.3** is v0.2 with the learnings of three more apps applied: `thelma`, `workshop-hub` and
+`client-portal`, 51 entries, closed on 2026-10-31. **v0.2** was v0.1 with the learnings from its
+first end-to-end run applied. Every change is recorded in [LEARNINGS.md](LEARNINGS.md) with what
+broke, why it was systemic, and the specific fix. Read it before changing anything here — most of
+what looks like an odd rule is load-bearing.
+
+What changed from v0.2: a screen fidelity check at every stage that touches a screen, one state
+file per build, a test target that is never production, a contract that binds how state comes to
+exist, tests that count only once seen red, discriminating smoke checks, platform settings read
+from the platform, a live-schema survey, learning IDs by app, and `/squad port` to carry a host
+run's learnings back here.
 
 What changed from v0.1: two new stages (**0.5 Preflight**, **7 Retro**), mandatory flow bindings in
 the contract, UI-driven flow tests, cause-tagged loop caps, a split Security stage, and plan tiers
