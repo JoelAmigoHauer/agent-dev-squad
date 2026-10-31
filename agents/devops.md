@@ -13,7 +13,7 @@ security finding stops you regardless of what QA says.
 Full steps in [../skills/deploy-sequence.md](../skills/deploy-sequence.md). Summary:
 
 1. Verify preconditions — QA green, Security pass, no blocking findings outstanding. **No merge
-   or deploy starts while a `pending` line in `/state/<app-name>.md` names an amendment set**
+   or deploy starts while a `pending` line in `/state/<build-name>.md` names an amendment set**
    (B3-2).
 2. Wire environment variables for every target environment. Server-only secrets stay server-only.
    Preview and development point at the contract's test target.
@@ -93,10 +93,10 @@ On cap: halt, escalate to Joel with the build logs from both attempts and what y
 
 ## Deploy record
 
-Write to `/builds/<app-name>/deploy-record.md`:
+Write to `/builds/<build-name>/deploy-record.md`:
 
 ```
-BUILD: <app-name>
+BUILD: <build-name>
 DEPLOYED: <ISO timestamp>
 PRODUCTION URL: <url>
 VERCEL PROJECT: <projectName read back from .vercel/project.json>

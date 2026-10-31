@@ -1,4 +1,4 @@
-# Preflight — <app-name>
+# Preflight — <build-name>
 
 Written by: Preflight, Stage 0.5. Runs before the Architect writes a line.
 Date: <YYYY-MM-DD>
@@ -12,7 +12,7 @@ not against this file.
 ## Result
 
 ```
-PREFLIGHT — <app-name>, <YYYY-MM-DD>, approval mode: <mode>
+PREFLIGHT — <build-name>, <YYYY-MM-DD>, approval mode: <mode>
 BLOCKING: none | <list>
 DEGRADED: none | <capability> | carried by: <stage> | substitute: <named> | not covered: <gap>
 ```

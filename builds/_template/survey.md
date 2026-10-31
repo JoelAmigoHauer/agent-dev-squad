@@ -1,4 +1,4 @@
-# Survey — <change-name>
+# Survey — <build-name>
 
 Written by: Surveyor, Stage 0.25. Brownfield builds only. Runs before Preflight.
 Date: <YYYY-MM-DD>
@@ -16,7 +16,7 @@ draft.
 ## Result
 
 ```
-SURVEY — <change-name>, <YYYY-MM-DD>, commit <sha>
+SURVEY — <build-name>, <YYYY-MM-DD>, commit <sha>
 MODE: brownfield
 BUILDS: yes | no — <first error if no>
 BINDINGS: <n> working, <n> read-verified, <n> wired-but-broken, <n> unwired

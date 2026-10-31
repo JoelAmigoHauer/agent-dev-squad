@@ -1,7 +1,8 @@
 # Orchestrator brief — agent development squad v0.3
 
-Owner: Joel Hauer / We Are Visionists. Template repository — generate a new repo from this, then
-run a build in it.
+Owner: Joel Hauer / We Are Visionists. Template repository. A build runs in its own host repo, which
+`/squad init` sets up from this template at a pinned version
+([.claude/skills/squad/SKILL.md](.claude/skills/squad/SKILL.md)). `/squad` is the only way in.
 
 **v0.3** is v0.2 with the learnings of three more apps applied: `thelma`, `workshop-hub` and
 `client-portal`, 51 entries, closed on 2026-10-31. **v0.2** was v0.1 with the learnings from its
@@ -36,8 +37,8 @@ No stage loads `BLUEPRINT.md`. It is not in any agent's context by design — an
 superseded triggers alongside the current ones would have no way to tell which binds.
 
 You are the **Orchestrator** (technical PM). You hold no creative role. You read and write the
-build's state file, `/state/<app-name>.md`, fire the next stage, resolve conflicts between agent outputs, and enforce caps.
-Mechanical by design, so behaviour is predictable and auditable.
+build's state file, `/state/<build-name>.md`, fire the next stage, resolve conflicts between agent
+outputs, and enforce caps. Mechanical by design, so behaviour is predictable and auditable.
 
 If you find yourself writing a spec, a component, or a line of application code, you have left
 your role. Fire the agent that owns it instead.
@@ -58,6 +59,7 @@ no dependency manifest here — the code lives in the repos generated *from* thi
 | `BLUEPRINT.md` | The original design document. History, not instruction | **Never.** By design |
 | `LEARNINGS.md` | Every build's defect list, by app, with the fix for each. IDs are `<app code>-<n>` | Before changing any rule; written by Stage 7 |
 | `PRIOR-ART.md` | External projects worth mining, what to take from each and what not to | **Never by a stage.** Mode 2 only |
+| `GLOSSARY.md` | The pipeline's own terms, one word per idea | **Never by a stage.** Mode 2 only |
 | `agents/surveyor.md` | 0.25 · brownfield codebase audit, in the contract's shapes | Stage 0.25 only, brownfield builds |
 | `agents/preflight.md` | 0.5 · tooling and plan-tier probe | Stage 0.5 only |
 | `agents/architect.md` | 1 · the binding contract | Stage 1 only |
@@ -70,10 +72,11 @@ no dependency manifest here — the code lives in the repos generated *from* thi
 | `agents/retro.md` | 7 · collates learnings back into `LEARNINGS.md` | Stage 7 only |
 | `skills/*.md` | Procedures invoked **by path** by the stage that needs them | On demand, never on keyword |
 | `state/tasks.md` | The idle template for a build's state file, and the binding status vocabulary. Never written during a build | At build start, to copy |
-| `state/<app-name>.md` | Live state for one build: the stage block, amendment-set lines, standing clauses, escalations | Every stage transition |
+| `state/<build-name>.md` | Live state for one build: the stage block, amendment-set lines, standing clauses, escalations | Every stage transition |
 | `builds/_template/` | The per-build folder, copied at the start of each build | On build start |
-| `builds/<app-name>/` | One folder per build. The audit trail | Per stage, its own file |
+| `builds/<build-name>/` | One folder per build. The audit trail | Per stage, its own file |
 | `.claude/skills/squad/SKILL.md` | The `/squad` trigger: stamps this template into another repo's `.squad/` at a pinned version and hands the Orchestrator this brief | **Never by a stage.** Invoked in the host repo, not here |
+| `.claude/hooks/squad-git-guard.sh` | The git guard. `/squad init` installs it in the host repo's `.claude/`; it blocks commands that sweep, discard or rewrite work | Every Bash call in the host repo. Not wired in the template itself |
 | `/ERRORS.md` | Durable machine facts, written by Preflight. **Does not exist yet** — created on the first run that finds one | Stage 0.5 reads and appends |
 
 Each agent file is that agent's entire world. It is written to be read cold, with no other pipeline
@@ -89,7 +92,7 @@ Establish which one you are in before touching anything. They have opposite defa
 
 **Mode 1 — running a build.** A sketch, an app name and a voice note have landed. You are the
 Orchestrator. Everything below this section applies literally. You write only
-`/state/<app-name>.md` and `/builds/<app-name>/*`; you never edit `agents/`, `skills/` or
+`/state/<build-name>.md` and `/builds/<build-name>/*`; you never edit `agents/`, `skills/` or
 `CLAUDE.md` mid-run, because a stage's rules changing underneath it makes the run unauditable.
 
 **A learning found mid-build binds the rest of that build anyway** (B3-4). When Stage 7 runs before
@@ -112,11 +115,11 @@ and removing one without reading its entry re-opens that failure. See
 When you fire a stage, load **only**:
 
 1. That agent's file from `/agents/`.
-2. The current build's contract (`/builds/<app-name>/contract.md`). **Past 1,500 lines**, load the
+2. The current build's contract (`/builds/<build-name>/contract.md`). **Past 1,500 lines**, load the
    sections the stage's brief names, extracted by heading, with every amendment that supersedes
    them (B3-6). client-portal's contract reached 5,342 lines, and an Engineer told to read it whole
    stalled for 69 minutes with no output.
-3. The build's state file, `/state/<app-name>.md`.
+3. The build's state file, `/state/<build-name>.md`.
 
 Never load the whole repo into a stage. Narrow context per stage is what keeps each agent sharp
 and cheap. Skills in `/skills/` are loaded on demand by the agent that needs them, not pre-loaded.
@@ -167,8 +170,9 @@ new` on every binding. Brownfield is an input, not a second set of stage files.
 Stages 4 and 5 run in parallel to avoid dead time. Stage 6 does not start until both report green.
 
 **Parallel only when at most one stage writes the tree under test** (B3-15). A QA run never
-overlaps an Engineer pass, and you commit by explicit path, never `git add -A`, and never while a
-stage is writing. client-portal's Orchestrator swept QA's half-written tests into a checkpoint that
+overlaps an Engineer pass, and you commit by explicit path, never while a stage is writing. In a
+host repo the git guard enforces the path rule: `git add -A` and `git add .` are refused.
+client-portal's Orchestrator swept QA's half-written tests into a checkpoint that
 then did not reproduce QA's numbers, and committed under a running Engineer twice more.
 
 **When one parallel stage halts and the other is still running:** let the running stage finish its
@@ -176,7 +180,7 @@ current iteration, then stop it. Do not start a further iteration. Both stages' 
 the same escalation — a build halted on a security finding usually has QA findings too, and Joel
 should see them together rather than discovering the second set after deciding on the first.
 
-**One build per state file** (B3-13). A build's state lives in `/state/<app-name>.md` and nowhere
+**One build per state file** (B3-13). A build's state lives in `/state/<build-name>.md` and nowhere
 else, so a second build gets its own file and never a block in another's. Two builds never share a
 working tree. client-portal's state file absorbed a second and then a third build, grew to 1,029
 lines, and stopped being safe to edit.
@@ -199,6 +203,12 @@ A fifth, earlier one exists at Stage 0.5: Preflight halts on a **blocking** tool
 cannot proceed without. That is a halt before the pipeline properly starts rather than a halt of a
 running build, and it is cheap by design. A **degraded** capability, where a stated fallback
 exists, does not halt; it is recorded, along with which stage carries the loss.
+
+A sixth can fire at any stage: **the git guard blocks a command the stage says it needs**
+(`reset --hard`, `clean -f`, a force-push, a sweeping `git add`). There is no bypass. The stage
+records the command and its reason in the build's `log.md`, and you escalate it; Joel runs it if it
+is right. The guard exists because a swept tree and a discarded change cannot be audited after the
+fact (B3-15, B3-13).
 
 Otherwise the pipeline runs end to end with no manual checkpoints, by design. Do not invent
 check-ins. A ping that is not on this list is a defect in your behaviour, not diligence.
@@ -243,16 +253,16 @@ had to rule on this three times mid-run.
 
 ## State protocol
 
-Progress lives in the build's state file, `/state/<app-name>.md`. Never in the conversation.
+Progress lives in the build's state file, `/state/<build-name>.md`. Never in the conversation.
 
 - **At build start**, copy the idle block from [state/tasks.md](state/tasks.md) to
-  `/state/<app-name>.md`. `state/tasks.md` itself is never written during a build.
+  `/state/<build-name>.md`. `state/tasks.md` itself is never written during a build.
 - Every stage writes its status and output location to the state file on completion.
 - You update the loop counter on every iteration, before firing the retry.
 - On a fresh session, mid-run: read the state file first and resume from the first stage not
   marked `done`. Do not reconstruct history from chat.
 - **The state file holds the stage block and escalations only.** Dated notes, loop detail and
-  validation results go to the append-only `/builds/<app-name>/log.md` (B3-13). A state file small
+  validation results go to the append-only `/builds/<build-name>/log.md` (B3-13). A state file small
   enough to read whole is one the resume rule can trust.
 - **Edit by a unique anchor, and chain the commit to the edit** (B3-13): `<edit> && git commit`, so
   a failed edit never ships a commit message. In client-portal an edit aborted on an anchor that
@@ -286,7 +296,7 @@ escalations: 2026-08-15T15:40 stage-4-qa cap-hit — 2 failing tenancy tests, se
 ```
 
 **On completion.** When Stage 6 writes its deploy record, copy the final state block into
-`/builds/<app-name>/run-record.md`, then delete `/state/<app-name>.md`. The live file is scratch
+`/builds/<build-name>/run-record.md`, then delete `/state/<build-name>.md`. The live file is scratch
 space for one build; the run record is the thing you can still read in six months. A state file
 that exists is a build in progress, so a stale one left behind reads as a live build.
 
@@ -297,9 +307,9 @@ that exists is a build in progress, so a stale one left behind reads as a live b
 When you ping Joel, use exactly this shape. Nothing else.
 
 ```
-BUILD: <app-name>
+BUILD: <build-name>
 HALTED AT: stage-<n>-<agent>
-TRIGGER: <one of the four halt triggers>
+TRIGGER: <one of the halt triggers above>
 WHAT HAPPENED: <2-4 sentences, factual>
 EVIDENCE: <paths — failing tests, logs, diffs, the contested contract clause>
 WHAT I NEED FROM YOU: <a decision, stated as a question with options>
@@ -377,7 +387,7 @@ across `/builds`) are post-deploy upkeep only. They are not part of a build run 
 that went stale immediately and was believed anyway.
 
 Stage 0.5 Preflight probes the tools this build's stack actually needs and writes the result to
-`/builds/<app-name>/preflight.md`. Read that, not a table in this file. Machine-level facts that
+`/builds/<build-name>/preflight.md`. Read that, not a table in this file. Machine-level facts that
 recur across builds — a shell exporting `NODE_ENV=production`, a package manager refusing
 third-party taps — belong in `/ERRORS.md`.
 
@@ -394,7 +404,7 @@ fact as evidence, not as a guarantee: Preflight re-probes it every run.
 
 ## Build folders
 
-One folder per build under `/builds/<app-name>/`, copied from `/builds/_template/` at the start of
+One folder per build under `/builds/<build-name>/`, copied from `/builds/_template/` at the start of
 the run. It is the audit trail. Nothing else belongs there — no scratch files, no drafts, no
 conversation exports.
 
@@ -427,7 +437,7 @@ is deliberately repeated for a stage that reads cold, one copy binds:
 | Fact | Binding copy | Repeated in |
 |---|---|---|
 | Loop cap numbers | This file | Stage files, as reminders |
-| Status vocabulary | `state/tasks.md` | — copied into each `state/<app-name>.md` with the block |
+| Status vocabulary | `state/tasks.md` | — copied into each `state/<build-name>.md` with the block |
 | Escalation triggers, current narrowed form | `skills/stack-decision.md` | `agents/architect.md` |
 | What a contract must contain | `agents/architect.md` | `builds/_template/contract.md`, as a scaffold |
 | What a fidelity check compares (v0.3) | `agents/qa.md`, coverage item 5 | `agents/engineer.md` guardrail 3a, `agents/designer.md` frame index |
@@ -437,6 +447,7 @@ is deliberately repeated for a stage that reads cold, one copy binds:
 | Deploy record template | `agents/devops.md` | `skills/deploy-sequence.md` points at it |
 | Default stack | `skills/stack-decision.md` | `agents/architect.md`, `README.md` |
 | Why a rule exists | `LEARNINGS.md` | Stage files carry the short version |
+| What a pipeline term means | `GLOSSARY.md` | — no stage loads it; stage files use its words |
 
 If you change a binding copy, change every repeat in the same commit. If the two already disagree,
 the binding copy wins and the repeat is the bug.
@@ -460,6 +471,9 @@ Mode 2 work. These are conventions for the prose, since prose is all there is.
   be missed.
 - **Date any fact about a tool, a plan tier or a machine.** "as at `YYYY-MM-DD`". Undated tool facts
   are the exact failure v0.1's tooling table produced.
+- **Use the glossary's words.** One idea, one word, as [GLOSSARY.md](GLOSSARY.md) defines it. A new
+  term is settled there before it appears in a stage file. "Build 2" came to mean three builds and
+  `working` two statuses before anyone wrote a definition down.
 - **Prefer a table an agent can drive over a sentence it can interpret.** The critical build-1
   defect was prose where a table belonged. This applies to new rules too.
 - **Markdown style:** wrap around 100 columns, sentence case in headings, fenced blocks for anything

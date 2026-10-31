@@ -1,4 +1,4 @@
-# Deploy record — <app-name>
+# Deploy record — <build-name>
 
 Written by: DevOps, Stage 6.
 
@@ -40,7 +40,7 @@ ATTEMPTS: 1 | 2
 - [ ] Security pass, no outstanding blocking findings
 - [ ] Type check and lint pass
 - [ ] No secrets in repo or client-exposed variables
-- [ ] No `pending` amendment-set line in `/state/<app-name>.md`
+- [ ] No `pending` amendment-set line in `/state/<build-name>.md`
 - [ ] Nothing production reads points at the test target
 - [ ] Function region matches the residency clause, if any
 - [ ] Custom SMTP set, if the build emails anyone outside the project team

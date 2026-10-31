@@ -1,4 +1,4 @@
-# Build notes — <app-name>
+# Build notes — <build-name>
 
 Written by: Engineer, Stage 3.
 

@@ -1,6 +1,6 @@
 # Build folder template
 
-Copy this folder to `/builds/<app-name>/` at the start of every build. One folder per build, named
+Copy this folder to `/builds/<build-name>/` at the start of every build. One folder per build, named
 for the app.
 
 This is the per-build audit trail. Nothing else belongs here — no scratch files, no drafts, no
@@ -17,7 +17,7 @@ conversation exports.
 | `tests/` | QA | 4 |
 | `security-review.md` | Security | 5a, updated at 5b |
 | `deploy-record.md` | DevOps | 6 |
-| `run-record.md` | Orchestrator | on completion — copy of the final `/state/<app-name>.md` block |
+| `run-record.md` | Orchestrator | on completion — copy of the final `/state/<build-name>.md` block |
 
 `contract.md` is binding on every stage after 1. Amendments are made to the file itself, dated, by
 the Architect only.

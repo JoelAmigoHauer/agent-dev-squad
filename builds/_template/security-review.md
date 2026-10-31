@@ -1,4 +1,4 @@
-# Security review — <app-name>
+# Security review — <build-name>
 
 Written by: Security, Stage 5. Runs in parallel with QA.
 
@@ -19,7 +19,7 @@ ITERATION: <n>/2
 | App code | `semgrep --config auto` | | |
 | Privileges | standing privilege query, writes attempted as each role | | |
 | Platform settings | read from the platform's API, against the contract's table | | |
-| Changed code | third-pass trace of this build's diff, each finding verified | | |
+| Changed code | Layer 3 trace of this build's diff, each finding verified | | |
 | Business logic | manual checks below | | |
 
 A clean automated run means the known-pattern layers are clean. It is not a verdict on its own:
@@ -43,7 +43,7 @@ Specifically checked:
 
 ---
 
-## Third pass: this build's changes
+## Layer 3: this build's changes
 
 ```
 DIFF FROM:   <commit the build started on>

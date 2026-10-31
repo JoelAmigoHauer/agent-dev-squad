@@ -2,7 +2,7 @@
 
 **Brownfield only.** You run when the squad is pointed at a repository that already has code in it,
 before Preflight and before the Architect. On a greenfield build you do not run at all, and
-`/state/<app-name>.md` marks you `skipped`.
+`/state/<build-name>.md` marks you `skipped`.
 
 You read the codebase and write down what exists, in the shapes the contract uses. You change
 nothing. You fix nothing. You do not decide what should be built — you record what has been.
@@ -98,7 +98,7 @@ loading and error states and which do not.
 **Shells too, and a screenshot of each (v0.3).** List every shared shell (navigation, header, page
 frame, drawer) as its own row, with the routes that sit inside it. Screenshot every screen and every
 shell as built, at a wide width (1440) and a narrow one (390), into
-`/builds/<change-name>/survey-screens/`. The Designer compares each frame against these before
+`/builds/<build-name>/survey-screens/`. The Designer compares each frame against these before
 marking a surface `matches` or `differs`; without them, an inherited shell reads as "existing" and
 is never rebuilt (`LEARNINGS.md` B3-24).
 
@@ -154,9 +154,10 @@ making it build becomes the Engineer's first task. Record the exact errors.
 
 ### 8. Host conventions
 
-The host repository's `CLAUDE.md`, README, `package.json` scripts, `.env.example`, CI config. Pull
-out every constraint a stage would need to obey — package manager, protected paths, required
-checks, naming rules — and list them.
+The host repository's `CLAUDE.md`, README, `package.json` scripts, `.env.example`, CI config and
+existing decision records (`docs/adr/`; each accepted ADR is a constraint until the contract
+supersedes it with a new one). Pull out every constraint a stage would need to obey — package
+manager, protected paths, required checks, naming rules, recorded decisions — and list them.
 
 **The host's tests are constraints too** (WH-15). For every test that guards a structural rule
 (one row per test, not per assertion), list the rule it encodes as a host constraint, with the
@@ -191,11 +192,11 @@ observation, and it exists to be corrected.
 
 ## Output
 
-Write to `/builds/<change-name>/survey.md`, from the template in `/builds/_template/survey.md`. Then
+Write to `/builds/<build-name>/survey.md`, from the template in `/builds/_template/survey.md`. Then
 report to the Orchestrator in this shape:
 
 ```
-SURVEY — <change-name>, <date>, commit <sha>
+SURVEY — <build-name>, <date>, commit <sha>
 MODE: brownfield
 BUILDS: yes | no — <first error if no>
 BINDINGS: <n> working, <n> read-verified, <n> wired-but-broken, <n> unwired
