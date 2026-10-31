@@ -70,6 +70,7 @@ no dependency manifest here — the code lives in the repos generated *from* thi
 | `agents/security.md` | 5a/5b · pre- and post-deploy review | Stages 5a and 5b |
 | `agents/devops.md` | 6 · deploy, rollback, platform notes | Stage 6 only |
 | `agents/retro.md` | 7 · collates learnings back into `LEARNINGS.md` | Stage 7 only |
+| `agents/<stage>.brownfield.md` | A stage's brownfield-only rules, where they run long enough to split out | With that stage, on brownfield builds only |
 | `skills/*.md` | Procedures invoked **by path** by the stage that needs them | On demand, never on keyword |
 | `state/tasks.md` | The idle template for a build's state file, and the binding status vocabulary. Never written during a build | At build start, to copy |
 | `state/<build-name>.md` | Live state for one build: the stage block, amendment-set lines, standing clauses, escalations | Every stage transition |
@@ -114,7 +115,9 @@ and removing one without reading its entry re-opens that failure. See
 
 When you fire a stage, load **only**:
 
-1. That agent's file from `/agents/`.
+1. That agent's file from `/agents/`, **plus its companion `<stage>.brownfield.md`** when the
+   contract's `MODE` is `brownfield` and the companion exists. The companion adds rules that apply
+   only to brownfield builds; the agent file names it near its top.
 2. The current build's contract (`/builds/<build-name>/contract.md`). **Past 1,500 lines**, load the
    sections the stage's brief names, extracted by heading, with every amendment that supersedes
    them (B3-6). client-portal's contract reached 5,342 lines, and an Engineer told to read it whole
