@@ -41,7 +41,7 @@ it would happen the first time a rule was fixed in one place.
 ```bash
 set -euo pipefail
 SRC="https://github.com/JoelAmigoHauer/agent-dev-squad"
-REF="${SQUAD_REF:-main}"                # pin a tag here once one exists
+REF="${SQUAD_REF:-v0.3}"                # the current release; SQUAD_REF=main for unreleased work
 TMP="$(mktemp -d)"
 git clone --quiet --depth 1 --branch "$REF" "$SRC" "$TMP"
 SHA="$(git -C "$TMP" rev-parse HEAD)"
