@@ -19,7 +19,8 @@ draft.
 SURVEY — <change-name>, <YYYY-MM-DD>, commit <sha>
 MODE: brownfield
 BUILDS: yes | no — <first error if no>
-BINDINGS: <n> working, <n> wired-but-broken, <n> unwired
+BINDINGS: <n> working, <n> read-verified, <n> wired-but-broken, <n> unwired
+SCHEMA: captured from live catalogue | files only — <why>
 GUARDRAIL DEBT: <n> items, all marked existing
 HOST CONSTRAINTS: <n> folded in
 INTENT DRAFT: ready for Joel
@@ -42,12 +43,19 @@ anywhere in the repo>
 
 **Plan tiers detectable from config:** <service: tier, or "none detectable — Preflight probes">
 
+**Hosted resources and their other writers:**
+
+| Hosted resource | Used by this build for | Other writers | Their migrations or changes in this repo? |
+|---|---|---|---|
+| | | | yes / no |
+
 ---
 
 ## 2. Data model as it exists
 
-Per migration, `applied | pending`. Disagreements between code and schema are findings, not
-reconciliations.
+Captured from the live catalogue first (columns, constraints, policies, functions, applied
+migrations), read-only. Then the repo's migrations, per migration `applied | pending`, as the drift
+comparison. Disagreements between capture, files and code are findings, not reconciliations.
 
 ```sql
 
@@ -76,9 +84,11 @@ each.
 
 ## 5. Flow bindings, extracted
 
-| Flow | Screen | Control | Calls | Post-condition | Status |
-|---|---|---|---|---|---|
-| | | | | | `working` \| `wired-but-broken` \| `unwired` |
+| Flow | Screen | Reached from | Control | Calls | Post-condition | Status |
+|---|---|---|---|---|---|---|
+| | `/<path>` | | | | | `working` \| `read-verified` \| `wired-but-broken` \| `unwired` |
+
+`working` needs runtime evidence. A wire that only reads as correct is `read-verified`.
 
 ---
 
@@ -90,6 +100,10 @@ Suite runs:       yes | no
 Suite green:      yes | no — <n> failing
 Flows covered:    <list from §5, or none>
 ```
+
+| Shared dependency | Kind | Suites that use it |
+|---|---|---|
+| | | |
 
 ---
 
@@ -113,6 +127,9 @@ a contract clause.
 | Constraint | Source | Binds which stage |
 |---|---|---|
 | | | |
+
+Host tests that guard a structural rule are rows too, one per test, with the test's path as the
+source.
 
 ---
 

@@ -466,28 +466,18 @@ Mode 2 work. These are conventions for the prose, since prose is all there is.
 Audited against `LEARNINGS.md`. Recorded so a stage does not trust this repo to be level with its
 own learnings.
 
-**7 open.** thelma's, workshop-hub's and client-portal's learnings were written into separate
-copies of this file on separate branches and consolidated on 2026-10-31 without their changes being
-applied. They are being closed a file at a time. Every stage file but `surveyor.md` and
-`designer.md` is done, as are this file, `state/tasks.md` and `retro.md`; a row below names only
-the files still to change. The backlog is WH-19 (no return path for `/squad` learnings) happening
-at scale, which is why WH-19 is listed here despite its low severity.
+**None open.** Every entry in `LEARNINGS.md` has reached the stage file or template it names.
 
-Ordered by severity, then by ID. The entry in `LEARNINGS.md` carries the full change; this column
-names only where it lands. Files are in `agents/` unless a path is given.
+The last backlog was 51 entries: thelma's, workshop-hub's and client-portal's learnings, written
+into separate copies of this file on separate branches, consolidated on 2026-10-31 and closed a
+file at a time the same day. That was WH-19 (no return path for `/squad` learnings) at scale, and
+`/squad port` ([.claude/skills/squad/SKILL.md](.claude/skills/squad/SKILL.md)) is its fix: every
+ported entry arrives here as a row, so this list is where the next backlog shows.
 
-| ID | Gap | Change lands in |
-|---|---|---|
-| WH-13 | `working` is not runtime-verified; brownfield schema is not captured live | `surveyor.md` §2, §5 |
-| WH-15 | Invariants the host's tests enforce are not host constraints | `surveyor.md` §8 |
-| WH-27 | The survey does not name dependencies several suites share | `surveyor.md` §6 |
-| B3-17 | The flow binding table has no column for how a screen is reached | `designer.md` |
-| WH-19 | Learnings from `/squad` runs have no return path | `.claude/skills/squad/SKILL.md` |
-| B3-21 | The contract and the design number screens differently | `designer.md` |
-| B3-23 | The survey does not list other writers to shared hosted resources | `surveyor.md` |
-
-Several rows touch the same file. Close them a file at a time rather than an ID at a time, and
-when a row spans files, cut the closed file from its last column so the row says what is left.
+When gaps are open, list them here as a table with the columns `ID | Gap | Change lands in`,
+ordered by severity, then by ID. Several rows will touch the same file: close them a file at a
+time rather than an ID at a time, and when a row spans files, cut the closed file from its last
+column so the row says what is left.
 
 Add a row per gap as one appears, and delete it when it closes rather than marking it done.
 This section is a list of open items, not a changelog.

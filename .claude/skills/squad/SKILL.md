@@ -24,11 +24,13 @@ future build.
 | `/squad survey` | Brownfield only. Run Stage 0.25 and put the intent draft to Joel |
 | `/squad run` | Load `.squad/CLAUDE.md` as your brief and fire the next stage |
 | `/squad status` | Print `.squad/state/<change-name>.md`, or "no build in progress" if none exists |
-| `/squad upgrade` | Re-stamp from a newer template version. **Between builds only** |
+| `/squad port` | Carry this repo's new `LEARNINGS.md` entries back to the template. After every Stage 7 |
+| `/squad upgrade` | Re-stamp from a newer template version. **Between builds only**, and only once `port` has run |
 
 `/squad` with no argument: if `.squad/` is absent run `init`; if a `.squad/state/<change-name>.md`
 exists, a build is in progress, so run `run` (the state protocol resumes from the first stage not
-`done`); otherwise ask whether this is greenfield or brownfield and route accordingly.
+`done`); if `.squad/LEARNINGS.md` holds entries the template does not, run `port`; otherwise ask
+whether this is greenfield or brownfield and route accordingly.
 
 ## `init` — stamp, don't carry
 
@@ -96,11 +98,39 @@ only then fire Preflight. That is not an invented check-in — it is the intake.
 Set `mode: brownfield` in `.squad/state/<change-name>.md` and `MODE: brownfield` in the contract. On
 a greenfield repo set both to `greenfield` and mark `stage-0.25-surveyor: skipped (greenfield)`.
 
+## `port`: learnings go back to the template (WH-19)
+
+Stage 7 appends to `.squad/LEARNINGS.md`, which is a copy pinned to one template commit. The
+template the next `/squad` run stamps from never sees those entries unless they are carried back.
+workshop-hub's builds 2, 3 and 5 were each ported by hand, only because the Orchestrator happened
+to remember; thelma's, workshop-hub's and client-portal's learnings later sat on three branches,
+unapplied, until a consolidation on 2026-10-31 found 51 gaps the template believed closed.
+
+Run `port` as the last step of every `/squad run` that reached Stage 7:
+
+1. **Find the new entries.** Diff `.squad/LEARNINGS.md` against the template's `LEARNINGS.md` at
+   the commit in `.squad/VERSION`. Every entry heading absent from the template's copy is one to
+   port.
+2. **Check the IDs against the template as it is now.** Use the app's code from the *Entry IDs*
+   table. If another copy has since ported entries under the same code, renumber yours after the
+   template's highest and record the old numbers in that table's *Was numbered* column.
+3. **Open one pull request against the template repository** that adds the entries under the
+   app's section, adds the app's code to *Entry IDs* if it is new, and adds one row per entry to
+   `CLAUDE.md` *Known gaps*: `| <ID> | <the gap> | <the files its change lands in> |`.
+4. **If you cannot open that pull request from here**, write the same three changes to
+   `.squad/PORT-<YYYY-MM-DD>.md`, ready to apply, and give Joel the path. An entry is never left
+   unported without saying so.
+5. **Record it.** Append `ported: <date> <pull request URL or PORT file>` to `.squad/VERSION`.
+
 ## `upgrade`
 
 Re-runs the stamp against a newer ref and rewrites `.squad/VERSION`. **Never mid-build.** A stage's
 rules changing underneath a running build makes the run unauditable, and the brief forbids it. If
 any `.squad/state/<change-name>.md` exists, a build is in progress: refuse.
+
+**Never over unported learnings.** The stamp replaces `.squad/LEARNINGS.md` with the template's
+copy, so an entry not yet ported is deleted by the upgrade. If `.squad/LEARNINGS.md` holds an entry
+the template does not, run `port` first, then upgrade.
 
 ## What this skill never does
 
