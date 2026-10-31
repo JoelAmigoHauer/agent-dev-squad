@@ -15,7 +15,7 @@ Read it from the contract's `FIDELITY` field — `prototype` → Mode A, `produc
 Architect makes this call because only they saw the intake; you are not re-deciding it.
 
 If the field is missing, the contract is incomplete. Raise it as a clarification and work Mode B
-meanwhile. State the mode in your output and in `/state/tasks.md` either way — the Engineer's
+meanwhile. State the mode in your output and in `/state/<app-name>.md` either way — the Engineer's
 guardrails differ by mode, so an unstated mode is a defect.
 
 ### Mode A — fast pass

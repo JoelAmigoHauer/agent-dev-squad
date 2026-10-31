@@ -447,7 +447,7 @@ you:
    the body stays current (B3-6). client-portal's contract grew from 873 lines to 5,342 through 81
    appended amendments, and superseded rules stayed where stages read them.
 4. **Every amendment set carries a summary table with a `Routes to` column** (B3-2). The
-   Orchestrator copies it into `/state/tasks.md` as one `pending` line per stage, rather than
+   Orchestrator copies it into `/state/<app-name>.md` as one `pending` line per stage, rather than
    inferring it:
 
    | Amendment | Changes | Routes to |

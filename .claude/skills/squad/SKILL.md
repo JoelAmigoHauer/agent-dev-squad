@@ -23,12 +23,12 @@ future build.
 | `/squad init` | Stamp the pipeline into `.squad/` at a pinned version |
 | `/squad survey` | Brownfield only. Run Stage 0.25 and put the intent draft to Joel |
 | `/squad run` | Load `.squad/CLAUDE.md` as your brief and fire the next stage |
-| `/squad status` | Print `.squad/state/tasks.md` |
+| `/squad status` | Print `.squad/state/<change-name>.md`, or "no build in progress" if none exists |
 | `/squad upgrade` | Re-stamp from a newer template version. **Between builds only** |
 
-`/squad` with no argument: if `.squad/` is absent run `init`; if `.squad/state/tasks.md` shows a
-build in progress run `run` (the state protocol resumes from the first stage not `done`); otherwise
-ask whether this is greenfield or brownfield and route accordingly.
+`/squad` with no argument: if `.squad/` is absent run `init`; if a `.squad/state/<change-name>.md`
+exists, a build is in progress, so run `run` (the state protocol resumes from the first stage not
+`done`); otherwise ask whether this is greenfield or brownfield and route accordingly.
 
 ## `init` — stamp, don't carry
 
@@ -67,7 +67,8 @@ Commit `.squad/` to the host repo. It is the audit trail, and it is meant to be 
 The brief was written for a repo where it sits at the root. Here it sits in `.squad/`.
 
 1. **Every path in `.squad/CLAUDE.md` and in `.squad/agents/*` resolves relative to `.squad/`.**
-   `/state/tasks.md` means `.squad/state/tasks.md`. `/builds/<name>/` means
+   `/state/<app-name>.md` means `.squad/state/<change-name>.md`, copied from
+   `.squad/state/tasks.md` at build start. `/builds/<name>/` means
    `.squad/builds/<name>/`. `/ERRORS.md` means `.squad/ERRORS.md`.
 2. **The host repository's own `CLAUDE.md` is not the brief.** It auto-loads and you cannot stop
    that. Treat its contents as constraints to be recorded — the Surveyor folds them into
@@ -92,14 +93,14 @@ the context-loading rule applies to it as to every other.
 sketch and no voice note. Put `survey.md` §10 to Joel, record his answer in the same section, and
 only then fire Preflight. That is not an invented check-in — it is the intake.
 
-Set `mode: brownfield` in `.squad/state/tasks.md` and `MODE: brownfield` in the contract. On a
-greenfield repo set both to `greenfield` and mark `stage-0.25-surveyor: skipped (greenfield)`.
+Set `mode: brownfield` in `.squad/state/<change-name>.md` and `MODE: brownfield` in the contract. On
+a greenfield repo set both to `greenfield` and mark `stage-0.25-surveyor: skipped (greenfield)`.
 
 ## `upgrade`
 
 Re-runs the stamp against a newer ref and rewrites `.squad/VERSION`. **Never mid-build.** A stage's
 rules changing underneath a running build makes the run unauditable, and the brief forbids it. If
-`.squad/state/tasks.md` shows anything other than `build: none`, refuse.
+any `.squad/state/<change-name>.md` exists, a build is in progress: refuse.
 
 ## What this skill never does
 

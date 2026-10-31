@@ -17,7 +17,7 @@ conversation exports.
 | `tests/` | QA | 4 |
 | `security-review.md` | Security | 5a, updated at 5b |
 | `deploy-record.md` | DevOps | 6 |
-| `run-record.md` | Orchestrator | on completion — copy of the final `/state/tasks.md` block |
+| `run-record.md` | Orchestrator | on completion — copy of the final `/state/<app-name>.md` block |
 
 `contract.md` is binding on every stage after 1. Amendments are made to the file itself, dated, by
 the Architect only.

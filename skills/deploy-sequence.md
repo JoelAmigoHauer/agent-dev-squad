@@ -18,7 +18,7 @@ Do not start until all of these are true. Check them, do not assume them.
       advisors, `npm audit`, `gitleaks` and `semgrep` all run.
 - [ ] Type check and lint pass.
 - [ ] No secrets in the repo or in client-exposed variables.
-- [ ] No `pending` line in `/state/tasks.md` names an amendment set (B3-2). client-portal's
+- [ ] No `pending` line in `/state/<app-name>.md` names an amendment set (B3-2). client-portal's
       amendment set 6 had no stage lines, and v1 reached `main` with much of it unbuilt.
 - [ ] Nothing production reads points at the test target: no production variable holds
       `localhost:54321` or the test target's project ref (B3-3).
@@ -180,7 +180,7 @@ production ones; workshop-hub-end met that refusal mid-deploy with no written br
 
 **On a git-linked project, the merge to the production branch is the promote** (B3-11). Whoever
 merges deploys, whether Stage 6 is running or not. Merge only with Stage 6 `running` in
-`/state/tasks.md`, after step 5 passed on that exact SHA. client-portal's deploy 2 was a
+`/state/<app-name>.md`, after step 5 passed on that exact SHA. client-portal's deploy 2 was a
 fast-forward push of `main`, and Stage 6 was fired afterwards to verify only.
 
 ---

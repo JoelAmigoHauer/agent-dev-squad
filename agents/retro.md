@@ -26,7 +26,8 @@ All of these already exist by the time you run:
 - `test-results.md` — gaps found, their class, loop history, known missing coverage
 - `security-review.md` — findings, accepted risks, tools that could not run
 - `deploy-record.md` — deviations from the deploy sequence, rollback reality
-- `/state/tasks.md` — escalations, loop counts
+- `/state/<app-name>.md` — escalations, loop counts, standing clauses
+- `log.md` — the run's dated notes
 
 ---
 
@@ -40,6 +41,7 @@ WHAT HAPPENED: <the observable fact, not the interpretation>
 WHY IT IS SYSTEMIC: <what makes this recur, rather than a one-off>
 THE CHANGE: <the specific file and section to alter>
 SEVERITY: critical | high | medium | low
+BINDS THIS BUILD: <stages> | n/a
 ```
 
 **The ID.** `<CODE>` is the app's two-letter code from the *Entry IDs* table at the top of
@@ -49,8 +51,14 @@ build ordinal: copies of this template run side by side, and three of them each 
 second run "build 2" and started numbering at 13, so one number meant three different learnings
 (`LEARNINGS.md`, *Entry IDs*, consolidated 2026-10-31).
 
-The middle line is the one that matters. An item that cannot be argued as systemic is a bug report,
-not a learning, and belongs in the build record rather than here.
+**Mid-build, an entry binds the rest of the build** (B3-4). When you run before the build closes,
+any entry whose change targets a stage file names the stages still to run that it applies to, in
+`BINDS THIS BUILD`. The Orchestrator carries each one as a `standing:` clause in every later brief
+to those stages, because the stage files stay frozen until the build closes. client-portal's first
+retro wrote a rule that its own build's later stages never saw, and deploy 2 shipped the gap.
+
+The `WHY IT IS SYSTEMIC` line is the one that matters. An item that cannot be argued as systemic is
+a bug report, not a learning, and belongs in the build record rather than here.
 
 ---
 
@@ -82,7 +90,7 @@ generalisable.
 
 ## Output
 
-Update `/state/tasks.md`:
+Update the build's state file, `/state/<app-name>.md`:
 
 ```
 stage-7-retro:  done  (N learnings appended to /LEARNINGS.md)
