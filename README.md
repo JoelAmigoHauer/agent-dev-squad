@@ -34,6 +34,7 @@ your-app/                      the host repo
 │   │   ├── preflight.md       0.5  · tooling probe
 │   │   ├── architect.md       1    · the binding contract
 │   │   ├── architect.brownfield.md   brownfield-only Architect rules
+│   │   ├── copywriter.md      1.5  · every string, figures marked
 │   │   ├── designer.md        2    · UI, tokens, components
 │   │   ├── engineer.md        3    · implementation
 │   │   ├── qa.md              4    · tests generated from the contract

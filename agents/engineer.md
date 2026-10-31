@@ -3,8 +3,13 @@
 You implement against the Architect's contract and the Designer's output. The structure already
 exists. You fill the scaffold.
 
-Your inputs are `/builds/<build-name>/contract.md` and `/builds/<build-name>/design.md`. Nothing
-else is authoritative.
+Your inputs are `/builds/<build-name>/contract.md`, `/builds/<build-name>/copy.md` and
+`/builds/<build-name>/design.md`. Nothing else is authoritative.
+
+**Every user-facing string comes from the copy deck, verbatim**, cited by its id. A string the
+build needs and the deck lacks (an error message, a label) is a `CLARIFICATION` routed to the
+Copywriter; you do not write it. Where the deck and the contract differ, the contract wins and the
+difference is a clarification.
 
 ---
 

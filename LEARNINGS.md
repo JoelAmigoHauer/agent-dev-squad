@@ -20,6 +20,7 @@ bare numbers 1–12; nothing else is unprefixed.
 | `TH` | `thelma` | 2026-08-24 to 08-25 | greenfield, halted at Stage 6 | TH-13 to TH-20 | 13–20, "build 2" | branch `claude/thelma-portfolio-agent-ba057f`, archived as tag `archive/thelma-2026-08-25` |
 | `WH` | `workshop-hub` | 2026-09-07 to 09-09 | brownfield via `/squad` | WH-13 to WH-29 | 13–29, "builds 2, 3, 5, 6" | branch `claude/claude-md-docs-3l7ior` |
 | `B2`, `B3` | `client-portal` | 2026-09-11 to 10-26 | brownfield via `/squad` | B2-1 to B2-3, B3-1 to B3-24 | unchanged | branch `claude/screen-fidelity-check` |
+| `WS` | `website` | to 2026-09-20 | via `/squad` | WS-1 | unnumbered: the record in `agents/RETIRED-copywriter.md` | that file, removed on 2026-10-31 when the Copywriter was revived |
 
 `TH` and `WH` keep their original numbers after the prefix, so a citation in an old run record
 still finds its entry by stripping or adding the prefix. `client-portal` keeps its `B2-` and `B3-`
@@ -1639,3 +1640,34 @@ the thing every screen sits inside.
 | `agents/engineer.md` | Guardrail 3a: build each row to its frame and screenshot it beside the frame before hand-back; definition of done item 2 |
 | `agents/qa.md` | Coverage item 5: a structural fidelity check of every frame-index row, both images saved, the count of rows reported; a difference is a GAP |
 | `skills/figma-pull.md` | Frame screenshots, and their cost against the call budget |
+
+---
+
+# WS: website (to 2026-09-20), via `/squad`
+
+The build that retired the first Copywriter. Its record lives in that host repo under
+`builds/website/`; the summary below was the retirement note, `agents/RETIRED-copywriter.md`,
+recorded here as an entry when the Copywriter was revived on 2026-10-31.
+
+## WS-1. website — The Copywriter shipped invented figures while marking its own source gate passed
+
+WHAT HAPPENED: One build produced three separate invented-number findings, each caught by someone
+other than the agent that used the number. A publisher check after the deck shipped found `81%`
+"report no meaningful bottom-line gains", traceable to no McKinsey publication. A later stage found
+six fabricated benchmark scores rendered in the scorecard PDF under "based on MethodWorks' client
+experience". Stage 6 found 12 unsourced figures, including the `60%` that carried a page's whole
+opening argument in its hero, `<title>` and share card. The role's own definition carried the gate
+for exactly this, "every number traces to a source file", and the gate was stated as run.
+
+WHY IT IS SYSTEMIC: A gate an agent marks itself against is not a gate. Copy that is asked to be
+concrete and credible pulls toward specific numbers, and a model fills that pull from memory when
+no source is in hand. The role also ran a second voice system beside Joel's own, handed the canon
+each session and unable to see it afterwards.
+
+THE CHANGE: Retired 2026-09-20; revived 2026-10-31 as `agents/copywriter.md`, Stage 1.5. Every
+figure carries `[source: …]`, `[bound: …]` or `[NEEDS SOURCE]` where it is written; the
+Orchestrator, never the Copywriter, verifies each against its primary source before the Designer
+starts; a figure that fails does not ship. The rewrite passes are an embedded copy of Joel's
+`full-rewrite`, so there is one voice system, re-synced whenever his skill changes.
+
+SEVERITY: high
