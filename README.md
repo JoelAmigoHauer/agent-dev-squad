@@ -32,7 +32,7 @@ your-build/
 │   ├── devops.md          6   · deploy and rollback
 │   └── retro.md           7   · writes learnings back  (v0.2)
 ├── skills/                Invoked by path during a build, never auto-triggered
-├── state/tasks.md         Live pipeline state. Survives a dropped session
+├── state/tasks.md         State-file template. Each build copies it to state/<app-name>.md
 └── builds/<app-name>/     One folder per build — the audit trail
 ```
 
@@ -48,8 +48,8 @@ Engineer who is unsure asks the Architect rather than guessing.
 file. Never the whole repo. It keeps each agent sharp and cheap.
 
 **Loops are capped, and state lives in a file.** Every fix loop has an iteration limit, and hitting
-it halts with full context rather than retrying forever. Progress lives in `state/tasks.md`, so a
-run survives a dropped session, a model swap or a restart.
+it halts with full context rather than retrying forever. Progress lives in the build's own
+`state/<app-name>.md`, so a run survives a dropped session, a model swap or a restart.
 
 ---
 

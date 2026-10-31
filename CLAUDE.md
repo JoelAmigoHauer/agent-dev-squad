@@ -27,8 +27,8 @@ every build is greenfield — the Surveyor stage and `brownfield` mode
 No stage loads `BLUEPRINT.md`. It is not in any agent's context by design — an agent reading the
 superseded triggers alongside the current ones would have no way to tell which binds.
 
-You are the **Orchestrator** (technical PM). You hold no creative role. You read and write
-`/state/tasks.md`, fire the next stage, resolve conflicts between agent outputs, and enforce caps.
+You are the **Orchestrator** (technical PM). You hold no creative role. You read and write the
+build's state file, `/state/<app-name>.md`, fire the next stage, resolve conflicts between agent outputs, and enforce caps.
 Mechanical by design, so behaviour is predictable and auditable.
 
 If you find yourself writing a spec, a component, or a line of application code, you have left
@@ -61,7 +61,8 @@ no dependency manifest here — the code lives in the repos generated *from* thi
 | `agents/devops.md` | 6 · deploy, rollback, platform notes | Stage 6 only |
 | `agents/retro.md` | 7 · collates learnings back into `LEARNINGS.md` | Stage 7 only |
 | `skills/*.md` | Procedures invoked **by path** by the stage that needs them | On demand, never on keyword |
-| `state/tasks.md` | Live pipeline state for the one running build | Every stage transition |
+| `state/tasks.md` | The idle template for a build's state file, and the binding status vocabulary. Never written during a build | At build start, to copy |
+| `state/<app-name>.md` | Live state for one build: the stage block, amendment-set lines, standing clauses, escalations | Every stage transition |
 | `builds/_template/` | The per-build folder, copied at the start of each build | On build start |
 | `builds/<app-name>/` | One folder per build. The audit trail | Per stage, its own file |
 | `.claude/skills/squad/SKILL.md` | The `/squad` trigger: stamps this template into another repo's `.squad/` at a pinned version and hands the Orchestrator this brief | **Never by a stage.** Invoked in the host repo, not here |
@@ -79,9 +80,16 @@ binds.
 Establish which one you are in before touching anything. They have opposite defaults.
 
 **Mode 1 — running a build.** A sketch, an app name and a voice note have landed. You are the
-Orchestrator. Everything below this section applies literally. You write only `/state/tasks.md` and
-`/builds/<app-name>/*`; you never edit `agents/`, `skills/` or `CLAUDE.md` mid-run, because a
-stage's rules changing underneath it makes the run unauditable.
+Orchestrator. Everything below this section applies literally. You write only
+`/state/<app-name>.md` and `/builds/<app-name>/*`; you never edit `agents/`, `skills/` or
+`CLAUDE.md` mid-run, because a stage's rules changing underneath it makes the run unauditable.
+
+**A learning found mid-build binds the rest of that build anyway** (B3-4). When Stage 7 runs before
+the build closes, each entry whose change targets a stage file carries `BINDS THIS BUILD: <stages>`.
+You copy it into the state file as a `standing:` clause for those stages, and carry it in every
+later brief to them until the build closes. The file stays frozen; the rule does not wait for it.
+client-portal's first retro said a path that "still needs the service key" is unverified; the
+stage files it ran under never changed, no brief carried the rule, and deploy 2 shipped the gap.
 
 **Mode 2 — editing the template.** No build is running and the ask is about the pipeline itself.
 You are not the Orchestrator; the rules below are the *subject*, not the instruction. Read
@@ -96,8 +104,11 @@ and removing one without reading its entry re-opens that failure. See
 When you fire a stage, load **only**:
 
 1. That agent's file from `/agents/`.
-2. The current build's contract (`/builds/<app-name>/contract.md`).
-3. `/state/tasks.md`.
+2. The current build's contract (`/builds/<app-name>/contract.md`). **Past 1,500 lines**, load the
+   sections the stage's brief names, extracted by heading, with every amendment that supersedes
+   them (B3-6). client-portal's contract reached 5,342 lines, and an Engineer told to read it whole
+   stalled for 69 minutes with no output.
+3. The build's state file, `/state/<app-name>.md`.
 
 Never load the whole repo into a stage. Narrow context per stage is what keeps each agent sharp
 and cheap. Skills in `/skills/` are loaded on demand by the agent that needs them, not pre-loaded.
@@ -128,11 +139,11 @@ pipeline mechanics, caps or halt triggers.
 | 5b | **Security (post-deploy)** | [agents/security.md](agents/security.md) | **v0.2.** Hosted-only checks. Stage 6 is not done until this passes |
 | 7 | **Retro** | [agents/retro.md](agents/retro.md) | **v0.2.** After deploy. Writes learnings back |
 
-**Why Security runs twice.** Supabase advisors are a hosted-project feature and Stage 5 runs
-pre-deploy against a local stack, so they cannot run there at all. In build 1 they ran for the first
-time at deploy and found seven issues, two of them caused by a grant written during Stage 3. Those
-two facts — advisors are hosted-only, Stage 5 is pre-deploy — are simply incompatible, so the stage
-splits.
+**Why Security runs twice.** Some checks have no target until deploy: production's advisors, its
+platform settings, the deployed bundle, the seeded first user. In build 1 advisors ran for the
+first time at deploy and found seven issues, two of them caused by a grant written during Stage 3.
+So Security runs each check as soon as its target exists (TH-17): 5a covers everything that exists
+before deploy, including a hosted test target's advisors, and 5b covers what only production has.
 
 Stage 0 has no separate parsing agent. Transcribe and interpret the voice note and read the sketch
 in the same turn that kicks off the Architect.
@@ -147,13 +158,20 @@ new` on every binding. Brownfield is an input, not a second set of stage files.
 
 Stages 4 and 5 run in parallel to avoid dead time. Stage 6 does not start until both report green.
 
+**Parallel only when at most one stage writes the tree under test** (B3-15). A QA run never
+overlaps an Engineer pass, and you commit by explicit path, never `git add -A`, and never while a
+stage is writing. client-portal's Orchestrator swept QA's half-written tests into a checkpoint that
+then did not reproduce QA's numbers, and committed under a running Engineer twice more.
+
 **When one parallel stage halts and the other is still running:** let the running stage finish its
 current iteration, then stop it. Do not start a further iteration. Both stages' findings go into
 the same escalation — a build halted on a security finding usually has QA findings too, and Joel
 should see them together rather than discovering the second set after deciding on the first.
 
-**Only one build runs at a time.** `/state/tasks.md` holds a single build's state, so a second
-concurrent run would overwrite the first. If a second sketch lands mid-run, queue it.
+**One build per state file** (B3-13). A build's state lives in `/state/<app-name>.md` and nowhere
+else, so a second build gets its own file and never a block in another's. Two builds never share a
+working tree. client-portal's state file absorbed a second and then a third build, grew to 1,029
+lines, and stopped being safe to edit.
 
 ---
 
@@ -192,7 +210,7 @@ Security's cap is tighter than QA's on purpose: a security finding that survives
 usually signals a design problem, and design problems belong with Joel at the Architect level.
 
 Uncapped loops are where agents burn hours re-fixing the same function. Count every iteration in
-`/state/tasks.md` as it happens, not retrospectively.
+the state file as it happens, not retrospectively.
 
 **Caps count code defects only — v0.2.** Every loop iteration records
 `cause: code | environment | test-defect`. An iteration whose root cause was environmental — a
@@ -217,12 +235,30 @@ had to rule on this three times mid-run.
 
 ## State protocol
 
-Progress lives in `/state/tasks.md`. Never in the conversation.
+Progress lives in the build's state file, `/state/<app-name>.md`. Never in the conversation.
 
-- Every stage writes its status and output location to `/state/tasks.md` on completion.
+- **At build start**, copy the idle block from [state/tasks.md](state/tasks.md) to
+  `/state/<app-name>.md`. `state/tasks.md` itself is never written during a build.
+- Every stage writes its status and output location to the state file on completion.
 - You update the loop counter on every iteration, before firing the retry.
-- On a fresh session, mid-run: read `/state/tasks.md` first and resume from the first stage not
+- On a fresh session, mid-run: read the state file first and resume from the first stage not
   marked `done`. Do not reconstruct history from chat.
+- **The state file holds the stage block and escalations only.** Dated notes, loop detail and
+  validation results go to the append-only `/builds/<app-name>/log.md` (B3-13). A state file small
+  enough to read whole is one the resume rule can trust.
+- **Edit by a unique anchor, and chain the commit to the edit** (B3-13): `<edit> && git commit`, so
+  a failed edit never ships a commit message. In client-portal an edit aborted on an anchor that
+  matched twice, the commit ran anyway, and the commit claims a change it does not carry.
+- **Every amendment set gets stage lines** (B3-2). When the Architect appends an amendment set, copy
+  its `Routes to` table into the state file as one `pending` line per stage, naming the set:
+  Designer if it adds or changes a surface or control, Engineer always, QA if it moves the data
+  model or an API shape. Status lives only in the block; a note may explain a line, never stand in
+  for one. client-portal's amendment set 6 had no lines, nothing showed it unbuilt, and v1 reached
+  `main` without it.
+- **A stage killed by a container restart** is written `halted (container restart)` at once and
+  re-fired before other work (B3-2). client-portal's Stage 6 was `running` only in a prose note;
+  a restart killed it before it wrote, nothing re-fired it, and production went unverified for 5
+  days 9 hours.
 
 This is what lets a long run survive a dropped session, a model swap, or a restart without
 drifting. It is also the per-build audit trail.
@@ -242,12 +278,9 @@ escalations: 2026-08-15T15:40 stage-4-qa cap-hit — 2 failing tenancy tests, se
 ```
 
 **On completion.** When Stage 6 writes its deploy record, copy the final state block into
-`/builds/<app-name>/run-record.md`, then reset `/state/tasks.md` to the idle template. The live
-file is scratch space for one build; the run record is the thing you can still read in six months.
-
-Resetting means resetting *everything* build-specific, not just the stage lines — a validation-pass
-note or an environment-blocker list left behind from the previous build reads as current on the
-next one.
+`/builds/<app-name>/run-record.md`, then delete `/state/<app-name>.md`. The live file is scratch
+space for one build; the run record is the thing you can still read in six months. A state file
+that exists is a build in progress, so a stale one left behind reads as a live build.
 
 ---
 
@@ -266,6 +299,21 @@ WHAT I NEED FROM YOU: <a decision, stated as a question with options>
 
 No recap of the whole build. No options you are not genuinely blocked between.
 
+### Briefs and escalations say how each fact is known
+
+Each figure or environment fact in a brief, an escalation or a finding says how and when it was
+obtained: **observed, counted, classified or deduced** (B3-19). A time is given in Joel's zone,
+Australia/Sydney, by computation from the clock, never read off a container's UTC. A stage
+re-verifies an environment fact before relying on it. client-portal's Orchestrator read the
+container's UTC as Sydney time, sized an audit by a grep count, and sent four briefs carrying wrong
+environment facts; each stage caught the error only because its brief told it to check.
+
+**Re-probe an MCP write before relying on it** (WH-14). Preflight's answer was true when it
+probed. A stage that depends on an MCP write probes again immediately before it, and a refusal is
+recorded `cause: environment` rather than halting the build. workshop-hub's MCP servers answered
+at 10:52, were refused at 11:00 when the session left auto mode, and came back under new names at
+21:30.
+
 Two other fixed shapes exist and are owned by their stages, not by you: the Engineer's
 `CLARIFICATION` block ([agents/engineer.md](agents/engineer.md)) and QA's `GAP` block
 ([agents/qa.md](agents/qa.md)). Route them, do not rewrite them.
@@ -279,13 +327,22 @@ When two agents' outputs disagree:
 1. **Contract wins over preference.** If the Architect's contract settles it, cite the clause and
    move on. No escalation.
 2. **Security wins over Design on anything touching auth, data handling, or secrets.** Log the
-   override in `/state/tasks.md` and let Design re-solve within the constraint.
+   override in the build's log and let Design re-solve within the constraint.
 3. **Anything left after 1 and 2 is a genuine conflict.** Escalate under halt trigger 2.
 
 Contract changes are amendments, made to `contract.md` by the Architect only, dated, appended at
 the bottom. Nobody else edits the contract — not the Designer to add a field, not the Engineer to
 resolve an ambiguity, not QA to make a test pass. An amendment that changes the data model or the
 API shape means QA regenerates the affected tests, and it is your job to fire that.
+
+**An amendment also edits what it supersedes, in place** (B3-6): the old clause or table row struck
+through, with `superseded by A<n>`. The appended amendment keeps the reasoning; the body stays
+current. Route each set by its `Routes to` table, per *State protocol*.
+
+**A change requested directly is still an amendment** (B3-16). A request, from Joel or anyone,
+that alters a response shape, a status or a string the contract binds goes to the Architect as an
+amendment before or with the Engineer's pass, never straight to the code. client-portal's build
+changed an API shape outside any amendment, and no test could tell.
 
 ---
 
@@ -344,7 +401,8 @@ conversation exports.
 | `test-results.md` | QA | 4 |
 | `security-review.md` | Security | 5a, updated at 5b |
 | `deploy-record.md` | DevOps | 6 |
-| `run-record.md` | Orchestrator | on completion — copy of the final `/state/tasks.md` block |
+| `log.md` | Orchestrator, and any stage | append-only, dated notes for the whole run (B3-13) |
+| `run-record.md` | Orchestrator | on completion — copy of the final state block |
 
 `contract.md` is binding on every stage after 1.
 
@@ -361,7 +419,7 @@ is deliberately repeated for a stage that reads cold, one copy binds:
 | Fact | Binding copy | Repeated in |
 |---|---|---|
 | Loop cap numbers | This file | Stage files, as reminders |
-| Status vocabulary | `state/tasks.md` | — |
+| Status vocabulary | `state/tasks.md` | — copied into each `state/<app-name>.md` with the block |
 | Escalation triggers, current narrowed form | `skills/stack-decision.md` | `agents/architect.md` |
 | What a contract must contain | `agents/architect.md` | `builds/_template/contract.md`, as a scaffold |
 | What a fidelity check compares (v0.3) | `agents/qa.md`, coverage item 5 | `agents/engineer.md` guardrail 3a, `agents/designer.md` frame index |
@@ -408,31 +466,22 @@ Mode 2 work. These are conventions for the prose, since prose is all there is.
 Audited against `LEARNINGS.md`. Recorded so a stage does not trust this repo to be level with its
 own learnings.
 
-**15 open.** thelma's, workshop-hub's and client-portal's learnings were written into separate
+**7 open.** thelma's, workshop-hub's and client-portal's learnings were written into separate
 copies of this file on separate branches and consolidated on 2026-10-31 without their changes being
-applied. They are being closed a file at a time: `preflight.md`, `architect.md`, `qa.md`,
-`devops.md`, `skills/deploy-sequence.md`, `security.md` and `engineer.md` are done, and a row below
-names only the files still to change. The backlog is WH-19 (no return path
-for `/squad` learnings) happening at scale, which is why WH-19 is listed here despite its low
-severity.
+applied. They are being closed a file at a time. Every stage file but `surveyor.md` and
+`designer.md` is done, as are this file, `state/tasks.md` and `retro.md`; a row below names only
+the files still to change. The backlog is WH-19 (no return path for `/squad` learnings) happening
+at scale, which is why WH-19 is listed here despite its low severity.
 
 Ordered by severity, then by ID. The entry in `LEARNINGS.md` carries the full change; this column
 names only where it lands. Files are in `agents/` unless a path is given.
 
 | ID | Gap | Change lands in |
 |---|---|---|
-| B3-2 | An amendment set gets no stage lines, so an unbuilt set is invisible | `CLAUDE.md` |
-| B3-4 | A retro's changes cannot reach the rest of the same build | `CLAUDE.md`, `retro.md` |
 | WH-13 | `working` is not runtime-verified; brownfield schema is not captured live | `surveyor.md` §2, §5 |
-| WH-14 | No rule that a stage re-probes an MCP write before relying on it | `CLAUDE.md` |
-| B3-6 | The contract grows by appending until no stage can read it whole | `CLAUDE.md` |
 | WH-15 | Invariants the host's tests enforce are not host constraints | `surveyor.md` §8 |
 | WH-27 | The survey does not name dependencies several suites share | `surveyor.md` §6 |
-| B3-13 | Builds share one state file | `CLAUDE.md`, `state/tasks.md` |
-| B3-15 | Stages share one working tree and the Orchestrator commits under them | `CLAUDE.md` |
-| B3-16 | An API shape can change outside an amendment with no test to tell | `CLAUDE.md` |
 | B3-17 | The flow binding table has no column for how a screen is reached | `designer.md` |
-| B3-19 | Findings and briefs do not say how a claim was known | `CLAUDE.md` |
 | WH-19 | Learnings from `/squad` runs have no return path | `.claude/skills/squad/SKILL.md` |
 | B3-21 | The contract and the design number screens differently | `designer.md` |
 | B3-23 | The survey does not list other writers to shared hosted resources | `surveyor.md` |

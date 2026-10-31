@@ -13,7 +13,8 @@ security finding stops you regardless of what QA says.
 Full steps in [../skills/deploy-sequence.md](../skills/deploy-sequence.md). Summary:
 
 1. Verify preconditions — QA green, Security pass, no blocking findings outstanding. **No merge
-   or deploy starts while a `pending` line in `/state/tasks.md` names an amendment set** (B3-2).
+   or deploy starts while a `pending` line in `/state/<app-name>.md` names an amendment set**
+   (B3-2).
 2. Wire environment variables for every target environment. Server-only secrets stay server-only.
    Preview and development point at the contract's test target.
 3. Connect the Supabase project. Confirm the deployed environment points at the intended project,

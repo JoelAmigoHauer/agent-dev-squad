@@ -199,7 +199,7 @@ naive cap they would have burned two of three iterations and escalated a build t
 
 **Before diagnosing any post-fix failure, confirm the binary under test contains the fix.**
 
-Record the iteration count in `/state/tasks.md` as each one starts, not at the end.
+Record the iteration count in `/state/<app-name>.md` as each one starts, not at the end.
 
 ---
 

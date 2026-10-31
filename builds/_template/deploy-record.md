@@ -40,7 +40,7 @@ ATTEMPTS: 1 | 2
 - [ ] Security pass, no outstanding blocking findings
 - [ ] Type check and lint pass
 - [ ] No secrets in repo or client-exposed variables
-- [ ] No `pending` amendment-set line in `/state/tasks.md`
+- [ ] No `pending` amendment-set line in `/state/<app-name>.md`
 - [ ] Nothing production reads points at the test target
 - [ ] Function region matches the residency clause, if any
 - [ ] Custom SMTP set, if the build emails anyone outside the project team
