@@ -189,11 +189,20 @@ Same shape as QA's. Kick the finding back to the Engineer with the specific fix 
 attempt usually signals a design problem, and design problems belong with Joel at the Architect
 level, not with the Engineer patching symptoms.
 
+**What counts as an iteration** (B3-14). One round trip on a finding: you report it, the
+Engineer changes code, you re-review. These are not iterations: a review pass with no code change,
+a re-review after a contract amendment, an environmental re-scan. The cap halts when a finding is
+still open after the second fix; a second iteration that closes it is done, not a halt.
+
 **The cap counts code defects only.** Every iteration records a diagnosis line:
 
 ```
-cause: code | environment
+cause: code | environment | test-defect
 ```
+
+`test-defect` is a fault in your own check rather than the build: a rule or probe that asserted
+something the contract does not require (WH-24). Like `environment`, it is logged, does not consume
+the cap, and is recorded rather than fixed silently.
 
 An iteration whose root cause was environmental — a stale build, a scanner run against the wrong
 tree, a tool that was not installed — is logged but **does not consume the cap**. This matters more
