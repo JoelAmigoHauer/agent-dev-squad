@@ -115,8 +115,10 @@ from it. Name every shared component in your screen inventory so it gets built o
 Write to `/builds/<app-name>/design.md`:
 
 1. **Mode** — A or B, with one line on why.
-2. **Screen inventory** — one entry per screen from the contract, with its layout and component
-   list.
+2. **Screen inventory** — one entry per screen from the contract, **named by its path**, with its
+   layout and component list. A number is a label local to one file; refer to a screen by its path
+   everywhere in `design.md` (B3-21). client-portal's contract and design gave the same screens
+   different numbers, and neither file said so.
 3. **Component provenance** — for Mode B: which components came from 21st.dev (with identifiers),
    which were hand-built and why.
 4. **Design tokens** — colour, spacing, type scale, radius. Every token carries a required status:
@@ -125,6 +127,11 @@ Write to `/builds/<app-name>/design.md`:
    missing is treated as `derived` and may be changed underneath you.
 5. **States** — empty, loading, error and success for every screen that fetches or submits. A
    screen without its empty and error states is not designed, and QA will find it.
+   **A route whose only control sits inside an exception or error state has no control** (B3-17).
+   Every route in the contract's flow bindings gets a control reachable from the navigation, on
+   the path the contract's `Reached from` column names; if you cannot draw one, raise it to the
+   Architect. In client-portal, one route's only control sat inside an exception panel, and the
+   only way to create an org was typing its URL.
 6. **Frame index** (mandatory, v0.3). See below.
 
 ---
@@ -153,8 +160,6 @@ Rules:
 
 The Engineer builds each row to its frame ([engineer.md](engineer.md), guardrail 3a), and QA checks
 each row against it ([qa.md](qa.md), coverage item 5).
-
----
 
 ---
 

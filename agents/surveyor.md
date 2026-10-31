@@ -59,11 +59,31 @@ at the end, clearly labelled as a draft.
 Preflight runs after you and probes **this** stack, not the default. If you get it wrong, Preflight
 probes the wrong tools and reports a clean bill of health for a stack the repo does not use.
 
+**Every other writer to what the build will share** (B3-23). List each hosted resource the build
+will use (database, storage bucket, auth project, Vercel project) and every other writer to it:
+another app, a script, a scheduled job, and migrations applied outside this repository.
+
+| Hosted resource | Used by this build for | Other writers | Their migrations or changes in this repo? |
+|---|---|---|---|
+| `<Supabase project ref>` | `<tables>` | `<marketing site, cron job>` | yes \| no |
+
+client-portal's database was shared with the marketing site, and the survey did not say so. The
+hosted project carried a marketing-site migration with no local file, so the schema could not be
+reproduced elsewhere, and an anon-callable function from that site stayed an open finding from
+5a's first pass onward.
+
 ### 2. Data model as it exists
 
-Migrations and schema files, not what the application code implies. Output as DDL, marked
-`applied | pending` per migration. If the two disagree — code references a column no migration
-creates — that is a finding, not something to reconcile.
+**Capture the schema from the live catalogue first** (WH-13). Where the project is hosted, read
+its columns, constraints, policies, functions and applied-migration list from the database itself,
+read-only, before anything else. That capture is the data model. Migrations and schema files come
+second, as the drift comparison: output both as DDL, marked `applied | pending` per migration, and
+where they disagree with the capture or with the code, that is a finding, not something to
+reconcile. Never reconstruct the schema from handler code.
+
+workshop-hub's schema lived only on the hosted project. Reading the page and handler said "Advance
+stage" worked; only the catalogue showed a check constraint holding three other values, so every
+press had been refused for a month.
 
 ### 3. API surface as built
 
@@ -87,14 +107,19 @@ is never rebuilt (`LEARNINGS.md` B3-24).
 **The single most valuable thing you produce.** Trace every control that crosses the UI/API
 boundary from the button to its effect, and fill the same table the Architect uses:
 
-| Flow | Screen | Control | Calls | Post-condition | Status |
-|---|---|---|---|---|---|
-| … | … | … | … | … | `working` \| `wired-but-broken` \| `unwired` |
+| Flow | Screen | Reached from | Control | Calls | Post-condition | Status |
+|---|---|---|---|---|---|---|
+| … | `/<path>` | `<navigation path, and the state the control is live in>` | … | … | … | `working` \| `read-verified` \| `wired-but-broken` \| `unwired` |
 
-- `working` — control reaches the route, route does what the post-condition says, verified by
-  reading both ends.
+- `working` — control reaches the route and the route does what the post-condition says, verified
+  **at runtime**: a probe that exercises it, or a capture that includes the data layer (WH-13).
+- `read-verified` — both ends of the wire agree when read, and nothing has shown the write lands.
+  The Architect treats it as `changing` until proven. Reading page and handler alone never earns
+  `working`.
 - `wired-but-broken` — control reaches the route, and the route or the post-condition is wrong.
 - `unwired` — the control exists and calls nothing, or the route exists and nothing reaches it.
+  A control reachable only by typing a URL, or only from inside an error state, is `unwired` from
+  the navigation's side.
 
 "Half-built" almost always means screens exist and some are not wired. This table is where that
 fact becomes something QA can drive and the Architect can complete, instead of something the
@@ -105,6 +130,16 @@ Engineer discovers on day two.
 What test files exist, what runner, whether the suite runs, whether it is green, and what the
 passing tests actually cover against the flow table above. A green suite covering none of the
 flows is recorded as exactly that.
+
+**Name every dependency more than one suite shares** (WH-27): any enumeration, fixture or helper
+that two or more test suites index into, with the suites that use it. The Architect binds which
+suites re-run when it changes. In workshop-hub-room-runner, the survey happened to note that three
+suites index `ROOM_STAGES`; that note is the only reason a change to it did not leave a suite red
+that nobody runs.
+
+| Shared dependency | Kind | Suites that use it |
+|---|---|---|
+| `<ROOM_STAGES>` | enumeration | `<flows.spec.ts, room.spec.ts, end.spec.ts>` |
 
 ### 7. Build health
 
@@ -122,6 +157,13 @@ making it build becomes the Engineer's first task. Record the exact errors.
 The host repository's `CLAUDE.md`, README, `package.json` scripts, `.env.example`, CI config. Pull
 out every constraint a stage would need to obey — package manager, protected paths, required
 checks, naming rules — and list them.
+
+**The host's tests are constraints too** (WH-15). For every test that guards a structural rule
+(one row per test, not per assertion), list the rule it encodes as a host constraint, with the
+test's path. The Architect runs the host suite against the contract before validation, and needs
+to know which tests guard what. workshop-hub's host already had a test, "no two stages claim the
+same section"; the survey listed `CLAUDE.md`'s conventions and not that test, and the contract
+broke it.
 
 **Why this matters more than it looks.** The host's `CLAUDE.md` auto-loads into every stage
 whether the squad wants it to or not. The context-loading rule cannot stop that. Listing its
@@ -156,7 +198,8 @@ report to the Orchestrator in this shape:
 SURVEY — <change-name>, <date>, commit <sha>
 MODE: brownfield
 BUILDS: yes | no — <first error if no>
-BINDINGS: <n> working, <n> wired-but-broken, <n> unwired
+BINDINGS: <n> working, <n> read-verified, <n> wired-but-broken, <n> unwired
+SCHEMA: captured from live catalogue | files only — <why>
 GUARDRAIL DEBT: <n> items, all marked existing
 HOST CONSTRAINTS: <n> folded in
 INTENT DRAFT: ready for Joel

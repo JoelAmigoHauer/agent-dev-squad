@@ -14,12 +14,14 @@ Why: <one line>
 
 ## Screen inventory
 
-One entry per screen from the contract.
+One entry per screen from the contract, named by its path. A number is a label local to this file.
 
-### <screen name>
+### `/<path>`
 - Layout:
 - Components:
 - States: empty / loading / error / success
+- Reached by: <the navigation control, matching the contract's Reached from; never only from an
+  error state>
 
 ---
 
