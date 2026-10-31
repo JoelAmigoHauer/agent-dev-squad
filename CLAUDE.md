@@ -408,10 +408,11 @@ Mode 2 work. These are conventions for the prose, since prose is all there is.
 Audited against `LEARNINGS.md`. Recorded so a stage does not trust this repo to be level with its
 own learnings.
 
-**35 open.** thelma's, workshop-hub's and client-portal's learnings were written into separate
+**26 open.** thelma's, workshop-hub's and client-portal's learnings were written into separate
 copies of this file on separate branches and consolidated on 2026-10-31 without their changes being
-applied. They are being closed a file at a time: `preflight.md`, `architect.md` and `qa.md` are
-done, and a row below names only the files still to change. The backlog is WH-19 (no return path
+applied. They are being closed a file at a time: `preflight.md`, `architect.md`, `qa.md`,
+`devops.md` and `skills/deploy-sequence.md` are done, and a row below names only the files still to
+change. The backlog is WH-19 (no return path
 for `/squad` learnings) happening at scale, which is why WH-19 is listed here despite its low
 severity.
 
@@ -420,27 +421,22 @@ names only where it lands. Files are in `agents/` unless a path is given.
 
 | ID | Gap | Change lands in |
 |---|---|---|
-| B3-2 | An amendment set gets no stage lines, so an unbuilt set is invisible | `CLAUDE.md`, `devops.md` |
-| B3-3 | No test environment, so tests, fixtures and migrations ran on production | `engineer.md`, `skills/deploy-sequence.md` |
-| B3-4 | A retro's changes cannot reach the rest of the same build | `CLAUDE.md`, `retro.md`, `devops.md` |
+| B3-2 | An amendment set gets no stage lines, so an unbuilt set is invisible | `CLAUDE.md` |
+| B3-3 | No test environment, so tests, fixtures and migrations ran on production | `engineer.md` |
+| B3-4 | A retro's changes cannot reach the rest of the same build | `CLAUDE.md`, `retro.md` |
 | WH-13 | `working` is not runtime-verified; brownfield schema is not captured live | `surveyor.md` §2, §5, `security.md` |
 | WH-14 | No rule that a stage re-probes an MCP write before relying on it | `CLAUDE.md` |
-| WH-20 | The deploy never confirms its target project | `skills/deploy-sequence.md` §3, `devops.md` |
-| WH-25 | Migration ordering is one question where there are two | `devops.md` |
-| B2-1 | Admin-client RPCs hidden in a non-exposed schema fail closed | `engineer.md`, `security.md`, `devops.md` |
-| B3-5 | Contract premises about code, consumers and third parties go unread | `engineer.md`, `skills/deploy-sequence.md` |
+| B2-1 | Admin-client RPCs hidden in a non-exposed schema fail closed | `engineer.md`, `security.md` |
+| B3-5 | Contract premises about code, consumers and third parties go unread | `engineer.md` |
 | B3-6 | The contract grows by appending until no stage can read it whole | `CLAUDE.md` |
-| B3-7 | Checks that cannot fail are read as evidence | `security.md`, `engineer.md`, `devops.md` |
+| B3-7 | Checks that cannot fail are read as evidence | `security.md`, `engineer.md` |
 | B3-8 | Supabase default grants undo column revokes and hand out TRUNCATE | `engineer.md`, `security.md` |
 | B3-9 | A foreign key proves a row exists, never that it is yours | `engineer.md`, `security.md` |
 | B3-10 | Platform settings contradict contract clauses, unseen by any scanner | `security.md` |
-| B3-11 | On a git-linked project the merge is the promote | `skills/deploy-sequence.md`, `devops.md` |
 | TH-17 | The 5a/5b split is by stage, not by when a check's target exists | `security.md` |
 | TH-18 | Security has no per-tool fallback table for a degraded scanner | `security.md` |
 | WH-15 | Invariants the host's tests enforce are not host constraints | `surveyor.md` §8 |
-| WH-23 | The promote step has one path, refused when environments differ | `skills/deploy-sequence.md` §6 |
 | WH-27 | The survey does not name dependencies several suites share | `surveyor.md` §6 |
-| B2-2 | A new Vercel project's first deploy is production | `skills/deploy-sequence.md` |
 | B3-12 | Status codes and bodies do not say what happened | `engineer.md` |
 | B3-13 | Builds share one state file | `CLAUDE.md`, `state/tasks.md` |
 | B3-15 | Stages share one working tree and the Orchestrator commits under them | `CLAUDE.md` |
@@ -448,12 +444,8 @@ names only where it lands. Files are in `agents/` unless a path is given.
 | B3-17 | The flow binding table has no column for how a screen is reached | `designer.md` |
 | B3-18 | Container restarts lose evidence | `engineer.md` |
 | B3-19 | Findings and briefs do not say how a claim was known | `CLAUDE.md` |
-| WH-17 | Smoke data written to production has no owner | `skills/deploy-sequence.md`, `devops.md` |
-| WH-18 | The rollback target's age is not recorded | `skills/deploy-sequence.md` §6 |
 | WH-19 | Learnings from `/squad` runs have no return path | `.claude/skills/squad/SKILL.md` |
-| B2-3 | Magic-link sign-in needs Auth URL config no connector exposes | `skills/deploy-sequence.md` |
 | B3-21 | The contract and the design number screens differently | `designer.md` |
-| B3-22 | Residency is bound for the data store, not the functions | `skills/deploy-sequence.md` |
 | B3-23 | The survey does not list other writers to shared hosted resources | `surveyor.md` |
 
 Several rows touch the same file. Close them a file at a time rather than an ID at a time, and
