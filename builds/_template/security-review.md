@@ -19,6 +19,7 @@ ITERATION: <n>/2
 | App code | `semgrep --config auto` | | |
 | Privileges | standing privilege query, writes attempted as each role | | |
 | Platform settings | read from the platform's API, against the contract's table | | |
+| Changed code | third-pass trace of this build's diff, each finding verified | | |
 | Business logic | manual checks below | | |
 
 A clean automated run means the known-pattern layers are clean. It is not a verdict on its own:
@@ -39,6 +40,20 @@ Specifically checked:
 - [ ] RLS present on every table
 - [ ] No policy permissive to the point of decorative (`using (true)` on tenant-scoped tables)
 - [ ] Advisor-flagged vulnerabilities resolved
+
+---
+
+## Third pass: this build's changes
+
+```
+DIFF FROM:   <commit the build started on>
+HOUSE PATTERN:
+  auth:       <how a caller is authenticated>
+  validation: <where input is validated>
+  tenancy:    <how a query is scoped>
+  output:     <how output is escaped>
+ENTRY POINTS TRACED: <n>
+```
 
 ---
 
@@ -83,11 +98,18 @@ Specifically checked:
 ```
 FINDING <n> — <title>
 SEVERITY: blocking | non-blocking
-FOUND BY: <scanner name> | attempt
+CATEGORY: 
+FOUND BY: <scanner name> | attempt | trace
+CONFIDENCE: attempt | <8–10>
 LOCATION: <file:line, route, or platform setting>
 ISSUE: 
+EXPLOIT SCENARIO: <who does what, and what they get>
 IMPACT: <what an attacker or a mistake gets>
 FIX: <the specific change required>
+```
+
+```
+CONSIDERED, NOT REPORTED: <n> — <each: location, score, why>
 ```
 
 Blocking stops the deploy. Non-blocking is recorded and carried into the deploy record.

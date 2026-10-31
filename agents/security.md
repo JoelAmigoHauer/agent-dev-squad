@@ -149,6 +149,41 @@ not a verdict.
 
 ---
 
+## Third pass: trace this build's changes
+
+Adapted from Claude Code's built-in `/security-review` command (version 2.1.314, read 2026-10-31;
+logged in `PRIOR-ART.md`). The scanners match patterns and the manual checks below work through a
+list. This pass reads the build's own changes the way an attacker would.
+
+**Scope:** everything this build adds or changes, from `git diff` against the commit the build
+started on. On a brownfield build that is the code behind `changing` and `new` bindings; `existing`
+code stays inherited debt, recorded rather than traced.
+
+1. **Learn the house pattern first.** Write down, one line each, how this codebase authenticates a
+   caller, validates input, scopes a query to a tenant and escapes output. On a greenfield build
+   the Engineer's guardrails 6 and 7 are the pattern.
+2. **Diff the build against it.** A route that checks its caller its own way, a query that skips
+   the tenant scope, a handler that goes round the shared entry point: each deviation is a
+   candidate, because a second way of doing auth is where the first way's protection goes missing.
+3. **Trace every input to every sensitive operation.** For each new or changed entry point (route,
+   server action, webhook, RPC, form), follow the request's data to where it reaches the database,
+   a file, a shell, a template, the HTML, another service or a log, and ask at each hop whether it
+   crosses a privilege boundary unsafely.
+
+What to look for along the way, beyond what the manual checks already cover:
+
+| Category | On the default stack, look for |
+|---|---|
+| Injection | SQL built by string in an RPC, a raw query or a `security definer` body (`execute` with concatenation, `format()` without `%I` / `%L`); a shell call with request data; path traversal in storage keys and file reads |
+| Authorisation | A route that trusts that a session exists rather than who it belongs to; a `security definer` function that checks nothing; escalation through a column the caller can write |
+| Sessions and tokens | A JWT decoded without verification; a token or magic link that can be reused, never expires, or is accepted for the wrong audience |
+| Code execution | `eval`, `new Function`, or deserialising request data unsafely |
+| XSS | `dangerouslySetInnerHTML` or another raw HTML sink fed request data. React escapes everything else, so ordinary JSX is not a finding |
+| Crypto and randomness | `Math.random()` for a token, id or code; home-made crypto; a disabled certificate check |
+| Data exposure | A response carrying more columns than the contract binds (a `select('*')` handed to the client); secrets, passwords or PII written to logs; stack traces or database errors in a response |
+
+---
+
 ## Manual checks
 
 ### Auth
@@ -229,6 +264,44 @@ For each integration named in the contract — Stripe sandbox, Resend, anything 
 
 ---
 
+## Before a finding is reported
+
+**Where you can attempt it, attempt it.** A privilege, a tenancy guard, a platform setting or an
+injection against the test target is settled by trying it (B3-7). The result is the evidence, so an
+attempted finding needs no confidence score: mark it `FOUND BY: attempt`.
+
+**A finding from reading code alone is verified independently first** (adapted from
+`/security-review`). Give it to a second pass: a fresh sub-agent where the runner allows one,
+otherwise a separate read that has only the finding, the code and this section. That pass scores it
+1 to 10 for how sure it is that the vulnerability can be exploited here. Report it at 8 or above.
+Below 8, list it under `considered, not reported` with its score and the reason, so the record of
+what was examined survives and a clean review cannot read as an unexamined one.
+
+**Not findings at this stage:**
+
+- Denial of service, resource exhaustion, memory or CPU use. **Except** a rate limiter or quota
+  that fails closed and locks real users out: that is an outage, and it goes to QA as a GAP.
+  client-portal's fail-closed limiter made sign-in impossible in production (B2-1).
+- A race or timing attack with no practical path.
+- Missing hardening in general. A setting the contract's *Platform settings* table binds is not
+  general hardening; a mismatch there is a finding (B3-10).
+- Unsanitised input written to logs (log spoofing), regex injection and regex DoS.
+- A missing permission check in client-side code. The server is the boundary, so review the
+  server-side check.
+- An attack that needs control of an environment variable or a CLI flag.
+- Test files and documentation, **unless** they write to a real target (B3-3).
+- An open redirect, tabnabbing or a similar low-impact web issue, **unless** it sits in a sign-in
+  or magic-link flow. client-portal's sign-in redirect was a real finding and was still served by
+  22 old production deployments (B3-10, B3-11).
+
+`/security-review` also excludes outdated dependencies and secrets stored on disk. They are not
+excluded here: this stage is the process that handles both (`npm audit`, `gitleaks`).
+
+**Severity.** A reported finding that reaches auth, tenant data, secrets or code execution is
+`blocking`. Anything else reported is `non-blocking`.
+
+---
+
 ## Output
 
 Write to `/builds/<app-name>/security-review.md`:
@@ -240,11 +313,16 @@ FINDINGS: <one block per finding, below>
 
 FINDING <n> — <title>
 SEVERITY: blocking | non-blocking
-FOUND BY: <scanner name> | attempt
+CATEGORY: <e.g. sql_injection, authz_bypass, data_exposure, platform_setting>
+FOUND BY: <scanner name> | attempt | trace
+CONFIDENCE: attempt | <8–10, from the verification pass>
 LOCATION: <file:line, route, or platform setting>
 ISSUE: <what is wrong>
+EXPLOIT SCENARIO: <who does what, and what they get>
 IMPACT: <what an attacker or a mistake gets>
 FIX: <the specific change required>
+
+CONSIDERED, NOT REPORTED: <n> — <each: location, score, why>
 ```
 
 Blocking findings stop the deploy. Non-blocking findings are recorded and passed to Joel with the
@@ -309,6 +387,7 @@ Three layers, and knowing which one caught something tells you how much to trust
 | App code | `semgrep` | Injection, unsafe patterns | Business-logic authorisation |
 | Privileges | The standing privilege query, writes attempted as each role | Table and column grants, TRUNCATE, default ACLs | Policy logic |
 | Platform settings | The platform's own API, against the contract's table | Auth and protection settings that default open | Code |
+| Changed code | The third-pass trace, each finding verified | Injection, authorisation drift, exposure in what this build changed | Code this build did not touch |
 | Business logic | You, manually | Tenancy, contract auth rules | Nothing — this is the backstop |
 
 A clean automated run means the known-pattern layer is clean. It does not mean the app is safe, and
