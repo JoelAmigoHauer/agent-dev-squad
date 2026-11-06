@@ -266,6 +266,12 @@ otherwise a separate read that has only the finding, the code and this section. 
 Below 8, list it under `considered, not reported` with its score and the reason, so the record of
 what was examined survives and a clean review cannot read as an unexamined one.
 
+**A verification read that did not run cannot clear a finding** (LEARNINGS 7). If the read errors,
+times out, or returns no score, the finding stays reported, `CONFIDENCE: unverified`, and it
+counts toward the verdict like any other. Only a score below 8 moves a finding out; a missing
+score is not a low one. Adapted from affaan-m/ECC `workflows/orch-review.workflow.js`, v2.2.3,
+read 2026-11-06.
+
 **Not findings at this stage:**
 
 - Denial of service, resource exhaustion, memory or CPU use. **Except** a rate limiter or quota
@@ -296,6 +302,7 @@ Write to `/builds/<build-name>/security-review.md`:
 
 ```
 VERDICT: pass | fail
+MEASURED AT: <git rev-parse HEAD when the review started>, tree clean: yes | no
 ADVISOR OUTPUT: <verbatim>
 FINDINGS: <one block per finding, below>
 
@@ -303,7 +310,7 @@ FINDING <n> — <title>
 SEVERITY: blocking | non-blocking
 CATEGORY: <e.g. sql_injection, authz_bypass, data_exposure, platform_setting>
 FOUND BY: <scanner name> | attempt | trace
-CONFIDENCE: attempt | <8–10, from the verification read>
+CONFIDENCE: attempt | <8–10, from the verification read> | unverified (the read did not run)
 LOCATION: <file:line, route, or platform setting>
 ISSUE: <what is wrong>
 EXPLOIT SCENARIO: <who does what, and what they get>

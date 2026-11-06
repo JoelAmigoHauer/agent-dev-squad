@@ -9,11 +9,13 @@ Written by: QA, Stage 4. Tests generated from `contract.md`, never from the impl
 ```
 SUITE: green | red
 ITERATION: <n>/3
+MEASURED AT: <git rev-parse HEAD when the run started>, tree clean: yes | no
 E2E (Playwright): passed | failed | NOT RUN — a suite that skipped this layer is not green
 TRACES ON FAILURE: <paths, for the Engineer>
 TEST TARGET: <from contract §4, never production> — strategy: <from contract §4>
 RESET BETWEEN ITERATIONS: yes | no
 BLOCKED FLOWS: none | <flow rows skipped for a missing credential; each blocks Stage 6>
+FIDELITY: <n> matches, <n> GAPs, <n> not compared: none | <frame-index row ids; each blocks Stage 6>
 ```
 
 ---

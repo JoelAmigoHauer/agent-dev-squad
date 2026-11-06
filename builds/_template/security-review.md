@@ -9,6 +9,7 @@ Written by: Security, Stage 5. Runs in parallel with QA.
 ```
 VERDICT: pass | fail
 ITERATION: <n>/2
+MEASURED AT: <git rev-parse HEAD when the review started>, tree clean: yes | no
 ```
 
 | Layer | Tool | Run | Result |
@@ -100,7 +101,7 @@ FINDING <n> — <title>
 SEVERITY: blocking | non-blocking
 CATEGORY: 
 FOUND BY: <scanner name> | attempt | trace
-CONFIDENCE: attempt | <8–10>
+CONFIDENCE: attempt | <8–10> | unverified
 LOCATION: <file:line, route, or platform setting>
 ISSUE: 
 EXPLOIT SCENARIO: <who does what, and what they get>

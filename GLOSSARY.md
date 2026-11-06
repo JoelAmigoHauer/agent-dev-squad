@@ -25,7 +25,7 @@ Carrying a host repo's new learnings back into the template (`/squad port`).
 _Avoid_: sync, upstream, backport
 
 **Release**:
-A tagged template version (`v0.3`) that `/squad` stamps by default.
+A tagged template version (`v0.4`) that `/squad` stamps by default.
 _Avoid_: build (a build is a run, never a version)
 
 ## Runs
@@ -149,6 +149,21 @@ _Avoid_: issue, defect, failure
 **Finding**:
 Security's report of a vulnerability, in the `FINDING` block, `blocking` or `non-blocking`.
 _Avoid_: vuln, issue, gap
+
+**Not compared**:
+A fidelity row that never had both its frame screenshot and its built screenshot beside each
+other. It is counted apart from matches and gaps, and never read as a match.
+_Avoid_: skipped, unchecked, n/a
+
+**Unverified**:
+A finding whose verification read errored or returned no score. It stays reported; only a score
+below 8 moves a finding to `considered, not reported`.
+_Avoid_: unconfirmed, low confidence
+
+**Measured at**:
+The commit a QA or Security verdict was run on, from `git rev-parse HEAD`, with whether the tree
+was clean. A verdict counts toward a deploy only at the commit being deployed.
+_Avoid_: tested on, build version
 
 **Clarification**:
 The Engineer's question to the Architect about an ambiguous clause, in the `CLARIFICATION` block.

@@ -1,14 +1,22 @@
-# Orchestrator brief — agent development squad v0.3
+# Orchestrator brief — agent development squad v0.4
 
 Owner: Joel Hauer / We Are Visionists. Template repository. A build runs in its own host repo, which
 `/squad init` sets up from this template at a pinned version
 ([.claude/skills/squad/SKILL.md](.claude/skills/squad/SKILL.md)). `/squad` is the only way in.
 
-**v0.3** is v0.2 with the learnings of three more apps applied: `thelma`, `workshop-hub` and
+**v0.4** is v0.3 with no new build behind it: the pipeline's own tooling tightened, and checked
+mechanisms from two outside sources adopted, each against a learning it fits (PRIOR-ART.md entries
+5 to 7). **v0.3** is v0.2 with the learnings of three more apps applied: `thelma`, `workshop-hub` and
 `client-portal`, 51 entries, closed on 2026-10-31. **v0.2** was v0.1 with the learnings from its
 first end-to-end run applied. Every change is recorded in [LEARNINGS.md](LEARNINGS.md) with what
 broke, why it was systemic, and the specific fix. Read it before changing anything here — most of
 what looks like an odd rule is load-bearing.
+
+What changed from v0.3: `/squad` as the only way in; a git guard that blocks sweeps, discards,
+force-pushes and hook bypasses, and is tested before it is trusted; a pre-commit type check and
+lint; the Copywriter back as Stage 1.5, with your figure check; a diff trace and verified findings
+in Security; verdicts that name the commit they measured; `not compared` and `unverified` as
+results that never read as a pass; tests that name the clause they check; ADRs and a glossary.
 
 What changed from v0.2: a screen fidelity check at every stage that touches a screen, one state
 file per build, a test target that is never production, a contract that binds how state comes to
@@ -78,6 +86,7 @@ no dependency manifest here — the code lives in the repos generated *from* thi
 | `builds/<build-name>/` | One folder per build. The audit trail | Per stage, its own file |
 | `.claude/skills/squad/SKILL.md` | The `/squad` trigger: stamps this template into another repo's `.squad/` at a pinned version and hands the Orchestrator this brief | **Never by a stage.** Invoked in the host repo, not here |
 | `.claude/hooks/squad-git-guard.sh` | The git guard. `/squad init` installs it in the host repo's `.claude/`; it blocks commands that sweep, discard or rewrite work | Every Bash call in the host repo. Not wired in the template itself |
+| `.claude/hooks/squad-git-guard.test.sh` | The guard's own test: about 90 commands and the exit each must give. `/squad init` refuses to stamp if one comes out wrong | At `/squad init` and Stage 0.5, in the host repo |
 | `/ERRORS.md` | Durable machine facts, written by Preflight. **Does not exist yet** — created on the first run that finds one | Stage 0.5 reads and appends |
 
 Each agent file is that agent's entire world. It is written to be read cold, with no other pipeline
@@ -279,10 +288,10 @@ Progress lives in the build's state file, `/state/<build-name>.md`. Never in the
 - **Every amendment set gets stage lines** (B3-2). When the Architect appends an amendment set, copy
   its `Routes to` table into the state file as one `pending` line per stage, naming the set:
   Copywriter if it adds or changes a surface, control or string, Designer if it adds or changes a
-  surface or control, Engineer always, QA if it moves the data
-  model or an API shape. Status lives only in the block; a note may explain a line, never stand in
-  for one. client-portal's amendment set 6 had no lines, nothing showed it unbuilt, and v1 reached
-  `main` without it.
+  surface or control, Engineer always, QA if it moves the data model or an API shape or strikes
+  through any clause, so its tests can be reconciled. Status lives only in the block; a note may
+  explain a line, never stand in for one. client-portal's amendment set 6 had no lines, nothing
+  showed it unbuilt, and v1 reached `main` without it.
 - **A stage killed by a container restart** is written `halted (container restart)` at once and
   re-fired before other work (B3-2). client-portal's Stage 6 was `running` only in a prose note;
   a restart killed it before it wrote, nothing re-fired it, and production went unverified for 5

@@ -49,7 +49,7 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
   exit 1; }
 [ -z "$(git status --porcelain)" ] || { echo "Working tree is dirty. Commit or stash first." >&2; exit 1; }
 SRC="https://github.com/JoelAmigoHauer/agent-dev-squad"
-REF="${SQUAD_REF:-v0.3}"                # the current release; SQUAD_REF=main for unreleased work
+REF="${SQUAD_REF:-v0.4}"                # the current release; SQUAD_REF=main for unreleased work
 TMP="$(mktemp -d)"
 git -c advice.detachedHead=false clone --quiet --depth 1 --branch "$REF" "$SRC" "$TMP"
 SHA="$(git -C "$TMP" rev-parse HEAD)"
@@ -63,8 +63,14 @@ printf 'template: %s\nref: %s\ncommit: %s\nstamped: %s\n' \
 
 # The git guard: a PreToolUse hook in the host's own .claude/, merged with any existing settings.
 GUARD=".claude/hooks/squad-git-guard.sh"
+GTEST=".claude/hooks/squad-git-guard.test.sh"
 if [ -f "$TMP/$GUARD" ]; then
   mkdir -p .claude/hooks && cp "$TMP/$GUARD" "$GUARD" && chmod +x "$GUARD"
+  if [ -f "$TMP/$GTEST" ]; then
+    cp "$TMP/$GTEST" "$GTEST" && chmod +x "$GTEST"
+    bash "$GTEST" "$GUARD" || { echo "The git guard failed its own test. Not stamped." >&2
+      exit 1; }
+  fi
   node -e '
     const fs = require("fs"), p = ".claude/settings.json";
     const s = fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf8")) : {};
@@ -75,7 +81,9 @@ if [ -f "$TMP/$GUARD" ]; then
     fs.writeFileSync(p, JSON.stringify(s, null, 2) + "\n");'
 fi
 rm -rf "$TMP"
-git add .squad .claude/settings.json "$GUARD" 2>/dev/null || git add .squad
+STAGE=(.squad)
+for f in .claude/settings.json "$GUARD" "$GTEST"; do [ -e "$f" ] && STAGE+=("$f"); done
+git add -- "${STAGE[@]}"
 git commit --quiet -m "Stamp the agent development squad at $SHA"
 echo "squad stamped at $SHA"
 ```
@@ -90,13 +98,27 @@ changes are whose.
 It commits `.squad/` and the git guard to the host repo. `.squad/` is the audit trail, meant to be
 read in six months.
 
-**The git guard** (`.claude/hooks/squad-git-guard.sh`) blocks `git add -A`, `git add .`,
-`reset --hard`, `clean -f`, `checkout .`, `restore .` and any force-push, in every Claude session in
-the host repo. Plain `git push` stays allowed. It turns the brief's rule (commit by explicit path,
-never sweep the tree; B3-15) into something a stage cannot skip. A command it blocks has no
-bypass: the stage records it in the build's `log.md` and halts, and Joel runs it if it is right.
-Adapted from mattpocock/skills `git-guardrails-claude-code`, read 2026-10-31. A template version
-older than the guard (`v0.3`) stamps without it.
+**The git guard** (`.claude/hooks/squad-git-guard.sh`) blocks, in every Claude session in the
+host repo, commands that sweep the tree (`git add -A`, `.`, `-u`, `commit -a`), discard work
+(`reset --hard`, `clean -f`, `checkout .`, `restore .`, `stash drop`, `branch -D`), rewrite
+history (any force-push, `filter-branch`) or skip the git hooks (`--no-verify`, `commit -n`,
+`core.hooksPath`, `HUSKY=0`). It catches them behind `env`, `sudo`, `VAR=value`, quotes, a path
+to git and git's global options. Plain `git push` stays allowed. It turns the brief's rule (commit
+by explicit path, never sweep the tree; B3-15) into something a stage cannot skip, and keeps the
+pre-commit hook the Engineer installs from being skipped with one flag (B3-11). A command it
+blocks has no bypass: the stage records it in the build's `log.md` and halts, and Joel runs it if
+it is right. Adapted from mattpocock/skills `git-guardrails-claude-code`, read 2026-10-31; bypass
+spellings from affaan-m/ECC `block-no-verify.js` and `gateguard-fact-force.js` v2.2.3, read
+2026-11-06. A template version older than the guard (`v0.3`) stamps without it. Commands reached
+through `bash -c`, `sh -c` or `eval` are not inspected.
+
+**The guard is shown to block before anything relies on it** (B3-7). The script above runs
+`squad-git-guard.test.sh`, about 90 commands with the exit each must give, and refuses to stamp if
+one comes out wrong. That proves the script; it does not prove the session loaded it, because
+Claude Code reads hooks only when a session starts. So, straight after stamping, run
+`git add -A --dry-run` through Bash. It changes nothing either way. If it is refused, the guard
+is live. If it runs, the session started before the hook existed: tell Joel to restart the
+session, and fire nothing until the same check is refused.
 
 ## Three rules the brief cannot state for itself
 

@@ -56,6 +56,13 @@ Cover, at minimum:
    fidelity pass that looked at nothing cannot read as a clean one. A suite that never looked at a
    screen has not tested it.
 
+   **A row without both images is `not compared`, never a match** (B3-24, B3-7). On a capped Figma
+   seat the frame screenshots run out, shells and most-used screens first, and the rest must not
+   vanish into the count. List each `not compared` row by id, count them apart from matches and
+   GAPs, and while any remains the fidelity pass is not clean: it is a `blocked` line, as a flow
+   skipped for a missing credential is. Adapted from affaan-m/ECC `browser-qa` ("no baseline ⇒
+   INCONCLUSIVE, never a silent PASS"), v2.2.3, read 2026-11-06.
+
 ### A test counts once it has been seen to fail
 
 A new or regenerated test counts toward coverage only once it has been shown red against the
@@ -66,6 +73,19 @@ defect it guards: run by the unfixed binary, or with its expectation inverted (B
 - Assert the bound value with an exact matcher: `toEqual` on the value, not `toBeTruthy` on its
   existence.
 - Show a locator resolves the element you mean before trusting it to be absent.
+
+### A test names the clause it checks
+
+Every test's title carries the contract clause, flow row or amendment it binds, as the contract
+numbers it: `§3.4`, `F-07`, `A53`. When an amendment set lands, before any other work on it, grep
+the suite for every clause the set strikes through (`superseded by A<n>`) and rewrite or retire each
+test that cites one. A test still asserting a struck clause is a defect in the suite, logged
+`cause: test-defect`. Report in `test-results.md` the clauses that no test cites.
+
+client-portal's `flows/09-take-on-spine.spec.ts:135` kept asserting A53's "there is no Decline in
+v1" while amendment set 6 sat unbuilt, and "both gates were green over it" (B3-2). Nothing tied the
+test to the clause, so nothing showed it was stale. Adapted from affaan-m/ECC `test-collaboration`,
+v2.2.3, read 2026-11-06.
 
 ### A guard derives its subjects
 
@@ -82,6 +102,13 @@ Write the suite to `/builds/<build-name>/tests/` and the results to
 
 **Every coverage claim in `test-results.md` names the spec file and the assertion that makes it**
 (WH-29). A claim without that citation is a plan, and is written as one.
+
+**A verdict names the commit it measured** (B3-15). Record `MEASURED AT:` from
+`git rev-parse HEAD` when the run starts, and whether the tree was clean (`git status --porcelain`,
+the build folder excepted). A green with no commit can describe a tree that is not the one being
+deployed: Security's fix pass lands code after your green, and client-portal's checkpoint did not
+reproduce QA's numbers. Adapted from affaan-m/ECC `issue-review` and `opensource-pipeline`,
+v2.2.3, read 2026-11-06.
 
 ---
 
