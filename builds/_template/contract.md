@@ -256,5 +256,5 @@ Downstream impact: <does QA need to regenerate tests? does the schema change?>
 
 | Amendment | Changes | Routes to |
 |---|---|---|
-| A<n> | <clause or table> | Designer (surface or control) / Engineer (always) / QA (data model or API shape) |
+| A<n> | <clause or table> | Designer (surface or control) / Engineer (always) / QA (data model, API shape, or any clause struck through) |
 -->

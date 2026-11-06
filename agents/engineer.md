@@ -57,6 +57,8 @@ frame index that your round touches, shells included:
    screenshots).
 3. Record each row in `build-notes.md`: `matches`, or `differs` with what and why. A difference you
    meant to make (the contract overrides the frame) cites the clause. One you didn't is not done.
+   A row you could not put beside its frame (no frame screenshot) is `not compared`, never
+   `matches` (qa.md coverage item 5).
 
 Code that passes every test and doesn't look like its frame is not done. QA checks the same rows
 independently, so a row you skip comes back as a GAP and costs a loop.

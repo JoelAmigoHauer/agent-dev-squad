@@ -12,10 +12,18 @@ Do not start until all of these are true. Check them, do not assume them.
 
 - [ ] QA reports full suite green (`test-results.md`), **including the Playwright E2E layer**. An
       API-only green is not a green.
-- [ ] No flow in `test-results.md` is `blocked`, unless Joel has accepted that gap in writing. A
-      flow skipped for a missing credential has not been tested (B3-4).
+- [ ] No flow in `test-results.md` is `blocked`, and no fidelity row is `not compared`, unless Joel
+      has accepted that gap in writing. A flow skipped for a missing credential has not been tested
+      (B3-4), and a screen never put beside its frame has not been checked (B3-24).
 - [ ] Security reports pass with no outstanding **blocking** findings (`security-review.md`), with
       advisors, `npm audit`, `gitleaks` and `semgrep` all run.
+- [ ] **Both verdicts were measured on the commit you will deploy** (B3-15). The `MEASURED AT`
+      lines in `test-results.md` and `security-review.md` each equal it, both with a clean tree, or
+      the diff from them to it touches only the build folder. On a git-linked project that commit
+      is step 5's `PREVIEW SHA`. Otherwise the stage whose commit is stale re-runs on this one,
+      recorded `cause: environment`, so it uses no loop iteration. QA and Security run in
+      parallel, so a Security fix pass routinely lands code after QA's green. Adapted from
+      affaan-m/ECC `issue-review` and `opensource-pipeline`, v2.2.3, read 2026-11-06.
 - [ ] Type check and lint pass.
 - [ ] No secrets in the repo or in client-exposed variables.
 - [ ] No `pending` line in `/state/<build-name>.md` names an amendment set (B3-2). client-portal's

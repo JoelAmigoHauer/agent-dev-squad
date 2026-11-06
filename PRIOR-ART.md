@@ -223,6 +223,83 @@ of them only when a build produces a failure one of them would have prevented.
 
 ---
 
+## 7. `affaan-m/ECC`: a large Claude Code skills, hooks and agents collection
+
+**Read 2026-11-06**, v2.2.3 (commit `b38be6a`, 2026-10-29), MIT. 314 skills, 71 agents, 98
+commands, 27 hooks, about 600k lines. Read in source by eight parallel readers: every file
+touching orchestration, verification, state, testing, security, deploy, MCP, git or learnings in
+full, scripts included; domain and language skills (homelab, Kotlin, trading, video) by heading;
+translated docs and the Rust control plane skipped. Every file reference below was re-checked
+against this repo before adoption.
+
+**Why it matters here.** Most of it is a prompt library, the same verdict as the
+`awesome-claude-code-subagents` collections below. A handful of mechanisms in it close gaps in
+fixes this repo already adopted.
+
+**Taken:**
+
+- **Hook-bypass and wrapper spellings** (`scripts/hooks/block-no-verify.js`,
+  `gateguard-fact-force.js`) → `.claude/hooks/squad-git-guard.sh`. Run on 2026-11-06, the guard
+  let 13 of 16 sample spellings through: `env git add -A`, `commit -am`, `add -u`, `push -fu`,
+  `clean --force`, `/usr/bin/git reset --hard`, `--no-verify`, `-n`, `HUSKY=0`. `--no-verify`
+  cancels B3-11's pre-commit hook with one flag. Changed from the source: bash, not 1,800 lines of
+  Node; `HUSKY=0` and `git config core.hooksPath`, which ECC misses, are blocked; `bash -c` and
+  `eval` bodies stay out of scope.
+- **Prove the guard blocks** (no ECC equivalent; prompted by `docs/hook-bug-workarounds.md` on
+  hooks loading only at session start) → `.claude/hooks/squad-git-guard.test.sh`, run by
+  `/squad init` and Preflight, plus a live `git add -A --dry-run` probe. B3-7: a guard nobody has
+  seen refuse is a check that could not fail. The test passes 88 of 88 against the new guard, 44 of
+  88 against the old one and 23 of 88 against one that allows everything.
+- **A verdict names the commit it measured** (`skills/issue-review`, `skills/opensource-pipeline`)
+  → `MEASURED AT` in both verdict templates, `agents/qa.md` § Where it is written,
+  `skills/deploy-sequence.md` § 0. Fits B3-15 and LEARNINGS 4: QA and Security run in parallel,
+  so a Security fix lands after QA's green, and DevOps checked neither commit.
+- **No comparison is never a pass** (`skills/browser-qa`) → `agents/qa.md` coverage item 5,
+  `engineer.md` guardrail 3a, `figma-pull.md`, the test-results template, deploy preconditions.
+  Fits B3-24: on a capped Figma seat the frame screenshots run out, and the skipped rows vanished
+  into "N rows checked".
+- **A verifier that does not run cannot clear a finding** (`workflows/orch-review.workflow.js`) →
+  `agents/security.md` § Before a finding is reported. Fits LEARNINGS 7: a verification read that
+  errored had no defined outcome, so a crash could drop a finding.
+- **A test names the clause it checks** (`skills/test-collaboration`) → `agents/qa.md` § A test
+  names the clause it checks, and QA now routes on any amendment that strikes a clause. Fits B3-2,
+  whose fix covered the state file and not the suite: `flows/09…spec.ts:135` kept asserting a
+  struck clause and "both gates were green over it".
+
+**Overturned by the source read, not taken:**
+
+- **`gateguard-fact-force`** (deny a file's first edit until it has been searched). ECC's own
+  pre-registered trial, 336 paid runs, did not confirm a benefit (p = 0.210) at 35 to 45% more
+  turns (`docs/gateguard/question-effectiveness.md:445-459`), and it allows any denied command on
+  the second try. B3-5 is fixed at the contract, where the premises were written.
+- **`mcp-health-check`**. WH-14 was the approval mode refusing calls while servers were up; the
+  hook counts 401, 403 and 404 as healthy and skips servers that come back under new names.
+
+**Take later, each with its trigger:**
+
+| Mechanism | ECC source | Trigger |
+|---|---|---|
+| CLI route for Supabase when MCP is refused | `docs/MCP-CONNECTOR-POLICY.md` | A probe shows the CLI covers advisors and Bash survives the approval mode that refuses MCP |
+| Read back what a killed stage did before re-firing it | `skills/operator-approval-loop` | A re-fired Stage 6 promotes twice or records the wrong rollback target |
+| Survey lists the files it did not read | `agents/spec-miner.md` | An Architect premise about a file the survey never opened |
+| Retro checks for an entry with the same root cause | `skills/growth-log`, `rules-distill`, `commands/learn-eval.md` | A `/squad port` brings back a duplicate |
+| Measured rule compliance under a competing brief | `skills/skill-comply` | A stage breaks a rule in its own file a second time (WS-1 was the first) |
+| Amendment headings checked against state lines | `skills/story-lifecycle` | B3-2 recurs |
+| A worktree per stage, so QA and the Engineer overlap | `skills/autonomous-loops` | Serial QA and Engineer passes become a build's bottleneck again |
+| Machine-checkable API contract with generated types | `skills/contract-first` | Key-set drift that exact matchers miss |
+
+**Not taken:** `continuous-learning-v2` (a model writes lessons at 0.3 to 0.9 confidence with no
+review, the opposite of the mining rule), `santa-method`, `verification-loop`, `delivery-gate`,
+`loop-design-check`, `click-path-audit`, `config-protection`, the session-memory hooks (chat
+summaries kept outside the repo, lost on a container restart), and the language reviewers.
+
+**Caution for anyone mining it later.** Its Supabase row-level security examples assert "0 rows"
+with no matched control (B3-7) and never mention the default TRUNCATE grants (B3-8).
+
+**Status:** adopted 2026-11-06, the five items above.
+
+---
+
 ## Deliberately not adopted
 
 Recorded so the same evaluation is not repeated in six months.
@@ -247,4 +324,9 @@ One line per mechanism actually taken, appended, never overwritten.
 2026-10-31  git guard hook  from mattpocock/skills git-guardrails-claude-code  →  .claude/hooks/squad-git-guard.sh, installed by /squad init
 2026-10-31  pre-commit type check and lint  from mattpocock/skills setup-pre-commit  →  agents/engineer.md done item 4, agents/qa.md § Static checks
 2026-10-31  ADRs and glossary format  from mattpocock/skills domain-modeling  →  agents/architect.md § Decision records, GLOSSARY.md
+2026-11-06  hook-bypass and wrapper spellings, guard self-test  from affaan-m/ECC v2.2.3 block-no-verify.js, gateguard-fact-force.js  →  .claude/hooks/squad-git-guard.sh, squad-git-guard.test.sh, agents/preflight.md § Always
+2026-11-06  verdict names the commit it measured  from affaan-m/ECC v2.2.3 issue-review, opensource-pipeline  →  agents/qa.md, agents/security.md § Output, skills/deploy-sequence.md § 0
+2026-11-06  no comparison is never a pass  from affaan-m/ECC v2.2.3 browser-qa  →  agents/qa.md coverage item 5, agents/engineer.md guardrail 3a, skills/figma-pull.md
+2026-11-06  unrun verifier cannot clear a finding  from affaan-m/ECC v2.2.3 orch-review.workflow.js  →  agents/security.md § Before a finding is reported
+2026-11-06  test names the clause it checks  from affaan-m/ECC v2.2.3 test-collaboration  →  agents/qa.md § A test names the clause it checks, amendment routing
 ```

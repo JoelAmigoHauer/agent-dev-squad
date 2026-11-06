@@ -78,6 +78,7 @@ no dependency manifest here — the code lives in the repos generated *from* thi
 | `builds/<build-name>/` | One folder per build. The audit trail | Per stage, its own file |
 | `.claude/skills/squad/SKILL.md` | The `/squad` trigger: stamps this template into another repo's `.squad/` at a pinned version and hands the Orchestrator this brief | **Never by a stage.** Invoked in the host repo, not here |
 | `.claude/hooks/squad-git-guard.sh` | The git guard. `/squad init` installs it in the host repo's `.claude/`; it blocks commands that sweep, discard or rewrite work | Every Bash call in the host repo. Not wired in the template itself |
+| `.claude/hooks/squad-git-guard.test.sh` | The guard's own test: about 90 commands and the exit each must give. `/squad init` refuses to stamp if one comes out wrong | At `/squad init` and Stage 0.5, in the host repo |
 | `/ERRORS.md` | Durable machine facts, written by Preflight. **Does not exist yet** — created on the first run that finds one | Stage 0.5 reads and appends |
 
 Each agent file is that agent's entire world. It is written to be read cold, with no other pipeline
@@ -279,10 +280,10 @@ Progress lives in the build's state file, `/state/<build-name>.md`. Never in the
 - **Every amendment set gets stage lines** (B3-2). When the Architect appends an amendment set, copy
   its `Routes to` table into the state file as one `pending` line per stage, naming the set:
   Copywriter if it adds or changes a surface, control or string, Designer if it adds or changes a
-  surface or control, Engineer always, QA if it moves the data
-  model or an API shape. Status lives only in the block; a note may explain a line, never stand in
-  for one. client-portal's amendment set 6 had no lines, nothing showed it unbuilt, and v1 reached
-  `main` without it.
+  surface or control, Engineer always, QA if it moves the data model or an API shape or strikes
+  through any clause, so its tests can be reconciled. Status lives only in the block; a note may
+  explain a line, never stand in for one. client-portal's amendment set 6 had no lines, nothing
+  showed it unbuilt, and v1 reached `main` without it.
 - **A stage killed by a container restart** is written `halted (container restart)` at once and
   re-fired before other work (B3-2). client-portal's Stage 6 was `running` only in a prose note;
   a restart killed it before it wrote, nothing re-fired it, and production went unverified for 5

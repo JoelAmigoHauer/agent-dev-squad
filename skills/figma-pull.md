@@ -85,7 +85,8 @@ For every row of `design.md`'s frame index the round touches, take the frame's s
 `tests/fidelity/<surface>-<state>-<width>.frame.png` and `.built.png`. The Engineer uses the pair
 before handing back (guardrail 3a); QA makes its own pair independently (coverage item 5). A
 screenshot is a read call: count it against the call budget above, and on a capped seat take the
-shells and the most-used screens first.
+shells and the most-used screens first. Every row left without a frame screenshot is
+`not compared`, and QA reports it as such: a budget that ran out is recorded, never read as a pass.
 
 ### Assets
 
