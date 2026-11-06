@@ -1,4 +1,4 @@
-# Agent development squad — v0.3
+# Agent development squad — v0.4
 
 A template repository. Point `/squad` at a repo, give it a sketch, and a seven-role agent pipeline
 turns it into a deployed application.
@@ -68,6 +68,29 @@ it halts with full context rather than retrying forever. Progress lives in the b
 `state/<build-name>.md`, so a run survives a dropped session, a model swap or a restart.
 
 ---
+
+## What v0.4 changed
+
+No new app ran between v0.3 and v0.4. This release tightens the pipeline's own tooling, and adopts
+mechanisms from Claude Code's `/security-review`, `mattpocock/skills` and `affaan-m/ECC`, each only
+where a documented learning shows the gap ([PRIOR-ART.md](PRIOR-ART.md) entries 5 to 7).
+
+**`/squad` is the only way in, and it installs a git guard.** The guard refuses commands that
+sweep the tree, discard work, force-push or skip the git hooks, behind wrappers and quotes too, and
+`/squad init` runs its own 88-case test and refuses to stamp if one fails.
+
+**The Copywriter is back as Stage 1.5**, writing every string before the Designer draws a screen,
+and you check every figure it marks against its source.
+
+**Verdicts have to say what they measured.** QA and Security record the commit they ran on, and
+DevOps deploys only that commit. A screen never put beside its drawing is `not compared`, a
+security check that did not run is `unverified`, and neither reads as a pass.
+
+**Tests name the clause they check**, so an amendment that strikes a clause finds the tests still
+asserting it.
+
+**Security traces this build's own diff**, and verifies each finding from reading code before
+reporting it.
 
 ## What v0.3 changed
 

@@ -1,14 +1,22 @@
-# Orchestrator brief — agent development squad v0.3
+# Orchestrator brief — agent development squad v0.4
 
 Owner: Joel Hauer / We Are Visionists. Template repository. A build runs in its own host repo, which
 `/squad init` sets up from this template at a pinned version
 ([.claude/skills/squad/SKILL.md](.claude/skills/squad/SKILL.md)). `/squad` is the only way in.
 
-**v0.3** is v0.2 with the learnings of three more apps applied: `thelma`, `workshop-hub` and
+**v0.4** is v0.3 with no new build behind it: the pipeline's own tooling tightened, and checked
+mechanisms from two outside sources adopted, each against a learning it fits (PRIOR-ART.md entries
+5 to 7). **v0.3** is v0.2 with the learnings of three more apps applied: `thelma`, `workshop-hub` and
 `client-portal`, 51 entries, closed on 2026-10-31. **v0.2** was v0.1 with the learnings from its
 first end-to-end run applied. Every change is recorded in [LEARNINGS.md](LEARNINGS.md) with what
 broke, why it was systemic, and the specific fix. Read it before changing anything here — most of
 what looks like an odd rule is load-bearing.
+
+What changed from v0.3: `/squad` as the only way in; a git guard that blocks sweeps, discards,
+force-pushes and hook bypasses, and is tested before it is trusted; a pre-commit type check and
+lint; the Copywriter back as Stage 1.5, with your figure check; a diff trace and verified findings
+in Security; verdicts that name the commit they measured; `not compared` and `unverified` as
+results that never read as a pass; tests that name the clause they check; ADRs and a glossary.
 
 What changed from v0.2: a screen fidelity check at every stage that touches a screen, one state
 file per build, a test target that is never production, a contract that binds how state comes to
