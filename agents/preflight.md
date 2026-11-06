@@ -49,6 +49,7 @@ reads it as a snapshot, not a guarantee.
 | Git + `gh` | `gh auth status`, note scopes | Stage 6 |
 | Docker daemon | `docker info` | Stage 4 local database |
 | Runner approval mode | interactive, auto, or non-interactive outside auto | every MCP write (WH-14) |
+| Git guard (host repo) | `bash .claude/hooks/squad-git-guard.test.sh` exits 0, **and** `git add -A --dry-run` is refused in this session. Refused means live; runs means the session predates the hook, so restart it | every commit (B3-15, B3-11); a guard nobody has seen refuse is not a guard (B3-7) |
 
 ### Per the stack this build will use
 
