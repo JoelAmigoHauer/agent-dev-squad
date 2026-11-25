@@ -47,10 +47,11 @@ your role. Fire the agent that owns it instead.
 
 ## Repository map
 
-Every file in this repo is prose. There is no application code, no build step, no test runner and
-no dependency manifest here — the code lives in the repos generated *from* this template, and the
-`.gitignore` at the root anticipates that generated build (`node_modules/`, `.next/`, `.env*`,
-`supabase/.temp/`, `playwright-report/`, `.vercel`).
+Every file in this repo is prose except two: the git guard, in bash, and `checks/`, the squad
+checks, in Node with no dependencies (v0.4). The checks have tests, run by `node --test` in CI on
+every pull request. There is no application code and no build step here — the code lives in the
+repos generated *from* this template, and the `.gitignore` at the root anticipates that generated
+build (`node_modules/`, `.next/`, `.env*`, `supabase/.temp/`, `playwright-report/`, `.vercel`).
 
 | Path | What it is | Loaded when |
 |---|---|---|
@@ -78,6 +79,7 @@ no dependency manifest here — the code lives in the repos generated *from* thi
 | `builds/_template/` | The per-build folder, copied at the start of each build | On build start |
 | `builds/<build-name>/` | One folder per build. The audit trail | Per stage, its own file |
 | `.claude/skills/squad/SKILL.md` | The `/squad` trigger: stamps this template into another repo's `.squad/` at a pinned version and hands the Orchestrator this brief | **Never by a stage.** Invoked in the host repo, not here |
+| `checks/` | The squad checks: a Node PreToolUse hook (`hook.mjs`), the checks (`lib.mjs`) and their tests. `/squad init` copies it to `.squad/checks/` and registers the hook. See *Checks* | Every Bash, Edit, Write and MultiEdit call in the host repo. Never read by a stage |
 | `.claude/hooks/squad-git-guard.sh` | The git guard. `/squad init` installs it in the host repo's `.claude/`; it blocks commands that sweep, discard or rewrite work | Every Bash call in the host repo. Not wired in the template itself |
 | `/ERRORS.md` | Durable machine facts, written by Preflight. **Does not exist yet** — created on the first run that finds one | Stage 0.5 reads and appends |
 
@@ -168,6 +170,8 @@ file, `stage-1.5-figure-check`, and only you write it. Check every figure the co
 sentence rewritten without it. Record each in the build's `log.md` as verified, corrected or
 removed, then set the line `done`, pointing at that log entry. The Copywriter marking its own stage
 `done` never clears it, so a session resumed between the two fires the check, not the Designer.
+The figure gate refuses to set a Designer line `running` while its figure check is open or the deck
+holds a `[NEEDS SOURCE]` mark.
 
 **Every Copywriter pass reopens the check.** That is Stage 1.5 itself, an amendment set's
 Copywriter line, a `COPY GAP` clarification from the Engineer, and a Designer's length request. Set
@@ -221,14 +225,37 @@ cannot proceed without. That is a halt before the pipeline properly starts rathe
 running build, and it is cheap by design. A **degraded** capability, where a stated fallback
 exists, does not halt; it is recorded, along with which stage carries the loss.
 
-A sixth can fire at any stage: **the git guard blocks a command the stage says it needs**
-(`reset --hard`, `clean -f`, a force-push, a sweeping `git add`). There is no bypass. The stage
+A sixth can fire at any stage: **the git guard or a squad check blocks a command the stage says it
+needs** (`reset --hard`, a force-push, a sweeping `git add`, a push to `main` with an amendment set
+unbuilt, a state edit the lint refuses). There is no bypass. The stage
 records the command and its reason in the build's `log.md`, and you escalate it; Joel runs it if it
 is right. The guard exists because a swept tree and a discarded change cannot be audited after the
 fact (B3-15, B3-13).
 
 Otherwise the pipeline runs end to end with no manual checkpoints, by design. Do not invent
 check-ins. A ping that is not on this list is a defect in your behaviour, not diligence.
+
+---
+
+## Checks
+
+v0.4. A rule a mechanism can enforce is enforced, not read. `checks/hook.mjs` runs before every
+Bash, Edit, Write and MultiEdit call in the host repo and **blocks** a call any check fails. There
+is no bypass: the stage records the block in `log.md` and stops, and you escalate it under halt
+trigger 6.
+
+| Check | Refuses | Rule |
+|---|---|---|
+| `state-lint` | A state file edit with an unknown key or status, a `done` with no path, a `halted` or `skipped` with no reason, a loop past its cap, Engineer and QA both active; and any Bash command that writes a state file | B3-13, B3-15 |
+| `figure-gate` | Setting a Designer line `running` while its figure check is open or `copy.md` holds `[NEEDS SOURCE]` | WS-1 |
+| `amendment-gate` | `git push` to `main`, `master` or `production`, and `gh pr merge`, while any amendment set has a line not `done` | B3-2 |
+| `commit-guard` | `git commit` while Engineer or QA is active, unless that stage declares it: `SQUAD_STAGE=<its line> git commit …` | B3-15 |
+| `waiver-guard` | An agent adding a `waived:` line, by any tool | — |
+
+**A check that is itself wrong** is logged `cause: test-defect` and escalated. Only Joel waives it,
+for one build, by adding `waived: <check> <reason>` to the state file on github.com; the stage then
+runs `git pull` and retries. No agent writes a waiver, and none covers `waiver-guard`. A waiver is
+the signal to fix the check upstream, with its test.
 
 ---
 
@@ -272,9 +299,10 @@ Progress lives in the build's state file, `/state/<build-name>.md`. Never in the
 - **The state file holds the stage block and escalations only.** Dated notes, loop detail and
   validation results go to the append-only `/builds/<build-name>/log.md` (B3-13). A state file small
   enough to read whole is one the resume rule can trust.
-- **Edit by a unique anchor, and chain the commit to the edit** (B3-13): `<edit> && git commit`, so
-  a failed edit never ships a commit message. In client-portal an edit aborted on an anchor that
-  matched twice, the commit ran anyway, and the commit claims a change it does not carry.
+- **Edit the state file with the Edit or Write tool, never from Bash** (B3-13). Edit refuses an
+  anchor that matches twice, and the state lint checks every change; a Bash write is refused. Commit
+  only after the edit succeeded. In client-portal an edit aborted on an anchor that matched twice,
+  the commit ran anyway, and the commit claims a change it does not carry.
 - **Every amendment set gets stage lines** (B3-2). When the Architect appends an amendment set, copy
   its `Routes to` table into the state file as one `pending` line per stage, naming the set:
   Copywriter if it adds or changes a surface, control or string, followed by a `figure-check` line
@@ -282,7 +310,8 @@ Progress lives in the build's state file, `/state/<build-name>.md`. Never in the
   surface or control, Engineer always, QA if it moves the data
   model or an API shape. Status lives only in the block; a note may explain a line, never stand in
   for one. client-portal's amendment set 6 had no lines, nothing showed it unbuilt, and v1 reached
-  `main` without it.
+  `main` without it. The amendment gate now refuses a push to `main` and `gh pr merge` while any
+  set has a line that is not `done`.
 - **A stage killed by a container restart** is written `halted (container restart)` at once and
   re-fired before other work (B3-2). client-portal's Stage 6 was `running` only in a prose note;
   a restart killed it before it wrote, nothing re-fired it, and production went unverified for 5
@@ -452,6 +481,7 @@ is deliberately repeated for a stage that reads cold, one copy binds:
 | What a fidelity check compares (v0.3) | `agents/qa.md`, coverage item 5 | `agents/engineer.md` guardrail 3a, `agents/designer.md` frame index |
 | What a survey must contain | `agents/surveyor.md` | `builds/_template/survey.md`, as a scaffold |
 | How `/squad` stamps and routes | `.claude/skills/squad/SKILL.md` | — it defers to this file for everything else |
+| What each check refuses | `checks/lib.mjs`, with its tests | This file's *Checks* table, `agents/_common.md` |
 | Vercel platform notes | `agents/devops.md` | `agents/engineer.md`, for the build side |
 | Deploy record template | `agents/devops.md` | `skills/deploy-sequence.md` points at it |
 | Default stack | `skills/stack-decision.md` | `agents/architect.md`, `README.md` |
@@ -466,7 +496,10 @@ the binding copy wins and the repeat is the bug.
 
 ## Conventions when editing this repo
 
-Mode 2 work. These are conventions for the prose, since prose is all there is.
+Mode 2 work. These are conventions for the prose, and for `checks/`.
+
+- **A check changes with its tests, and every test is seen red.** Break the check, watch the test
+  fail, restore it (B3-7). A check that cannot fail blocks nothing.
 
 - **Read `LEARNINGS.md` before removing or loosening a rule.** Nearly every rule here is a fix for
   a documented failure with evidence attached. If the entry does not justify the rule any more, say

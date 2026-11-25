@@ -26,6 +26,7 @@ stage-6-deploy:      idle
 stage-5b-security:   idle
 stage-7-retro:       idle
 standing:            none
+waived:              none
 escalations:         none
 ```
 
@@ -46,6 +47,9 @@ amendment-set-2 (A14–A20):
 (WS-1). The Copywriter's own `done` never clears it. Every Copywriter pass sets it back to
 `pending` (an amendment set's `figure-check` line, for that set), and no stage downstream of the
 deck fires until it reads `done` again, with the `log.md` entry that records each figure.
+
+**`waived:`** is `none`, or one line per waiver: `<check> <reason>`. **Only Joel writes it**, on
+github.com; the waiver guard refuses an agent that tries. A waiver lifts that check for this build.
 
 **`standing:`** carries any learning a mid-build Stage 7 marked `BINDS THIS BUILD`, one line per
 entry, naming the stages it binds, until the build closes (B3-4).
@@ -98,6 +102,7 @@ stage-6-deploy:      pending
 stage-5b-security:   pending
 stage-7-retro:       pending
 standing:            none
+waived:              none
 escalations:         none
 ```
 
