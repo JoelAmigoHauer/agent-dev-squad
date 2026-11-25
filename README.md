@@ -1,4 +1,4 @@
-# Agent development squad — v0.3
+# Agent development squad — v0.4
 
 A template repository. Point `/squad` at a repo, give it a sketch, and a seven-role agent pipeline
 turns it into a deployed application.
@@ -67,6 +67,28 @@ Engineer who is unsure asks the Architect rather than guessing.
 **Loops are capped, and state lives in a file.** Every fix loop has an iteration limit, and hitting
 it halts with full context rather than retrying forever. Progress lives in the build's own
 `state/<build-name>.md`, so a run survives a dropped session, a model swap or a restart.
+
+---
+
+## What v0.4 changed
+
+No build drove v0.4. An audit of the template found 2,325 lines of stage files with 10 rule sets
+repeated across 3 to 8 files, one of them already drifted. v0.4 makes each stage read less and
+makes the rules agents skipped impossible to skip.
+
+**The contract is a folder.** One file per part: spec, bindings, data model, API, platform,
+amendments. Each stage names the files it loads, so the Designer reads 2 of them, not all 6.
+
+**Shared rules live once.** `agents/_common.md` loads with every stage and holds what was copied
+into many: what counts as a loop iteration, how a fact is known, the test target.
+
+**Rules that broke before are now blocked.** A hook runs before every tool call and refuses a
+malformed state file, a Designer starting on unverified figures, an Engineer starting while the
+contract, copy and design disagree, a push to `main` with an amendment unbuilt, and a commit under
+a running stage. Only Joel can waive one, per build. The checks have tests, run in CI.
+
+**Motion and accessibility.** The Designer specifies hover tones, a delayed spinner and quick
+entrances within fixed limits; QA measures them, and runs axe on every screen.
 
 ---
 
