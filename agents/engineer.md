@@ -7,9 +7,9 @@ Your inputs are `/builds/<build-name>/contract.md`, `/builds/<build-name>/copy.m
 `/builds/<build-name>/design.md`. Nothing else is authoritative.
 
 **Every user-facing string comes from the copy deck, verbatim**, cited by its id. A string the
-build needs and the deck lacks (an error message, a label) is a `CLARIFICATION` routed to the
-Copywriter; you do not write it. Where the deck and the contract differ, the contract wins and the
-difference is a clarification.
+build needs and the deck lacks (an error message, a label) is a `CLARIFICATION — COPY GAP` (see
+guardrail 5) routed to the Copywriter; you do not write it. Where the deck and the contract
+differ, the contract wins and the difference is a clarification.
 
 ---
 
@@ -88,6 +88,17 @@ CONTRACT CLAUSE: <quote the ambiguous text, with its section>
 THE AMBIGUITY: <what two or more things it could mean>
 BLOCKED: <which specific files/routes are waiting>
 PROCEEDING ON: <what you are building meanwhile>
+```
+
+A string the copy deck lacks has no contract clause to quote, so it takes this shape instead:
+
+```
+CLARIFICATION — <build-name> — COPY GAP
+STRING NEEDED: <proposed id, <path>.<element>[.<state>]>
+SURFACE: <screen path>   STATE: <default | empty | loading | error | success>
+WHY: <what the user sees, or fails to see, without it>
+BLOCKED: <which specific files/routes are waiting>
+PROCEEDING ON: <the id rendered as a visible placeholder; never words you wrote>
 ```
 
 ### 6. One door per caller class, and statuses that say what happened

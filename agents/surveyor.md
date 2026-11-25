@@ -144,6 +144,11 @@ manager, protected paths, required checks, naming rules, recorded decisions — 
 test's path. The Architect runs the host suite against the contract before validation, and needs
 to know which tests guard what.
 
+**Copy and voice, as its own list.** Every place the host's words live or are governed: voice and
+tone guides, content style guides, a brand or messaging doc, and the files that hold user-facing
+strings (a message catalogue, an i18n folder, a constants file). One row each, with its path. The
+Copywriter reads this list on a brownfield build; `none found` is a valid answer and says so.
+
 The host's `CLAUDE.md` auto-loads into every stage regardless. Listing its constraints here turns
 that ambient context into contract clauses the stages are deliberately bound by, instead of a
 second brief competing with their own.
