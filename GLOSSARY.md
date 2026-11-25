@@ -50,9 +50,15 @@ draft plus Joel's corrections. Stage 0.
 _Avoid_: brief (a brief is what a stage is given)
 
 **Brief**:
-What the Orchestrator hands a stage when it fires it: the agent file and `_common.md`, the
-contract files the agent file names, the state file, and any standing clauses.
+What the Orchestrator hands a stage when it fires it, as the prompt of the stage's subagent: the
+agent file and `_common.md`, the contract files the agent file names, the state file, and any
+standing clauses.
 _Avoid_: prompt, instructions
+
+**Local thread**:
+A thread in a Claude project that runs on Joel's machine rather than in the cloud, so the
+repository's hooks and skills load. The only kind of thread a build runs in, one build per thread.
+_Avoid_: desktop session, cloud thread (a cloud thread is the kind a build never runs in)
 
 ## Stages and loops
 
@@ -98,6 +104,11 @@ a rule is broken. Named by its id, such as `figure-gate`. A check *blocks a call
 the pipeline itself.
 _Avoid_: validation (the Architect's validation pass is prose), lint (except `state-lint`'s name),
 gate on its own
+
+**Liveness probe**:
+Preflight's two commands that the squad checks and the git guard must refuse. A refusal proves the
+hooks run in this session; a probe that runs halts the build.
+_Avoid_: health check, smoke test (a smoke check is DevOps's, after deploy)
 
 **Consistency check**:
 `checks/consistency.mjs`: confirms the contract's bindings and routes, the copy deck and the design

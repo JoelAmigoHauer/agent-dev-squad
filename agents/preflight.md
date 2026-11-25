@@ -49,6 +49,35 @@ reads it as a snapshot, not a guarantee.
 | Git + `gh` | `gh auth status`, note scopes | Stage 6 |
 | Docker daemon | `docker info` | Stage 4 local database |
 | Runner approval mode | interactive, auto, or non-interactive outside auto | every MCP write (WH-14) |
+| Squad checks live | `test -f .squad/state/<build-name>.md > /dev/null` is **refused** with `[state-lint]` | every check in `.squad/checks/`; see *Prove the checks are live* |
+| Git guard live | `git add -A --dry-run` is **refused** by the git guard | every commit (B3-15, B3-11) |
+
+### Prove the checks are live
+
+The squad checks and the git guard are Claude Code hooks, and a hook that is not running blocks
+nothing while every stage believes it is protected (B3-7: a check nobody has seen refuse is not a
+check). So the first two probes are commands each hook **must refuse**. A refusal is the pass:
+do not record it as a block, log it or stop on it, even though the hook's message says to.
+
+| Probe result | Status | What it means |
+|---|---|---|
+| Both refused | OK | The hooks run in this session, and inside subagents: you are one |
+| Either ran (exit 0) | **BLOCKING** | The hook is not running here. Halt before Stage 1 |
+
+Both probes do nothing when they run: the first only tests that the state file exists, with its
+output thrown away, and `--dry-run` stages nothing. The first is refused because it names a live
+state file and redirects (the state lint's Bash rule). The test that keeps it refused is in
+`checks/test/hook.test.mjs`, so a change to the lint that lets it through fails CI.
+
+When a probe ran, say which of the two causes fits in the BLOCKING line:
+
+1. **A cloud thread in a Claude project.** These never run a repository's
+   `.claude/settings.json` hooks and never load its `.claude/skills/` (Claude Code docs,
+   *Claude projects*, "What threads pick up from your repositories", read 2026-11-25). The build
+   must run in a local thread on Joel's machine, with Worktree on. Append this to `/ERRORS.md`: it
+   is a fact about the environment, not this build.
+2. **A session older than the stamp.** A local session started before `/squad init` registered the
+   hooks has not loaded them. Restart the session and run Preflight again.
 
 ### Per the stack this build will use
 

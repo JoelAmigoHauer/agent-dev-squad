@@ -82,6 +82,7 @@ fix.** Build 1 lost two of three iterations to a stale binary and a stale server
 Commit by explicit path, never `git add -A` or `git add .` (B3-15). Never commit while another
 stage is writing the tree. While you are the Engineer or QA and your line is active, declare your
 commits as yours: `SQUAD_STAGE=<your state line, e.g. stage-3-engineer> git commit -m "…"`.
+Push the build's branch after each commit, so the record survives a lost worktree.
 
 Edit the state file with the Edit or Write tool, never from Bash (B3-13).
 

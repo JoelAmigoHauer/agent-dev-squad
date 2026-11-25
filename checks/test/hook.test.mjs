@@ -78,3 +78,11 @@ test('a waiver Joel wrote lifts its check', () => {
   assert.equal(r.code, 0, r.err);
   writeFileSync(stateFile, STATE);
 });
+
+// Preflight's liveness probe (agents/preflight.md, *Prove the checks are live*). Preflight runs
+// exactly this command and counts the refusal as the pass, so the lint must always refuse it.
+test('the Preflight liveness probe is refused', () => {
+  const r = hook({ tool_name: 'Bash', tool_input: { command: 'test -f .squad/state/demo.md > /dev/null' } });
+  assert.equal(r.code, 2);
+  assert.match(r.err, /\[state-lint\]/);
+});
