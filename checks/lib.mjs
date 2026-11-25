@@ -2,7 +2,7 @@
 // command, and they return a list of failures. Each failure names its check id, so a waiver can
 // name it too. Why each check exists is in LEARNINGS.md, under the ID in its comment.
 
-export const CHECKS = ['state-lint', 'figure-gate', 'amendment-gate', 'commit-guard', 'waiver-guard'];
+export const CHECKS = ['state-lint', 'figure-gate', 'consistency-gate', 'amendment-gate', 'commit-guard', 'waiver-guard'];
 
 const STATUSES = ['idle', 'pending', 'running', 'loop', 'done', 'halted', 'skipped'];
 const TOP_KEYS = new Set(['build', 'mode', 'started', 'standing', 'escalations', 'waived']);
@@ -144,6 +144,17 @@ export function figureGate(before, after, copyDeck) {
     }
   }
   return out;
+}
+
+// consistency-gate (B3-21): an Engineer line moving into running. The hook runs consistency.mjs
+// only then, so the check costs nothing on any other edit.
+export function startsEngineer(before, after) {
+  const prev = parseState(before || '').stages;
+  return parseState(after).stages.some((s) => {
+    if (s.name !== 'stage-3-engineer' || statusOf(s.value) !== 'running') return false;
+    const was = prev.find((p) => p.set === s.set && p.name === s.name);
+    return !was || statusOf(was.value) !== 'running';
+  });
 }
 
 // ---------------------------------------------------------------------------------------------

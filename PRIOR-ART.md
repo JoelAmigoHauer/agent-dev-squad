@@ -50,9 +50,10 @@ people arrive with. Its "constitution" is this repo's [CLAUDE.md](CLAUDE.md) plu
 **Take — `analyze`, the cross-artifact consistency pass.** This pipeline validates each stage's
 output *against the contract*. Nothing checks that `contract.md`, `design.md` and `build-notes.md`
 agree with *each other*. That is a distinct failure mode, and it is plausibly how LEARNINGS 1
-survived: every artefact was internally consistent and no pass compared them. A Stage 3.5 modelled
-on `analyze` would close it. Not yet adopted — no build has produced evidence for the specific
-shape it should take.
+survived: every artefact was internally consistent and no pass compared them. **Adopted
+2026-11-25, v0.4**, as a check rather than a stage: `checks/consistency.mjs` compares the contract's
+bindings and routes, the copy deck and the design before the Engineer starts. B3-21 (the contract
+and the design numbered screens differently) is the evidence for its shape.
 
 **Take, weaker — `converge`.** Assess the built thing against spec/plan/tasks and append the delta
 as new work. Stage 4 QA already does a stricter version of this against the contract, so the gain
@@ -67,7 +68,7 @@ does not bind acceptance criteria at the template level. That is LEARNINGS 1, un
 130k-star project. The flow binding table in [agents/architect.md](agents/architect.md) is ahead of
 it on the critical defect. Do not trade it away for alignment.
 
-**Status:** not adopted.
+**Status:** `analyze` adopted 2026-11-25 as `checks/consistency.mjs`; the rest not adopted.
 
 ---
 
@@ -223,6 +224,38 @@ of them only when a build produces a failure one of them would have prevented.
 
 ---
 
+## 7. Motion guidance: WCAG 2.3.3, web.dev, Material Design 3 state layers
+
+**Read 2026-11-25**, the pages themselves, for the motion work Joel asked for that day, first
+drafted as a Stage 2.5 and folded into the Designer in v0.4. Unlike sections 1 to 6, no build
+failure stands behind these yet: they set the limits the Designer's Motion section starts from, and
+the first build that finds one wrong moves it through `LEARNINGS.md`.
+
+**Taken:**
+
+- **WCAG 2.2 SC 2.3.3, *Animation from Interactions*** (Level AAA), W3C Understanding document:
+  "Motion animation triggered by interaction can be disabled, unless the animation is essential."
+  Its sufficient techniques C39 and SCR40 are the CSS and JavaScript `prefers-reduced-motion`
+  queries. → `agents/designer.md` *Motion*, limit L6 and *Reduced motion*; `agents/qa.md`
+  coverage item 6.
+  The page does not discuss loading spinners; treating the spinner as essential and its rotation
+  as not is this repo's reading, recorded in the stage file.
+- **web.dev, *How to create high-performance CSS animations*** (updated 2020-10-06): animate
+  `transform` and `opacity`, avoid properties that trigger layout or paint, use `will-change`
+  sparingly. → `agents/designer.md` limits L2, L4 and L9. Its companion *Animations and
+  performance* (2014-08-08) is older and was read only as background.
+- **Material Design 3 state-layer opacities**, read from Flutter's
+  `dev/tools/gen_defaults/data/state.json` (tokens `v0_132`): hover 0.08, focus 0.12, pressed
+  0.12, dragged 0.16. → `agents/designer.md` P1's 8% hover and 12% press. Focus is drawn as an
+  instant ring instead, so the 0.12 focus layer is not taken.
+
+**Not sourced, and said so in the stage file:** the 150 to 250ms bound is Joel's (2026-11-25); the
+300ms spinner delay, 500ms minimum and 800ms turn are defaults chosen that day, not measured.
+
+**Status:** adopted 2026-11-25.
+
+---
+
 ## Deliberately not adopted
 
 Recorded so the same evaluation is not repeated in six months.
@@ -247,4 +280,8 @@ One line per mechanism actually taken, appended, never overwritten.
 2026-10-31  git guard hook  from mattpocock/skills git-guardrails-claude-code  →  .claude/hooks/squad-git-guard.sh, installed by /squad init
 2026-10-31  pre-commit type check and lint  from mattpocock/skills setup-pre-commit  →  agents/engineer.md done item 4, agents/qa.md § Static checks
 2026-10-31  ADRs and glossary format  from mattpocock/skills domain-modeling  →  agents/architect.md § Decision records, GLOSSARY.md
+2026-11-25  reduced-motion requirement  from WCAG 2.2 SC 2.3.3 Understanding  →  agents/designer.md Motion L6, Reduced motion; agents/qa.md coverage item 6
+2026-11-25  compositor-only movement, sparing will-change  from web.dev animations guide  →  agents/designer.md Motion L2, L4, L9
+2026-11-25  hover and press state-layer opacities  from Material Design 3 tokens via Flutter state.json  →  agents/designer.md Motion P1
+2026-11-25  cross-artifact consistency pass  from github/spec-kit analyze  →  checks/consistency.mjs, CLAUDE.md § Checks
 ```

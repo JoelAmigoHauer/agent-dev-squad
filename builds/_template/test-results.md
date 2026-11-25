@@ -40,6 +40,17 @@ Red on either is a failed stage. Not negotiable.
 | Auth boundaries (permitted succeeds / forbidden refused) | | | |
 | Data model constraints (not-null, checks, FK cascades) | | | |
 | Visual fidelity, frame-index rows checked | | | |
+| Motion: properties, durations, reduced motion, spinner delay, layout shift, input, touch | | | |
+| Accessibility (axe): surfaces scanned, serious and critical violations | | | |
+
+### Accessibility, logged
+
+Moderate and minor violations, and on brownfield every violation on an `existing` surface, as a
+baseline. None of these is a failure.
+
+| Surface | Rule id | Impact | Count | Status |
+|---|---|---|---|---|
+| | | | | `new` / `changing` / `existing` (baseline) |
 
 A claim with no citation is a plan, and is written as one. Every new or regenerated test was shown
 red against its defect before it counts here.

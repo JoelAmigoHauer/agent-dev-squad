@@ -99,6 +99,12 @@ the pipeline itself.
 _Avoid_: validation (the Architect's validation pass is prose), lint (except `state-lint`'s name),
 gate on its own
 
+**Consistency check**:
+`checks/consistency.mjs`: confirms the contract's bindings and routes, the copy deck and the design
+name the same screens, routes and string ids. A failing run blocks the Engineer's start
+(`consistency-gate`).
+_Avoid_: analyze, cross-check, reconciliation
+
 **Waiver**:
 A `waived: <check> <reason>` line in a build's state file, written by Joel only, that lifts one
 check for that build because the check itself is wrong.
@@ -148,6 +154,17 @@ _Avoid_: stat, data point
 The Orchestrator's check of every figure in the copy deck against its cited source, recorded in
 `log.md` and on its own state line, `stage-1.5-figure-check`. Reopened by every Copywriter pass.
 _Avoid_: source check, fact check, verification
+
+**Motion section**:
+The part of `design.md` that says how the interface moves: motion tokens, every component's hover,
+press and focus states, every loading indicator and every entrance, within limits L1 to L9 in
+`agents/designer.md`. Folded in from the Motion stage, which never ran.
+_Avoid_: motion spec, animation doc, transitions file
+
+**State layer**:
+A pseudo-element over a control whose opacity rises on hover and press, so a tone shift animates
+on the compositor rather than repainting the control.
+_Avoid_: overlay, hover tint
 
 **Writer**:
 Whatever creates, changes or ends a row or column: a flow, a trigger, a seed or an external owner.

@@ -12,7 +12,7 @@ Runs in parallel with Stage 5 (Security).
 - Contract: `spec.md`, `bindings.md`, `data-model.md`, `api.md`, `platform.md`, from
   `/builds/<build-name>/contract/`. `amendments.md` only for a set your state line names.
 - The copy deck, `/builds/<build-name>/copy.md`, for the Words row of coverage item 5 only.
-- `design.md`'s frame index, for coverage item 5.
+- `design.md`'s frame index and Motion section, for coverage items 5 to 7.
 
 ---
 
@@ -68,6 +68,39 @@ Cover, at minimum:
    Save both images per row under `tests/fidelity/`, and report the count of rows checked, so a
    fidelity pass that looked at nothing cannot read as a clean one. A suite that never looked at a
    screen has not tested it.
+
+6. **Motion, against `design.md`'s Motion section and its limits** (v0.4). Measured, never judged
+   by eye:
+
+   | Check | How | Fails when |
+   |---|---|---|
+   | Properties | Parse the built stylesheets for every `transition` and `animation` declaration, and read each animated element's computed `transition-property` | Any property outside `transform`, `opacity` and the colour properties the section allows, or `all` |
+   | Durations | The same declarations, and computed `transition-duration` and `animation-duration` | Outside 150 to 250ms, except the spinner's rotation; or a literal value where a token belongs |
+   | Reduced motion | `page.emulateMedia({ reducedMotion: 'reduce' })`, then the same reads | Any `transform` still animated, or a spinner still rotating |
+   | Spinner delay | Delay the route with `page.route` to under `--spinner-delay`, then to well over it | The indicator appears on the short wait, never appears on the long one, or leaves before `--spinner-min` |
+   | No layout shift | Record layout shifts across each entrance and each loading state | Any shift caused by the indicator or an entering element |
+   | Input not delayed | Click a control during its entrance | The click does nothing until the animation ends |
+   | Touch | Emulate a touch device and tap a control | Its hover tone stays on after the tap |
+
+   The properties and durations checks derive their subjects from the stylesheets, not from a list
+   (*A guard derives its subjects*), so a transition added later is checked too. A breach is a GAP,
+   `CLASS: bug` when the section is right, `spec-gap` when the section itself breaks a limit.
+7. **Accessibility, by axe** (v0.4). On every surface in the frame index, in every state and width
+   QA renders for item 5, run `@axe-core/playwright` with the `wcag2a`, `wcag2aa`, `wcag21a`,
+   `wcag21aa` and `wcag22aa` tags, after the surface has settled. Tag names and the four impact
+   levels as at 2026-11-25; confirm them against axe-core's docs when you install it.
+
+   | Impact | Result |
+   |---|---|
+   | `critical`, `serious` | A GAP, `CLASS: bug`, into the fix loop like any other failure |
+   | `moderate`, `minor` | Logged in `test-results.md` by rule id and count; not a failure |
+
+   **Brownfield:** only surfaces the contract marks `changing` or `new` can fail. On an `existing`
+   surface every violation is logged as a baseline, by rule id and impact, and none enters the
+   loop; making the host's backlog this build's scope is Joel's call, never a default.
+
+   axe tests only what can be tested automatically. Report the count of surfaces scanned, and never
+   write that a build "meets WCAG"; write that it has no automated serious or critical violations.
 
 ### A test counts once it has been seen to fail
 
@@ -192,6 +225,7 @@ You own this. It is not a dependency you wait on.
 
 ```bash
 npm init playwright@latest -- --quiet --browser=chromium --lang=ts
+npm install --save-dev @axe-core/playwright      # coverage item 7
 ```
 
 Chromium only, unless the contract states a cross-browser requirement: a three-browser matrix
