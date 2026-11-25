@@ -1,8 +1,17 @@
-# Orchestrator brief — agent development squad v0.3
+# Orchestrator brief — agent development squad v0.4
 
 Owner: Joel Hauer / We Are Visionists. Template repository. A build runs in its own host repo, which
 `/squad init` sets up from this template at a pinned version
 ([.claude/skills/squad/SKILL.md](.claude/skills/squad/SKILL.md)). `/squad` is the only way in.
+
+**v0.4** is v0.3 made lighter to load and harder to skip, released 2026-11-25. No build drove it:
+it came from an audit of the template itself, so it carries no new `LEARNINGS.md` entries, and
+every rule it moved keeps its ID.
+
+What changed from v0.3: the contract is one file per part, loaded by a fixed list per stage; rules
+repeated across stage files live once, in `agents/_common.md`; blocking checks in `checks/`
+(state-file lint, figure gate, consistency gate, amendment gate, commit guard), waivable only by
+Joel; motion folded into the Designer; an automated accessibility check in QA.
 
 **v0.3** is v0.2 with the learnings of three more apps applied: `thelma`, `workshop-hub` and
 `client-portal`, 51 entries, closed on 2026-10-31. **v0.2** was v0.1 with the learnings from its

@@ -49,7 +49,7 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
   exit 1; }
 [ -z "$(git status --porcelain)" ] || { echo "Working tree is dirty. Commit or stash first." >&2; exit 1; }
 SRC="https://github.com/JoelAmigoHauer/agent-dev-squad"
-REF="${SQUAD_REF:-v0.3}"                # the current release; SQUAD_REF=main for unreleased work
+REF="${SQUAD_REF:-v0.4}"                # the current release; SQUAD_REF=main for unreleased work
 TMP="$(mktemp -d)"
 git -c advice.detachedHead=false clone --quiet --depth 1 --branch "$REF" "$SRC" "$TMP"
 SHA="$(git -C "$TMP" rev-parse HEAD)"

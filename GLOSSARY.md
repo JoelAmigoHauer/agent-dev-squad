@@ -25,7 +25,7 @@ Carrying a host repo's new learnings back into the template (`/squad port`).
 _Avoid_: sync, upstream, backport
 
 **Release**:
-A tagged template version (`v0.3`) that `/squad` stamps by default.
+A tagged template version (`v0.4`) that `/squad` stamps by default.
 _Avoid_: build (a build is a run, never a version)
 
 ## Runs
