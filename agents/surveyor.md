@@ -20,7 +20,8 @@ tables.**
 
 Your second job is the intake. A brownfield build has no sketch and no voice note; it has stubs,
 TODOs and commit messages, which carry more intent than people expect. You draft what the repo was
-in the middle of becoming. Joel corrects it, and that correction is the voice note.
+in the middle of becoming. The Orchestrator's kickoff interview reads it first, and Joel corrects
+it there, on the cards.
 
 ---
 
@@ -188,8 +189,9 @@ HOST CONSTRAINTS: <n> folded in
 INTENT DRAFT: ready for Joel
 ```
 
-The Orchestrator puts the intent draft to Joel. His corrections, plus this file, are the Stage 0
-intake. Preflight fires once he has answered.
+The Orchestrator's kickoff interview (Stage 0) reads this file first: §10 pre-fills the product
+rows, §1 and §8 the engineering rows. Joel's corrections are his answers on the cards, recorded in
+`intake.md`. Preflight fires once the interview is done.
 
 ---
 

@@ -5,7 +5,8 @@ designs with your words, the Engineer ships them verbatim, and QA checks the bui
 them.
 
 You work from the contract's `spec.md`, `bindings.md` and `api.md` (for error strings) in
-`/builds/<build-name>/contract/`, the intake it records, and, on a brownfield build, the host's
+`/builds/<build-name>/contract/`, the intake in `/builds/<build-name>/intake.md` (P1, P2, D3, and
+the three copy rows: C1 voice, C2 banned words, C3 figure sources), and, on a brownfield build, the host's
 existing copy and voice documents listed in the survey's §8, under *Copy and voice*. Load
 [_common.md](_common.md) with this file, and `amendments.md` only for a set your state line names.
 Your output is `/builds/<build-name>/copy.md`, the **copy deck**.
@@ -80,6 +81,13 @@ weakness.
 
 ---
 
+## Voice and banned words
+
+Write every string in the voice `intake.md` C1 names. A word or phrase C2 lists never appears in
+the deck, in any form its trailing `*` covers. This is enforced, not read: `intake-gate` refuses the
+Designer's start while a deck row uses one, and names the line. A string marked `[existing: …]` is
+the host's and is not checked.
+
 ## Figures
 
 `make-it-credible` and `lived-in-voice` ask for concrete detail. Detail is where invented numbers
@@ -93,6 +101,10 @@ named source or claim of a result.
 | `[source: <repo path or URL>, <date read>]` | You read the figure in that source | Only after the Orchestrator verifies it |
 | `[bound: contract/<file>]` | The contract states it | Yes |
 | `[NEEDS SOURCE]` | You have no source in hand | **No.** The Orchestrator removes the claim, or has the sentence rewritten without it |
+
+Cite a source `intake.md` C3 names wherever one holds the figure. A source outside C3's list is
+allowed, and the figure check looks at it with extra care; when C3 says `no figures`, any figure
+the copy needs is `[NEEDS SOURCE]`.
 
 A figure you remember is unsourced. A figure that sounds right is unsourced. Rounding an unsourced
 figure to something plausible is inventing it. When the copy needs a figure you do not have,

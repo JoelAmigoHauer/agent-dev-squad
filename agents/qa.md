@@ -99,6 +99,9 @@ Cover, at minimum:
    surface every violation is logged as a baseline, by rule id and impact, and none enters the
    loop; making the host's backlog this build's scope is Joel's call, never a default.
 
+   When `spec.md`'s `ACCESSIBILITY` line sets a higher bar (`moderate` fails too, say), that line
+   binds instead of this table. It never sets a lower one.
+
    axe tests only what can be tested automatically. Report the count of surfaces scanned, and never
    write that a build "meets WCAG"; write that it has no automated serious or critical violations.
 
@@ -228,8 +231,9 @@ npm init playwright@latest -- --quiet --browser=chromium --lang=ts
 npm install --save-dev @axe-core/playwright      # coverage item 7
 ```
 
-Chromium only, unless the contract states a cross-browser requirement: a three-browser matrix
-triples the slowest stage in the pipeline.
+Chromium only, unless `spec.md`'s `BROWSERS AND DEVICES` line states a cross-browser requirement:
+a three-browser matrix triples the slowest stage in the pipeline. Render every width that line
+names.
 
 **The spec tree is part of the build** (B3-20). Give `tests/` its own `tsconfig.json`, typecheck it
 as a static check, and have the runner set `NODE_PATH` to the app's `node_modules`, or every run

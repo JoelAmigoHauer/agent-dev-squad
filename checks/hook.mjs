@@ -11,7 +11,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   lintState, figureGate, waiverGuard, amendmentGate, commitGuard,
-  bashWritesState, bashAddsWaiver, applyWaivers, startsEngineer,
+  bashWritesState, bashAddsWaiver, applyWaivers, startsEngineer, intakeGate, bannedWordGate,
 } from './lib.mjs';
 import { consistency } from './consistency.mjs';
 
@@ -41,6 +41,11 @@ function buildDirFor(stateText) {
 function copyDeckFor(stateText) {
   const dir = buildDirFor(stateText);
   return dir ? read(path.join(dir, 'copy.md')) : null;
+}
+
+function intakeFor(stateText) {
+  const dir = buildDirFor(stateText);
+  return dir ? read(path.join(dir, 'intake.md')) : null;
 }
 
 function afterEdit(before, input) {
@@ -77,7 +82,9 @@ export function run(call) {
     failures = [
       ...waiverGuard(before, after),
       ...lintState(after),
+      ...intakeGate(before, after, intakeFor(after)),
       ...figureGate(before, after, copyDeckFor(after)),
+      ...bannedWordGate(before, after, intakeFor(after), copyDeckFor(after)),
     ];
     if (startsEngineer(before, after)) {
       const dir = buildDirFor(after);

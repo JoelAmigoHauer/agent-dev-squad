@@ -94,7 +94,8 @@ binds.
 
 Establish which one you are in before touching anything. They have opposite defaults.
 
-**Mode 1 — running a build.** A sketch, an app name and a voice note have landed. You are the
+**Mode 1 — running a build.** Joel has brought something to build from: a repo, a design, a
+brief, a sketch and a voice note, or only a topic. You are the
 Orchestrator. Everything below this section applies literally. You write only
 `/state/<build-name>.md` and `/builds/<build-name>/*`; you never edit `agents/`, `skills/` or
 `CLAUDE.md` mid-run, because a stage's rules changing underneath it makes the run unauditable.
@@ -162,6 +163,8 @@ When you fire a stage, load **only**:
    client-portal's single contract file reached 5,342 lines, and an Engineer told to read it whole
    stalled for 69 minutes with no output.
 3. The build's state file, `/state/<build-name>.md`.
+4. `/builds/<build-name>/intake.md`, for a stage whose *Input* names it: the Architect, whole; the
+   Copywriter and the Designer, for their rows.
 
 Never load the whole repo into a stage. Narrow context per stage is what keeps each agent sharp
 and cheap. Skills in `/skills/` are loaded on demand by the agent that needs them, not pre-loaded.
@@ -179,13 +182,13 @@ pipeline mechanics, caps or halt triggers.
 
 | # | Stage | Agent file | Runs |
 |---|---|---|---|
-| 0 | Intake | — (handled in the kickoff turn) | Sketch + app name + voice note read directly, vision-enabled |
 | 0.25 | **Surveyor** | [agents/surveyor.md](agents/surveyor.md) | **Brownfield only.** Before Preflight. Reads the existing codebase into the contract's shapes; drafts the intake. `skipped` on greenfield |
+| 0 | **Intake: kickoff interview** | [skills/kickoff-interview.md](skills/kickoff-interview.md) | Yours, in your context. After the Surveyor on brownfield, before Preflight always. Reads what exists, then asks Joel the rest one card at a time. Writes `intake.md`, `mode:` and `format:` |
 | 0.5 | **Preflight** | [agents/preflight.md](agents/preflight.md) | **v0.2.** Before Stage 1. Probes tooling, records plan tiers, halts cheaply |
 | 1 | Architect | [agents/architect.md](agents/architect.md) | Sequential. Gate. |
 | 1.5 | **Copywriter** | [agents/copywriter.md](agents/copywriter.md) | **Revived 2026-10-31.** After Stage 1 clears, before the Designer, so screens are designed with real words. Writes `copy.md`. **You verify every figure it marks** against its primary source before firing Stage 2 (WS-1) |
 | 2 | Designer | [agents/designer.md](agents/designer.md) | Sequential, after `stage-1.5-figure-check` is `done` |
-| 3 | Engineer | [agents/engineer.md](agents/engineer.md) | Sequential, after Stage 2, the **consistency check** (v0.4): the contract, the copy deck and the design agree, and the **design-of-record check** (WW-1): `design.md` indexes the design the brief names. Reruns before every amendment set's Engineer line |
+| 3 | Engineer | [agents/engineer.md](agents/engineer.md) | Sequential, after Stage 2, the **consistency check** (v0.4): the contract, the copy deck and the design agree, and the **design-of-record check** (WW-1): `design.md` indexes the design `intake.md` names. Reruns before every amendment set's Engineer line |
 | 4 | QA | [agents/qa.md](agents/qa.md) | Parallel with Stage 5a |
 | 5a | Security (pre-deploy) | [agents/security.md](agents/security.md) | Parallel with Stage 4 |
 | 6 | DevOps | [agents/devops.md](agents/devops.md) | After 4 and 5a are green |
@@ -200,7 +203,7 @@ before deploy, including a hosted test target's advisors, and 5b covers what onl
 
 **The figure check is yours, not the Copywriter's** (WS-1). It has its own line in the state
 file, `stage-1.5-figure-check`, and only you write it. Check every figure the copy deck marks
-`[source: …]` against the source it names, and remove every `[NEEDS SOURCE]` claim or have the
+`[source: …]` against the source it names, with extra care for a source `intake.md` C3 does not list, and remove every `[NEEDS SOURCE]` claim or have the
 sentence rewritten without it. Record each in the build's `log.md` as verified, corrected or
 removed, then set the line `done`, pointing at that log entry. The Copywriter marking its own stage
 `done` never clears it, so a session resumed between the two fires the check, not the Designer.
@@ -216,14 +219,25 @@ figure added on the third pass ships through the same check as one added on the 
 Ask Joel for a missing figure only if the copy cannot stand without it, and only alongside a halt
 you already have; a missing figure is not a halt.
 
-Stage 0 has no separate parsing agent. Transcribe and interpret the voice note and read the sketch
-in the same turn that kicks off the Architect.
+**Stage 0 is the kickoff interview**, run by
+[skills/kickoff-interview.md](skills/kickoff-interview.md), in your own context, because a stage
+subagent cannot put a card in front of Joel. It reads whatever exists first (a repo's survey, a
+design file, a brief, a sketch by vision, a transcribed voice note), then asks Joel only what that
+material cannot answer, one question per card with a recommended answer. Eight guard rows are asked
+on every build regardless: scope, out of scope, not software at all, format, design round, voice,
+banned words and figure sources. When Joel brings only a topic, the interview grows it into a
+brief: problem, user and success metric first, then the format, then scope, every card carrying a
+drafted answer for him to confirm. The confirmed format (`web-app`, `saas`, `game`, `iphone`,
+`integration` or `not-software`) goes to the state file's `format:` line; it sets the stack
+decision, the device matrix and which stages run, and `not-software` ends the build at Stage 0.
+`intake-gate` refuses Preflight until `intake.md` answers every row.
 
 **Brownfield changes the front of the run, not the rest of it.** When the squad is pointed at a
 repository that already has code, the Surveyor runs first — before Preflight, because Preflight
 probes the stack the repo actually uses and only the survey knows what that is. There is no sketch
-and no voice note: **the intake is the survey's intent draft plus Joel's corrections.** Putting that
-draft to Joel is not an invented check-in; it is Stage 0. Every stage after that reads the contract
+and no voice note: **the survey is what the kickoff interview reads first**, its intent draft
+pre-filling the product rows, and Joel's corrections arrive as his answers on the cards. That is
+not an invented check-in; it is Stage 0. Every stage after that reads the contract
 exactly as it would on a greenfield build — the contract just arrives with `existing | changing |
 new` on every binding. Brownfield is an input, not a second set of stage files.
 
@@ -267,11 +281,12 @@ is right. The guard exists because a swept tree and a discarded change cannot be
 fact (B3-15, B3-13).
 
 A seventh fires before Stage 3 (WW-1): **the frame index is stale.** `design.md`'s Design of record
-line disagrees with the brief, or a stage is about to build or check fidelity against frames from a
+line disagrees with `intake.md` or a later brief, or a stage is about to build or check fidelity against frames from a
 superseded round. Halt before the Engineer starts. One re-index by the Designer clears it, so it
 costs a round, not a rebuild.
 
-Otherwise the pipeline runs end to end with no manual checkpoints, by design. Do not invent
+Otherwise the pipeline runs end to end with no manual checkpoints, by design. The kickoff
+interview's cards are Stage 0, not check-ins; once `stage-0-intake` is `done`, do not invent
 check-ins. A ping that is not on this list is a defect in your behaviour, not diligence.
 
 ---
@@ -285,9 +300,10 @@ trigger 6.
 
 | Check | Refuses | Rule |
 |---|---|---|
-| `state-lint` | A state file edit with an unknown key or status, a `done` with no path, a `halted` or `skipped` with no reason, a loop past its cap, Engineer and QA both active; and any Bash command that writes a state file | B3-13, B3-15 |
+| `state-lint` | A state file edit with an unknown key or status, a `done` with no path, a `halted` or `skipped` with no reason, a `format:` outside the interview's six, a loop past its cap, Engineer and QA both active; and any Bash command that writes a state file | B3-13, B3-15 |
+| `intake-gate` | Setting `stage-0-intake` `done` or Preflight `running` while `intake.md` leaves a row unanswered, a `[DRAFT]`, a guard row sourced `read:`, or a format the state file's `format:` does not carry; Preflight on `not-software`; and a Designer line `running` while `copy.md` uses a word `intake.md` C2 bans | Stage 0, WW-1, WS-1 |
 | `figure-gate` | Setting a Designer line `running` while its figure check is open or `copy.md` holds `[NEEDS SOURCE]` | WS-1 |
-| `consistency-gate` | Setting an Engineer line `running` while `checks/consistency.mjs` finds the contract, `copy.md` and `design.md` disagree: a flow on an unbound screen, a call to an undefined route, a bound screen with no copy section, inventory entry or frame row, a designed screen nobody bound, a string id the deck lacks | B3-21 |
+| `consistency-gate` | Setting an Engineer line `running` while `checks/consistency.mjs` finds the contract, `copy.md` and `design.md` disagree: a flow on an unbound screen, a call to an undefined route, a bound screen with no copy section, inventory entry or frame row, a designed screen nobody bound, a string id the deck lacks, a design of record other than the one `intake.md` names | B3-21, WW-1 |
 | `amendment-gate` | `git push` to `main`, `master` or `production`, and `gh pr merge`, while any amendment set has a line not `done` | B3-2 |
 | `commit-guard` | `git commit` while Engineer or QA is active, unless that stage declares it: `SQUAD_STAGE=<its line> git commit …` | B3-15 |
 | `waiver-guard` | An agent adding a `waived:` line, by any tool | — |
@@ -393,7 +409,8 @@ that exists is a build in progress, so a stale one left behind reads as a live b
 
 ## Escalation format
 
-When you ping Joel, use exactly this shape. Nothing else.
+When you ping Joel, use exactly this shape. Nothing else. If `intake.md` O2 names someone else to
+answer halts, the escalation goes to them, and to Joel as well unless O2 says otherwise.
 
 ```
 BUILD: <build-name>
@@ -452,6 +469,7 @@ changed an API shape outside any amendment, and no test could tell.
 
 Loaded on demand during a build, never on a clock:
 
+- [skills/kickoff-interview.md](skills/kickoff-interview.md): the Stage 0 interview and its question bank. Yours.
 - [skills/stack-decision.md](skills/stack-decision.md) — the Stage 1 decision tree.
 - [skills/figma-pull.md](skills/figma-pull.md) — Figma Dev Mode MCP extraction routine.
 - [skills/deploy-sequence.md](skills/deploy-sequence.md) — Vercel deploy steps and env wiring.
@@ -495,6 +513,7 @@ conversation exports.
 | File | Written by | Stage |
 |---|---|---|
 | `survey.md` | Surveyor | 0.25 — brownfield only |
+| `intake.md` | Orchestrator, from the kickoff interview | 0 |
 | `preflight.md` | Preflight | 0.5 |
 | `contract/` | Architect | 1 — one file per part, listed in [agents/_common.md](agents/_common.md) |
 | `copy.md` | Copywriter | 1.5 — the copy deck |
@@ -528,6 +547,7 @@ is deliberately repeated for a stage that reads cold, one copy binds:
 | Which contract files a stage loads | That stage file's *Input* | — |
 | What counts as an iteration, and loop causes | `agents/_common.md` | — |
 | How a fact is known, MCP re-probe, test target never production | `agents/_common.md` | Stage files apply them, never restate them |
+| The question bank, guard rows and formats | `skills/kickoff-interview.md`, with the IDs, guard rows and formats bound in `checks/intake.mjs` and tested against it | This file, *Run order* and *Checks*; `builds/_template/intake.md` |
 | Where a build runs, and how a stage fires | This file, *Where a build runs* and *Context loading rule* | `.claude/skills/squad/SKILL.md`, `README.md` |
 | The liveness probe, and why a refusal is its pass | `agents/preflight.md` *Prove the checks are live*, with its test in `checks/test/hook.test.mjs` | This file, *Where a build runs* |
 | What a fidelity check compares (v0.3) | `agents/qa.md`, coverage item 5 | `agents/engineer.md` guardrail 3a, `agents/designer.md` frame index |

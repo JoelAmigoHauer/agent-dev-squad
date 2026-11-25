@@ -2,22 +2,26 @@
 // command, and they return a list of failures. Each failure names its check id, so a waiver can
 // name it too. Why each check exists is in LEARNINGS.md, under the ID in its comment.
 
-export const CHECKS = ['state-lint', 'figure-gate', 'consistency-gate', 'amendment-gate', 'commit-guard', 'waiver-guard'];
+import { intakeProblems, formatOf, bannedWords, bannedPattern, FORMATS } from './intake.mjs';
+
+export const CHECKS = ['state-lint', 'intake-gate', 'figure-gate', 'consistency-gate', 'amendment-gate', 'commit-guard', 'waiver-guard'];
 
 const STATUSES = ['idle', 'pending', 'running', 'loop', 'done', 'halted', 'skipped'];
-const TOP_KEYS = new Set(['build', 'mode', 'started', 'standing', 'escalations', 'waived']);
+const TOP_KEYS = new Set(['build', 'mode', 'format', 'started', 'standing', 'escalations', 'waived']);
 const FREE_TEXT = new Set(['build', 'mode', 'started', 'standing', 'escalations', 'waived']);
 const TREE_WRITERS = new Set(['stage-3-engineer', 'stage-4-qa']);
 
 // ---------------------------------------------------------------------------------------------
 // Parsing the state file
 
-// Returns { stages: [{ set, name, value, line }], waivers: [{ check, reason, line }], errors }.
+// Returns { stages: [{ set, name, value, line }], waivers: [{ check, reason, line }], top, errors }.
+// `top` maps each top-level key (build, mode, format, ...) to { value, line }.
 // `set` is null for the main block, or the amendment set's header, e.g. "amendment-set-2".
 export function parseState(text) {
   const stages = [];
   const waivers = [];
   const errors = [];
+  const top = {};
   let set = null;
   let freeKey = null; // the free-text key a continuation line belongs to
   const lines = text.split('\n');
@@ -43,6 +47,7 @@ export function parseState(text) {
         continue;
       }
       if (TOP_KEYS.has(key)) {
+        top[key] = { value, line: n };
         if (FREE_TEXT.has(key)) freeKey = key;
         if (key === 'waived' && value && value !== 'none') waivers.push(parseWaiver(value, n));
         continue;
@@ -66,7 +71,7 @@ export function parseState(text) {
     }
     errors.push({ line: n, msg: `indented line outside an amendment set or free-text field: ${raw.trim()}` });
   }
-  return { stages, waivers, errors };
+  return { stages, waivers, top, errors };
 }
 
 function parseWaiver(text, line) {
@@ -83,8 +88,12 @@ export function statusOf(value) {
 // state-lint (B3-13, status vocabulary in state/tasks.md)
 
 export function lintState(text) {
-  const { stages, waivers, errors } = parseState(text);
+  const { stages, waivers, top, errors } = parseState(text);
   const out = errors.map((e) => fail('state-lint', `line ${e.line}: ${e.msg}`));
+  // format: is set by the kickoff interview's F9 (skills/kickoff-interview.md); "—" until then.
+  if (top.format && !['—', ...FORMATS].includes(top.format.value)) {
+    out.push(fail('state-lint', `line ${top.format.line}: format "${top.format.value}" is not one of —, ${FORMATS.join(', ')}`));
+  }
   for (const s of stages) {
     const where = `line ${s.line} (${s.set ? s.set + ' ' : ''}${s.name})`;
     const st = statusOf(s.value);
@@ -120,6 +129,60 @@ export function lintState(text) {
 }
 
 const isActive = (v) => ['running', 'loop'].includes(statusOf(v));
+
+// ---------------------------------------------------------------------------------------------
+// intake-gate (Stage 0, skills/kickoff-interview.md). The kickoff interview is finished before
+// stage-0-intake reads done and before Preflight starts; the format it settled is the state
+// file's; and no Designer starts while the copy deck holds a word the interview banned.
+
+// The main-block line `name` as it reads after the edit, when this edit moves it into `status`.
+function moves(before, after, name, status) {
+  const prev = parseState(before || '').stages;
+  return parseState(after).stages.filter((s) => {
+    if (s.name !== name || statusOf(s.value) !== status) return false;
+    const was = prev.find((p) => p.set === s.set && p.name === s.name);
+    return !was || statusOf(was.value) !== status;
+  });
+}
+
+export function intakeGate(before, after, intakeText) {
+  const done = moves(before, after, 'stage-0-intake', 'done').some((s) => !s.set);
+  const preflight = moves(before, after, 'stage-0.5-preflight', 'running').some((s) => !s.set);
+  if (!done && !preflight) return [];
+  const { stages, top } = parseState(after);
+  const who = preflight ? 'stage-0.5-preflight cannot start' : 'stage-0-intake cannot be done';
+  const out = intakeProblems(intakeText).map((m) => fail('intake-gate', `${who}: ${m}`));
+  if (preflight) {
+    const line = stages.find((s) => !s.set && s.name === 'stage-0-intake');
+    if (!line || statusOf(line.value) !== 'done') {
+      out.push(fail('intake-gate', `${who}: stage-0-intake is "${line ? line.value : 'missing'}", not done`));
+    }
+  }
+  const format = formatOf(intakeText);
+  const stated = top.format ? top.format.value : '—';
+  if (format && stated !== format) {
+    out.push(fail('intake-gate', `${who}: the state file's format: is "${stated}", but intake.md F9 settled "${format}"`));
+  }
+  if (preflight && format === 'not-software') {
+    out.push(fail('intake-gate', `${who}: the format is not-software, so the build ends at Stage 0; skip every later stage`));
+  }
+  return out;
+}
+
+export function bannedWordGate(before, after, intakeText, copyDeck) {
+  if (!moves(before, after, 'stage-2-designer', 'running').length || !copyDeck) return [];
+  const words = bannedWords(intakeText);
+  if (!words.length) return [];
+  const out = [];
+  copyDeck.split('\n').forEach((l, i) => {
+    // Table rows only, and never a string the host already ships, marked [existing: ...].
+    if (!/^\s*\|/.test(l) || /^\s*\|[\s:|-]+\|\s*$/.test(l) || /\[existing:/.test(l)) return;
+    for (const w of words) {
+      if (bannedPattern(w).test(l)) out.push(fail('intake-gate', `stage-2-designer cannot start: copy.md line ${i + 1} uses "${w}", which intake.md C2 bans`));
+    }
+  });
+  return out;
+}
 
 // ---------------------------------------------------------------------------------------------
 // figure-gate (WS-1): no Designer starts while its figure check is open or the deck has a

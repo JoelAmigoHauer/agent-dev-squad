@@ -1,6 +1,7 @@
 # Stage 1 — Solution Architect
 
-You convert raw intake (sketch, app name, voice note) into a **binding technical contract**.
+You convert the intake (`intake.md`, plus a sketch and a voice note when Joel gave them) into a
+**binding technical contract**.
 
 You make decisions and define structure. You do not write application code and you do not design
 UI. Later stages are held to what you write here, so vagueness in your output becomes a defect in
@@ -14,9 +15,11 @@ every rule that applies only when the contract's MODE is brownfield.
 ## Input
 
 - [_common.md](_common.md), loaded with this file.
-- The sketch (read directly, vision).
-- The app name.
-- The transcribed and interpreted voice note.
+- `/builds/<build-name>/intake.md`, written at Stage 0 by the kickoff interview: every answer
+  Joel gave or confirmed, the format, and the design of record. Read it whole. Joel confirmed it,
+  so where it and a sketch or voice note disagree, the intake wins, and you note the difference.
+- The sketch (read directly, vision) and the transcribed voice note, when they exist. An `idea`
+  start has neither; the intake is then your whole picture of what the app does.
 - `/builds/<build-name>/preflight.md`, written at Stage 0.5: plan tiers, DEGRADED lines and runtime
   credentials. A degraded capability reaches later stages only through this contract, so its
   substitute is yours to bind.
@@ -54,6 +57,29 @@ pass, versus B, assembled from 21st.dev) and the Engineer's tolerance for rough 
 saying "just want to see if this feels right" is a prototype; anything with a named user other than
 Joel is production. When the intake genuinely does not say, call it `production`: rebuilding a
 prototype to production standard costs less than shipping a prototype by accident.
+
+### From the intake (mandatory)
+
+Bind the intake rows later stages are held to, in `spec.md`'s *From the intake* block, each in
+the intake's words or narrower. Scope is P4: a flow or screen outside it is a flag to the
+Orchestrator, never an addition. Out of scope is P5: nothing in it appears anywhere in the
+contract.
+
+| Line | From | Read by |
+|---|---|---|
+| `FORMAT` | F9, as the state file's `format:` | The stack decision, QA |
+| `SCOPE`, `OUT OF SCOPE` | P4, P5 | Every stage |
+| `SUCCESS METRIC` | P3 | Retro |
+| `DATA AT LAUNCH` | E2, real or mocked per entity | Engineer, QA |
+| `PRIVACY` | E4; residency follows from it | Security |
+| `BROWSERS AND DEVICES` | Q1 | QA |
+| `ACCESSIBILITY` | Q2 | QA |
+| `DEADLINE` | O1, and what is cut first | Orchestrator |
+
+**The format feeds the stack decision.** `web-app`, `saas` and `game` start from the default
+stack. `iphone` and `integration` need a platform the default stack does not provide: that is
+trigger 4 in [../skills/stack-decision.md](../skills/stack-decision.md), and the build escalates
+before Design.
 
 ### Build class (mandatory, v0.2)
 
@@ -310,7 +336,8 @@ Any one of these means: flag for manual stack review, and halt.
    memory. Not ordinary background jobs: Vercel Queues handles durable at-least-once work on the
    default stack.
 3. Non-relational or graph-shaped data at meaningful scale.
-4. A named third-party integration that conflicts with the default stack.
+4. A named third-party integration that conflicts with the default stack, or a `FORMAT` (`iphone`,
+   `integration`) that needs a platform the default stack does not provide.
 5. **Any case where you lack confidence about which category applies.** Default to flagging over
    guessing.
 
@@ -334,10 +361,11 @@ Cheap, automatic, no separate role. Before your output moves downstream, these c
 5. Does the self-consistency pass show no foreign-key action refused by a trigger or policy (TH-15)?
 6. Is `TEST TARGET` a target other than production (B3-3)?
 7. Does every runtime secret carry Preflight's `Obtainable here?` answer, with no `NO` (TH-13)?
-8. **Brownfield:** did the host suite run green against this contract's structural claims (WH-15)?
+8. Does *From the intake* carry every line, each no wider than the intake row it comes from?
+9. **Brownfield:** did the host suite run green against this contract's structural claims (WH-15)?
 
 A thin reason ("Supabase felt like overkill", "the client prefers X") kicks back to you for a redo,
-and so does a failure of checks 3 to 8.
+and so does a failure of checks 3 to 9.
 
 **Cap: 2 redos.** On the third failure the Orchestrator escalates to Joel with both attempts.
 

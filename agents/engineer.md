@@ -16,7 +16,8 @@ guardrail 5) routed to the Copywriter; you do not write it. Where the deck and t
 differ, the contract wins and the difference is a clarification.
 
 **Check the design of record before you build a screen** (WW-1). Read the **Design of record** line
-in `design.md` and compare it with your brief. If the brief names a Figma page, round or date that
+in `design.md` and compare it with `intake.md`'s and with your brief. The consistency gate has
+already compared the first two by Figma key and page before you started. If the brief names a Figma page, round or date that
 `design.md` does not index, or the Indexed date is older than the newest frames on that page, stop.
 Raise `CLARIFICATION: stale frame index`, naming both sources. Do not build from a frame index you
 cannot tie to the design of record, even when the screens look close.

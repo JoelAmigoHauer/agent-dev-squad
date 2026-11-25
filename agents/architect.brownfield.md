@@ -10,8 +10,8 @@ section of `architect.md` it attaches to.
 ## Input (attaches to *Input* and *Mode*)
 
 `brownfield` means the Surveyor ran at Stage 0.25 and `/builds/<build-name>/survey.md` exists.
-**The survey is your primary input, ahead of the intake.** The intake is the survey's intent draft
-plus Joel's corrections. You do not write the contract from nothing; you complete it. Sections 1 to
+**The survey is your primary input, ahead of the intake.** The intake is `intake.md`, which the kickoff
+interview built from the survey, its intent draft corrected by Joel on the cards. You do not write the contract from nothing; you complete it. Sections 1 to
 4 start from what the survey found.
 
 ## Binding status (attaches to *Mode*, *Flow bindings* and *Screen bindings*)

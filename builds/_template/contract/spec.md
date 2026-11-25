@@ -28,6 +28,22 @@ does not say, this is `production`.
 `B` is domain logic with derived values (~2 hours), `C` fires an escalation trigger (no target).
 A build landing between two classes takes the higher one.
 
+### From the intake
+
+From `/builds/<build-name>/intake.md`, each line no wider than its row.
+
+```
+FORMAT:              <F9>
+SCOPE:               <P4, flow by flow>
+OUT OF SCOPE:        <P5>
+SUCCESS METRIC:      <P3>
+DATA AT LAUNCH:      <E2, real or mocked per entity>
+PRIVACY:             <E4>
+BROWSERS AND DEVICES: <Q1>
+ACCESSIBILITY:       <Q2>
+DEADLINE:            <O1, and what is cut first>
+```
+
 ### Screens
 
 <one entry per screen, named by its path; a number is a label local to one file>

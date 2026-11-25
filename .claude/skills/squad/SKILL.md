@@ -46,7 +46,9 @@ empty private GitHub repo that Joel creates and opens; `/squad` never creates a 
 `.squad/` is absent run `init`; if a `.squad/state/<build-name>.md`
 exists, a build is in progress, so run `run` (the state protocol resumes from the first stage not
 `done`); if `.squad/LEARNINGS.md` holds entries the template does not, run `port`; otherwise ask
-whether this is greenfield or brownfield and route accordingly.
+whether this is greenfield or brownfield and route accordingly. On greenfield, take whatever Joel
+has, down to a single line naming a topic, and start the kickoff interview
+(`.squad/skills/kickoff-interview.md`).
 
 ## `init` — stamp, don't carry
 
@@ -151,9 +153,10 @@ The Surveyor runs first because Preflight probes the stack the repo *actually us
 survey knows what that is. Load `.squad/agents/surveyor.md` and `.squad/agents/_common.md`, nothing else, for that stage —
 the context-loading rule applies to it as to every other.
 
-**Stage 0 intake in brownfield is the survey's intent draft plus Joel's corrections.** There is no
-sketch and no voice note. Put `survey.md` §10 to Joel, record his answer in the same section, and
-only then fire Preflight. That is not an invented check-in — it is the intake.
+**Stage 0 in brownfield is the kickoff interview, reading the survey first.** There is no sketch
+and no voice note. Run `.squad/skills/kickoff-interview.md` with `survey.md` as its material: §10's
+intent draft pre-fills the product rows, Joel corrects them on the cards, and the answers land in
+`intake.md`. Only then fire Preflight. That is not an invented check-in; it is the intake.
 
 Set `mode: brownfield` in `.squad/state/<build-name>.md` and `MODE: brownfield` in the contract. On
 a greenfield repo set both to `greenfield` and mark `stage-0.25-surveyor: skipped (greenfield)`.

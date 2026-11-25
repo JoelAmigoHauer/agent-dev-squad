@@ -3,7 +3,7 @@
 Written by: Designer, Stage 2.
 
 **Design of record:** Figma file `<key>`, page "<name>", plus route pages `<node ids>`.
-**Indexed:** <YYYY-MM-DD>, against <the brief or contract line that names the design of record>.
+**Indexed:** <YYYY-MM-DD>, against <`intake.md`'s Design of record line, or the later brief that changed it>.
 
 ---
 

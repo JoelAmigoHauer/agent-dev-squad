@@ -1,36 +1,20 @@
 #!/usr/bin/env node
 // consistency-gate (v0.4, B3-21, PRIOR-ART §1): the contract, the copy deck and the design agree on
-// screens, routes and strings. Gates the Engineer's start and every amendment set's Engineer line.
+// screens, routes and strings, and design.md indexes the design of record intake.md names (WW-1).
+// Gates the Engineer's start and every amendment set's Engineer line.
 // Run by hand: node .squad/checks/consistency.mjs <build-dir>
 
 import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { tableAfter } from './md.mjs';
+import { parseIntake } from './intake.mjs';
 
 const read = (p) => (existsSync(p) ? readFileSync(p, 'utf8') : null);
 const clean = (c) => c.replace(/`/g, '').trim();
 const placeholder = (c) => !c || /[<>]/.test(c);
 
-// The rows of the first markdown table after a heading matching `heading`, as objects keyed by
-// lower-cased header cells.
-export function tableAfter(text, heading) {
-  const lines = text.split('\n');
-  const start = lines.findIndex((l) => /^#{1,6}\s/.test(l) && heading.test(l));
-  if (start < 0) return [];
-  let i = start + 1;
-  while (i < lines.length && !/^\s*\|/.test(lines[i])) {
-    if (/^#{1,6}\s/.test(lines[i])) return [];
-    i++;
-  }
-  const cells = (l) => l.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
-  const head = cells(lines[i] || '').map((h) => h.toLowerCase());
-  const rows = [];
-  for (i += 2; i < lines.length && /^\s*\|/.test(lines[i]); i++) {
-    const c = cells(lines[i]);
-    rows.push(Object.fromEntries(head.map((h, k) => [h, c[k] ?? ''])));
-  }
-  return rows;
-}
+export { tableAfter };
 
 const normRoute = (r) => clean(r).replace(/\[([^\]]+)\]|\{([^}]+)\}/g, ':$1$2').replace(/:[A-Za-z_][A-Za-z0-9_]*/g, ':p');
 
@@ -84,7 +68,26 @@ export function consistency(buildDir) {
       }
     }
   } else fail('design.md is missing');
+
+  // C8 (WW-1): design.md indexes the design of record the kickoff interview settled.
+  const intake = read(path.join(buildDir, 'intake.md'));
+  const want = intake === null ? null : parseIntake(intake).designOfRecord;
+  if (design !== null && want && !placeholder(want) && !/^none\b/i.test(clean(want))) {
+    const have = (design.match(/^\*\*Design of record:\*\*[ \t]*(.*)$/m) || [])[1];
+    if (!have || placeholder(have)) fail(`design.md has no Design of record line; intake.md names "${clean(want)}"`);
+    else if (!sameDesign(want, have)) fail(`design.md indexes "${clean(have)}", but intake.md names "${clean(want)}" as the design of record (WW-1)`);
+  }
   return out;
+}
+
+// Two design-of-record lines name the same design when the Figma key and the page agree. A line
+// with neither is compared whole, ignoring case, backticks and spacing.
+export function sameDesign(a, b) {
+  const key = (s) => (clean(s).match(/figma\s+(?:file\s+)?([A-Za-z0-9]{6,})/i) || [])[1];
+  const page = (s) => ((s.match(/page\s+"([^"]+)"/i) || [])[1] || '').trim().toLowerCase() || undefined;
+  const norm = (s) => clean(s).toLowerCase().replace(/\s+/g, ' ').replace(/\.$/, '');
+  if (!key(a) && !page(a)) return norm(a) === norm(b);
+  return (!key(a) || key(a) === key(b)) && (!page(a) || page(a) === page(b));
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

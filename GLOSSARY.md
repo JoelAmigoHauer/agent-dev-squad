@@ -45,9 +45,25 @@ of an existing codebase.
 _Avoid_: new build, existing build
 
 **Intake**:
-What a build starts from: the sketch, app name and voice note, or on brownfield the survey's intent
-draft plus Joel's corrections. Stage 0.
+What a build starts from, written down as `intake.md` by the kickoff interview at Stage 0: Joel's
+answers, read from the material he brought (a repo's survey, a design, a brief, a sketch and voice
+note, or only a topic) and confirmed or given on cards.
 _Avoid_: brief (a brief is what a stage is given)
+
+**Kickoff interview**:
+Stage 0, run by the Orchestrator in its own context from `skills/kickoff-interview.md`. Reads what
+exists, then asks Joel the rest one question per card, with a recommended answer.
+_Avoid_: onboarding, discovery, questionnaire
+
+**Guard row**:
+A kickoff interview row asked on every build even when the material answers it: scope, out of
+scope, not software at all, format, design round, voice, banned words, figure sources.
+_Avoid_: required field, mandatory question
+
+**Format**:
+What kind of thing the build makes, settled by the kickoff interview's F9 and written to the state
+file's `format:` line: `web-app`, `saas`, `game`, `iphone`, `integration` or `not-software`.
+_Avoid_: platform, app type, product type
 
 **Brief**:
 What the Orchestrator hands a stage when it fires it, as the prompt of the stage's subagent: the
