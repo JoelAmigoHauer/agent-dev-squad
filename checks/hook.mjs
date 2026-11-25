@@ -11,8 +11,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   lintState, figureGate, waiverGuard, amendmentGate, commitGuard,
-  bashWritesState, bashAddsWaiver, applyWaivers,
+  bashWritesState, bashAddsWaiver, applyWaivers, startsEngineer,
 } from './lib.mjs';
+import { consistency } from './consistency.mjs';
 
 // The pipeline root: .squad/ in a host repo, the repo root in the template.
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -32,9 +33,14 @@ function isLiveState(p) {
   return path.dirname(abs) === STATE_DIR && abs.endsWith('.md') && path.basename(abs) !== 'tasks.md';
 }
 
-function copyDeckFor(stateText) {
+function buildDirFor(stateText) {
   const m = stateText.match(/^build:\s*(\S+)/m);
-  return m ? read(path.join(ROOT, 'builds', m[1], 'copy.md')) : null;
+  return m ? path.join(ROOT, 'builds', m[1]) : null;
+}
+
+function copyDeckFor(stateText) {
+  const dir = buildDirFor(stateText);
+  return dir ? read(path.join(dir, 'copy.md')) : null;
 }
 
 function afterEdit(before, input) {
@@ -73,6 +79,11 @@ export function run(call) {
       ...lintState(after),
       ...figureGate(before, after, copyDeckFor(after)),
     ];
+    if (startsEngineer(before, after)) {
+      const dir = buildDirFor(after);
+      const found = dir ? consistency(dir) : [{ check: 'consistency-gate', msg: 'the state file names no build' }];
+      failures.push(...found.map((f) => ({ ...f, msg: `stage-3-engineer cannot start: ${f.msg}` })));
+    }
     waiverText = before ?? '';
   } else if (tool === 'Bash' && typeof input.command === 'string') {
     const cmd = input.command;

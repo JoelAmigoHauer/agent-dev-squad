@@ -65,6 +65,26 @@ frame index that your round touches, shells included:
 Code that passes every test and doesn't look like its frame is not done. QA checks the same rows
 independently, so a row you skip comes back as a GAP and costs a loop.
 
+### 3b. Ship motion from the design's Motion section, and nothing else that moves
+
+`design.md`'s *Motion* section is binding the way the copy deck is. Ship its tokens as CSS custom
+properties (or the host's token format) and reference them; a literal duration or easing curve in
+a component is a defect. Then:
+
+- Animate only what the section names, with the properties its limits allow: `transform` and
+  `opacity` for movement and appearance, colour properties for tone shifts, never a layout
+  property, `box-shadow` or `filter`.
+- Every transition and animation ships with its `prefers-reduced-motion: reduce` branch, per the
+  section's reduced-motion table. A Tailwind build uses the `motion-safe:` and `motion-reduce:`
+  variants; script-driven motion reads `matchMedia('(prefers-reduced-motion: reduce)')`.
+- The loading indicator waits `--spinner-delay` before it shows and stays `--spinner-min` once it
+  does, from one shared hook or component, never a timer per screen. The space it appears in is
+  reserved before it appears.
+- Strip or restate any motion a retrieved component brings with it, as the section says.
+- No motion library unless the contract names one. A control or state the section does not cover
+  is a `CLARIFICATION` to the Designer; you do not choose its motion. A loading state with no string
+  is a `CLARIFICATION — COPY GAP`.
+
 ### 4. Generate TypeScript types from the Supabase schema
 
 Generate types from the schema and import them; never hand-write types that mirror the database.
@@ -166,7 +186,9 @@ rather than substituting silently.
 1. Every route in the API contract exists and returns the documented shapes, including the error
    shapes.
 2. Every screen in `design.md` renders, including its empty, loading and error states, and every
-   frame-index row your round touched is recorded `matches` or explained (guardrail 3a).
+   frame-index row your round touched is recorded `matches` or explained (guardrail 3a), and every
+   component and state in the Motion section moves as specified, reduced-motion branch included
+   (guardrail 3b).
 3. Types are generated from the schema, not hand-written.
 4. Type check and lint pass locally, **and a pre-commit hook runs them on every commit** (B3-11).
    Install Husky as a dev dependency (`npx husky init`) and make `.husky/pre-commit` run the

@@ -151,7 +151,7 @@ pipeline mechanics, caps or halt triggers.
 | 1 | Architect | [agents/architect.md](agents/architect.md) | Sequential. Gate. |
 | 1.5 | **Copywriter** | [agents/copywriter.md](agents/copywriter.md) | **Revived 2026-10-31.** After Stage 1 clears, before the Designer, so screens are designed with real words. Writes `copy.md`. **You verify every figure it marks** against its primary source before firing Stage 2 (WS-1) |
 | 2 | Designer | [agents/designer.md](agents/designer.md) | Sequential, after `stage-1.5-figure-check` is `done` |
-| 3 | Engineer | [agents/engineer.md](agents/engineer.md) | Sequential, after Stage 2 |
+| 3 | Engineer | [agents/engineer.md](agents/engineer.md) | Sequential, after Stage 2 and the **consistency check** (v0.4): the contract, the copy deck and the design agree. Reruns before every amendment set's Engineer line |
 | 4 | QA | [agents/qa.md](agents/qa.md) | Parallel with Stage 5a |
 | 5a | Security (pre-deploy) | [agents/security.md](agents/security.md) | Parallel with Stage 4 |
 | 6 | DevOps | [agents/devops.md](agents/devops.md) | After 4 and 5a are green |
@@ -248,6 +248,7 @@ trigger 6.
 |---|---|---|
 | `state-lint` | A state file edit with an unknown key or status, a `done` with no path, a `halted` or `skipped` with no reason, a loop past its cap, Engineer and QA both active; and any Bash command that writes a state file | B3-13, B3-15 |
 | `figure-gate` | Setting a Designer line `running` while its figure check is open or `copy.md` holds `[NEEDS SOURCE]` | WS-1 |
+| `consistency-gate` | Setting an Engineer line `running` while `checks/consistency.mjs` finds the contract, `copy.md` and `design.md` disagree: a flow on an unbound screen, a call to an undefined route, a bound screen with no copy section, inventory entry or frame row, a designed screen nobody bound, a string id the deck lacks | B3-21 |
 | `amendment-gate` | `git push` to `main`, `master` or `production`, and `gh pr merge`, while any amendment set has a line not `done` | B3-2 |
 | `commit-guard` | `git commit` while Engineer or QA is active, unless that stage declares it: `SQUAD_STAGE=<its line> git commit …` | B3-15 |
 | `waiver-guard` | An agent adding a `waived:` line, by any tool | — |
@@ -267,6 +268,13 @@ the signal to fix the check upstream, with its test.
 | QA ↔ Engineer fix loop | 3 | Halt. Escalate with failing tests + diff history |
 | Security ↔ Engineer fix loop | 2 | Halt. Escalate with the finding and the attempted fixes |
 | DevOps deploy attempt | 2 | Halt. Escalate with build logs. Never retry blind |
+| Consistency fix round (v0.4) | 2 | Halt. Escalate with the mismatches and both rounds |
+
+**A consistency mismatch is yours to route.** Run `node .squad/checks/consistency.mjs
+.squad/builds/<build-name>` to see the list, then pick the stage that fixes each mismatch: the
+Copywriter for a missing section or string, the Designer for a missing entry or frame, the Architect,
+by amendment, when the contract is what is wrong. Log each pick and why in `log.md`. One round is
+every fix you fire for one failing run; a third failing run halts.
 
 Security's cap is tighter than QA's on purpose: a security finding that survives one fix attempt
 usually signals a design problem, and design problems belong with Joel at the Architect level.
@@ -481,6 +489,9 @@ is deliberately repeated for a stage that reads cold, one copy binds:
 | What a fidelity check compares (v0.3) | `agents/qa.md`, coverage item 5 | `agents/engineer.md` guardrail 3a, `agents/designer.md` frame index |
 | What a survey must contain | `agents/surveyor.md` | `builds/_template/survey.md`, as a scaffold |
 | How `/squad` stamps and routes | `.claude/skills/squad/SKILL.md` | — it defers to this file for everything else |
+| What the consistency check compares | `checks/consistency.mjs`, with its tests | This file's *Checks* table |
+| Motion limits, patterns and tokens | `agents/designer.md` *Motion* | `agents/engineer.md` guardrail 3b, `agents/qa.md` coverage item 6 |
+| What fails an accessibility check | `agents/qa.md` coverage item 7 | — |
 | What each check refuses | `checks/lib.mjs`, with its tests | This file's *Checks* table, `agents/_common.md` |
 | Vercel platform notes | `agents/devops.md` | `agents/engineer.md`, for the build side |
 | Deploy record template | `agents/devops.md` | `skills/deploy-sequence.md` points at it |

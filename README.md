@@ -35,13 +35,14 @@ your-app/                      the host repo
 │   │   ├── architect.md       1    · the binding contract
 │   │   ├── architect.brownfield.md   brownfield-only Architect rules
 │   │   ├── copywriter.md      1.5  · every string, figures marked
-│   │   ├── designer.md        2    · UI, tokens, components
+│   │   ├── designer.md        2    · UI, tokens, components, motion
 │   │   ├── engineer.md        3    · implementation
 │   │   ├── qa.md              4    · tests generated from the contract
 │   │   ├── security.md        5a/5b · pre- and post-deploy
 │   │   ├── devops.md          6    · deploy and rollback
 │   │   └── retro.md           7    · writes learnings back
 │   ├── skills/                Invoked by path during a build, never auto-triggered
+│   ├── checks/                the squad checks: a hook that blocks a broken rule, and its tests
 │   ├── state/                 tasks.md template; <build-name>.md while a build runs
 │   └── builds/<build-name>/   One folder per build — the audit trail
 ├── .claude/hooks/             the git guard
