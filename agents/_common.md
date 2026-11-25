@@ -80,5 +80,15 @@ fix.** Build 1 lost two of three iterations to a stale binary and a stale server
 ## Writing to the tree
 
 Commit by explicit path, never `git add -A` or `git add .` (B3-15). Never commit while another
-stage is writing the tree. The git guard refuses sweeping and destructive commands; if it blocks one
-you need, record the command and why in `log.md` and stop. There is no bypass.
+stage is writing the tree. While you are the Engineer or QA and your line is active, declare your
+commits as yours: `SQUAD_STAGE=<your state line, e.g. stage-3-engineer> git commit -m "…"`.
+
+Edit the state file with the Edit or Write tool, never from Bash (B3-13).
+
+## When a check blocks you
+
+The git guard and the squad checks run before your tool calls, and a block has no bypass. Record
+the blocked command, the check's message and why you needed it in `log.md`, and stop; the
+Orchestrator escalates it. If you believe the check itself is wrong, say so with
+`cause: test-defect`. Never write a `waived:` line: only Joel waives a check. If he has, `git pull`
+and retry.

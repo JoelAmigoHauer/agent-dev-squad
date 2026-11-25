@@ -54,7 +54,8 @@ TMP="$(mktemp -d)"
 git -c advice.detachedHead=false clone --quiet --depth 1 --branch "$REF" "$SRC" "$TMP"
 SHA="$(git -C "$TMP" rev-parse HEAD)"
 mkdir -p .squad
-for p in CLAUDE.md LEARNINGS.md agents skills state builds; do
+for p in CLAUDE.md LEARNINGS.md agents skills state builds checks; do
+  [ -e "$TMP/$p" ] || continue          # checks/ exists from v0.4
   rm -rf ".squad/$p" && cp -R "$TMP/$p" ".squad/$p"
 done
 rm -f .squad/builds/_template/README.md    # describes the template, not a build
@@ -72,6 +73,10 @@ if [ -f "$TMP/$GUARD" ]; then
     s.hooks ??= {}; s.hooks.PreToolUse ??= [];
     const present = s.hooks.PreToolUse.some(e => (e.hooks || []).some(h => h.command === command));
     if (!present) s.hooks.PreToolUse.push({ matcher: "Bash", hooks: [{ type: "command", command }] });
+    const checks = "node \"$CLAUDE_PROJECT_DIR\"/.squad/checks/hook.mjs";
+    const hasChecks = s.hooks.PreToolUse.some(e => (e.hooks || []).some(h => h.command === checks));
+    if (fs.existsSync(".squad/checks/hook.mjs") && !hasChecks)
+      s.hooks.PreToolUse.push({ matcher: "Bash|Edit|Write|MultiEdit", hooks: [{ type: "command", command: checks }] });
     fs.writeFileSync(p, JSON.stringify(s, null, 2) + "\n");'
 fi
 rm -rf "$TMP"
@@ -97,6 +102,12 @@ never sweep the tree; B3-15) into something a stage cannot skip. A command it bl
 bypass: the stage records it in the build's `log.md` and halts, and Joel runs it if it is right.
 Adapted from mattpocock/skills `git-guardrails-claude-code`, read 2026-10-31. A template version
 older than the guard (`v0.3`) stamps without it.
+
+**The squad checks** (`.squad/checks/hook.mjs`, v0.4) run on every Bash, Edit, Write and MultiEdit
+call: the state-file lint, the figure gate, the amendment gate, the commit guard and the waiver
+guard. A failing check blocks, with no bypass; only Joel waives one, per build, by adding
+`waived: <check> <reason>` to the state file on github.com. What each check refuses is in *Checks*
+in `.squad/CLAUDE.md`. A template version older than v0.4 stamps without them.
 
 ## Three rules the brief cannot state for itself
 

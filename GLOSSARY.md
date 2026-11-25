@@ -89,7 +89,20 @@ _Avoid_: reason, category
 
 **Halt**:
 The pipeline stopping on one of the listed halt triggers, and the Orchestrator escalating to Joel.
-_Avoid_: pause, block (blocking is a Preflight and Security severity)
+_Avoid_: pause, block (blocking is a Preflight and Security severity, and what a check does to a
+tool call)
+
+**Check**:
+One of the squad checks in `checks/` (v0.4): code that runs before a tool call and blocks it when
+a rule is broken. Named by its id, such as `figure-gate`. A check *blocks a call*; it never halts
+the pipeline itself.
+_Avoid_: validation (the Architect's validation pass is prose), lint (except `state-lint`'s name),
+gate on its own
+
+**Waiver**:
+A `waived: <check> <reason>` line in a build's state file, written by Joel only, that lifts one
+check for that build because the check itself is wrong.
+_Avoid_: override, bypass, exception
 
 **Standing clause**:
 A rule a mid-build retro marked `BINDS THIS BUILD`, carried in every later brief to the stages it
