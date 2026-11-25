@@ -21,6 +21,7 @@ bare numbers 1–12; nothing else is unprefixed.
 | `WH` | `workshop-hub` | 2026-09-07 to 09-09 | brownfield via `/squad` | WH-13 to WH-29 | 13–29, "builds 2, 3, 5, 6" | branch `claude/claude-md-docs-3l7ior` |
 | `B2`, `B3` | `client-portal` | 2026-09-11 to 10-26 | brownfield via `/squad` | B2-1 to B2-3, B3-1 to B3-24 | unchanged | branch `claude/screen-fidelity-check` |
 | `WS` | `website` | to 2026-09-20 | via `/squad` | WS-1 | unnumbered: the record in `agents/RETIRED-copywriter.md` | that file, removed on 2026-10-31 when the Copywriter was revived |
+| `WW` | `wildwood-portal` | 2026-11-04 to 11-25 | greenfield via `/squad`, Stages 1 to 2 not run | WW-1 | new | the host repo `JoelAmigoHauer/wildwood-portal` |
 
 `TH` and `WH` keep their original numbers after the prefix, so a citation in an old run record
 still finds its entry by stripping or adding the prefix. `client-portal` keeps its `B2-` and `B3-`
@@ -1669,5 +1670,40 @@ figure carries `[source: …]`, `[bound: …]` or `[NEEDS SOURCE]` where it is w
 Orchestrator, never the Copywriter, verifies each against its primary source before the Designer
 starts; a figure that fails does not ship. The rewrite passes are an embedded copy of Joel's
 `full-rewrite`, so there is one voice system, re-synced whenever his skill changes.
+
+SEVERITY: high
+
+---
+
+# WW: wildwood-portal (2026-11-04 to 11-25), greenfield via `/squad`
+
+## WW-1. wildwood-portal — The Engineer built from a frame index two rounds out of date (HIGH)
+
+Found 2026-11-25, by Joel on the preview, comparing the couple sign-in and Home with Figma.
+
+**What happened.** The Designer wrote `design.md` as a pre-contract draft on 4 and 5 Nov, indexed
+against the Round 1 boards (sign-in `29:2`, Home `25:2`, Guests `27:2`). Round 2 was drawn on 11
+and 12 Nov on its own page, and the route pages after that, and nobody re-indexed `design.md`. The
+handover named the Round 2 page as the design of record, then sent the reader to `design.md` for
+the frame index; its addendum, which "still applies", named the Round 1 page and said to read
+`design.md` first. Stages 1 and 2 never ran, so the re-index that waited on the contract never
+fired. The Engineer followed the rule that `design.md` is its only design source and built every
+couple page to Round 1. Tokens still matched, so nothing looked broken until Joel put the two
+side by side.
+
+**Why it is systemic.** The pipeline names one design source and has no way to tell if it is
+current. B3-24's fidelity check makes the build look like its frames, but reads the same frame
+index, so it passes against a superseded round. And a brief can name two pages in two messages:
+the stale file wins by the pipeline's own tie-break.
+
+**The change.**
+
+| File | Change |
+|---|---|
+| `builds/_template/design.md` | A **Design of record** line and **Indexed** date at the top; a Page column in the frame index; a *Superseded* table for older rounds |
+| `agents/designer.md` | Frame index rule: name the design of record, re-index in the same session as a new round, older frames only under *Superseded* |
+| `agents/engineer.md` | Before building a screen, compare the Design of record line with the brief; a mismatch is `CLARIFICATION: stale frame index` |
+| `CLAUDE.md` | Halt trigger 7, the frame index is stale; the run-order row for Stage 3 names the design-of-record check |
+| `README.md` | Briefing a build: one design-of-record line, restated unchanged by any addendum |
 
 SEVERITY: high

@@ -23,6 +23,18 @@ no version, cannot upgrade and never sends its learnings back, so it is not used
 4. It runs. It pings you only when a halt trigger fires.
 5. After the build, `/squad port` sends that repo's new learnings back here.
 
+**Briefing a build that has a design** (WW-1). Name the design of record once, in one line, and
+point every later message at that line:
+
+```
+Design of record: Figma <key>, page "<name>" (<date>), plus route pages <list>.
+design.md must index exactly this.
+```
+
+An addendum restates that line unchanged, or says "Design of record unchanged". It never names a
+different page. When you draw a new round, say so in the brief and ask for a re-index before any
+screen is built.
+
 ```
 your-app/                      the host repo
 ├── .squad/                    the pipeline, stamped at a pinned version

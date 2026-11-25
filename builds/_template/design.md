@@ -2,6 +2,9 @@
 
 Written by: Designer, Stage 2.
 
+**Design of record:** Figma file `<key>`, page "<name>", plus route pages `<node ids>`.
+**Indexed:** <YYYY-MM-DD>, against <the brief or contract line that names the design of record>.
+
 ---
 
 ## Mode
@@ -67,9 +70,16 @@ UNRESOLVED:
 **Mandatory, v0.3.** One row per surface in the contract's screen binding table, per state, per
 width. Shells first.
 
-| Surface | State | Width | Frame | As built (brownfield) |
-|---|---|---|---|---|
-| `<role>` shell | default | wide | `<node id>` | `matches` / `differs`: <what> / `not compared` |
+| Surface | State | Width | Page | Frame | As built (brownfield) |
+|---|---|---|---|---|---|
+| `<role>` shell | default | wide | <Figma page> | `<node id>` | `matches` / `differs`: <what> / `not compared` |
+
+### Superseded
+
+Frames from an older round, kept for reference only. Never built or checked against.
+
+| Surface | Frame | Superseded by | On |
+|---|---|---|---|
 
 ---
 

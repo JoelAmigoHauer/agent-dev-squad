@@ -151,7 +151,7 @@ pipeline mechanics, caps or halt triggers.
 | 1 | Architect | [agents/architect.md](agents/architect.md) | Sequential. Gate. |
 | 1.5 | **Copywriter** | [agents/copywriter.md](agents/copywriter.md) | **Revived 2026-10-31.** After Stage 1 clears, before the Designer, so screens are designed with real words. Writes `copy.md`. **You verify every figure it marks** against its primary source before firing Stage 2 (WS-1) |
 | 2 | Designer | [agents/designer.md](agents/designer.md) | Sequential, after `stage-1.5-figure-check` is `done` |
-| 3 | Engineer | [agents/engineer.md](agents/engineer.md) | Sequential, after Stage 2 and the **consistency check** (v0.4): the contract, the copy deck and the design agree. Reruns before every amendment set's Engineer line |
+| 3 | Engineer | [agents/engineer.md](agents/engineer.md) | Sequential, after Stage 2, the **consistency check** (v0.4): the contract, the copy deck and the design agree, and the **design-of-record check** (WW-1): `design.md` indexes the design the brief names. Reruns before every amendment set's Engineer line |
 | 4 | QA | [agents/qa.md](agents/qa.md) | Parallel with Stage 5a |
 | 5a | Security (pre-deploy) | [agents/security.md](agents/security.md) | Parallel with Stage 4 |
 | 6 | DevOps | [agents/devops.md](agents/devops.md) | After 4 and 5a are green |
@@ -231,6 +231,11 @@ unbuilt, a state edit the lint refuses). There is no bypass. The stage
 records the command and its reason in the build's `log.md`, and you escalate it; Joel runs it if it
 is right. The guard exists because a swept tree and a discarded change cannot be audited after the
 fact (B3-15, B3-13).
+
+A seventh fires before Stage 3 (WW-1): **the frame index is stale.** `design.md`'s Design of record
+line disagrees with the brief, or a stage is about to build or check fidelity against frames from a
+superseded round. Halt before the Engineer starts. One re-index by the Designer clears it, so it
+costs a round, not a rebuild.
 
 Otherwise the pipeline runs end to end with no manual checkpoints, by design. Do not invent
 check-ins. A ping that is not on this list is a defect in your behaviour, not diligence.

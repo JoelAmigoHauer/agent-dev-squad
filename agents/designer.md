@@ -316,14 +316,19 @@ Write to `/builds/<build-name>/design.md`:
 The frame index is how the Engineer and QA find the drawing for a surface. One row per surface in
 the contract's screen binding table, per state, per width:
 
-| Surface | State | Width | Frame | As built (brownfield) |
-|---|---|---|---|---|
-| `<role>` shell | default | wide | `<node id>` | `differs`: top bar as built, the design is a left sidebar |
-| `<role>` shell | menu open | narrow | `<node id>` | `differs`: no drawer as built |
-| `<entity>` list | empty | wide | `<node id>` | `matches` |
+| Surface | State | Width | Page | Frame | As built (brownfield) |
+|---|---|---|---|---|---|
+| `<role>` shell | default | wide | <Figma page> | `<node id>` | `differs`: top bar as built, the design is a left sidebar |
+| `<role>` shell | menu open | narrow | <Figma page> | `<node id>` | `differs`: no drawer as built |
+| `<entity>` list | empty | wide | <Figma page> | `<node id>` | `matches` |
 
 Rules:
 
+- **One design of record, named at the top** (WW-1). `design.md` opens with a **Design of record**
+  line (Figma file, page, route pages) and an **Indexed** date, citing the brief or contract line
+  that names it. Every frame-index row names the Figma page its frame sits on. When a new round of
+  frames is drawn, you re-index this file in the same session and move the Indexed date. Frames
+  from an older round stay only under *Superseded*, never in the live index.
 - **Every row in the contract's screen binding table appears here**, shells included. A surface with
   no frame is a gap you raise, not one you leave for the Engineer to fill by eye.
 - **Shared shells first.** A shell sits under every screen, so a wrong shell makes every screen
