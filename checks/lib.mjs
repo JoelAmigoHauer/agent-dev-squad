@@ -3,8 +3,9 @@
 // name it too. Why each check exists is in LEARNINGS.md, under the ID in its comment.
 
 import { intakeProblems, formatOf, bannedWords, bannedPattern, FORMATS } from './intake.mjs';
+import { TIERS, TOP, ROLES, SUBAGENT_ROLES } from './models.mjs';
 
-export const CHECKS = ['state-lint', 'intake-gate', 'figure-gate', 'consistency-gate', 'amendment-gate', 'commit-guard', 'waiver-guard'];
+export const CHECKS = ['state-lint', 'intake-gate', 'figure-gate', 'consistency-gate', 'amendment-gate', 'commit-guard', 'model-guard', 'waiver-guard'];
 
 const STATUSES = ['idle', 'pending', 'running', 'loop', 'done', 'halted', 'skipped'];
 const TOP_KEYS = new Set(['build', 'mode', 'format', 'started', 'standing', 'escalations', 'waived']);
@@ -14,14 +15,17 @@ const TREE_WRITERS = new Set(['stage-3-engineer', 'stage-4-qa']);
 // ---------------------------------------------------------------------------------------------
 // Parsing the state file
 
-// Returns { stages: [{ set, name, value, line }], waivers: [{ check, reason, line }], top, errors }.
-// `top` maps each top-level key (build, mode, format, ...) to { value, line }.
+// Returns { stages: [{ set, name, value, line }], waivers: [{ check, reason, line }], top, models,
+// errors }. `top` maps each top-level key (build, mode, format, ...) to { value, line }. `models`
+// maps each role in the `models:` block to { value, line }, and is null when there is no block.
 // `set` is null for the main block, or the amendment set's header, e.g. "amendment-set-2".
 export function parseState(text) {
   const stages = [];
   const waivers = [];
   const errors = [];
   const top = {};
+  let models = null;
+  let inModels = false;
   let set = null;
   let freeKey = null; // the free-text key a continuation line belongs to
   const lines = text.split('\n');
@@ -35,6 +39,7 @@ export function parseState(text) {
     if (!indented) {
       set = null;
       freeKey = null;
+      inModels = false;
       if (!m) {
         errors.push({ line: n, msg: `not a "key: value" line: ${raw.trim()}` });
         continue;
@@ -44,6 +49,13 @@ export function parseState(text) {
       if (/^amendment-set-\d+$/.test(key)) {
         if (value !== '') errors.push({ line: n, msg: `${key} header takes no value` });
         set = key;
+        continue;
+      }
+      if (key === 'models') {
+        if (value !== '') errors.push({ line: n, msg: 'models: header takes no value; one indented "<role>: <model>" line per role' });
+        if (models) errors.push({ line: n, msg: 'a second models: block' });
+        models ??= {};
+        inModels = true;
         continue;
       }
       if (TOP_KEYS.has(key)) {
@@ -60,7 +72,13 @@ export function parseState(text) {
       continue;
     }
 
-    // Indented: a line inside an amendment set, or a continuation of a free-text key.
+    // Indented: a line inside an amendment set or the models block, or a continuation of a
+    // free-text key.
+    if (inModels && m) {
+      if (models[m[1]]) errors.push({ line: n, msg: `models: names ${m[1]} twice` });
+      models[m[1]] = { value: m[3].trim(), line: n };
+      continue;
+    }
     if (set && m && (/^stage-/.test(m[1]) || m[1] === 'figure-check')) {
       stages.push({ set, name: m[1], value: m[3].trim(), line: n });
       continue;
@@ -69,9 +87,9 @@ export function parseState(text) {
       if (freeKey === 'waived') waivers.push(parseWaiver(raw.trim(), n));
       continue;
     }
-    errors.push({ line: n, msg: `indented line outside an amendment set or free-text field: ${raw.trim()}` });
+    errors.push({ line: n, msg: `indented line outside an amendment set, the models block or a free-text field: ${raw.trim()}` });
   }
-  return { stages, waivers, top, errors };
+  return { stages, waivers, top, models, errors };
 }
 
 function parseWaiver(text, line) {
@@ -88,8 +106,9 @@ export function statusOf(value) {
 // state-lint (B3-13, status vocabulary in state/tasks.md)
 
 export function lintState(text) {
-  const { stages, waivers, top, errors } = parseState(text);
+  const { stages, waivers, top, models, errors } = parseState(text);
   const out = errors.map((e) => fail('state-lint', `line ${e.line}: ${e.msg}`));
+  if (models) out.push(...lintModels(models));
   // format: is set by the kickoff interview's F9 (skills/kickoff-interview.md); "—" until then.
   if (top.format && !['—', ...FORMATS].includes(top.format.value)) {
     out.push(fail('state-lint', `line ${top.format.line}: format "${top.format.value}" is not one of —, ${FORMATS.join(', ')}`));
@@ -125,6 +144,24 @@ export function lintState(text) {
   if (writers.length > 1) {
     out.push(fail('state-lint', `${writers.map((s) => (s.set ? s.set + ' ' : '') + s.name).join(' and ')} are both active; at most one stage writes the tree under test (B3-15)`));
   }
+  return out;
+}
+
+// The models block (checks/models.mjs binds the defaults). Every role has a row and every row is
+// a tier (state-lint). Exactly one tier runs on the top model, the Orchestrator's (model-guard, so
+// Joel can waive it for one build without lifting the rest of the lint).
+function lintModels(models) {
+  const out = [];
+  for (const [role, { value, line }] of Object.entries(models)) {
+    if (!ROLES.includes(role)) out.push(fail('state-lint', `line ${line}: models: has no role "${role}"; roles are ${ROLES.join(', ')}`));
+    else if (!TIERS.includes(value)) out.push(fail('state-lint', `line ${line}: models: ${role} is "${value}", not one of ${TIERS.join(', ')}`));
+    else if (role === 'orchestrator' && value !== TOP) {
+      out.push(fail('model-guard', `line ${line}: the Orchestrator is the one top tier and runs on ${TOP}, not ${value}`));
+    } else if (role !== 'orchestrator' && value === TOP) {
+      out.push(fail('model-guard', `line ${line}: ${role} cannot run on ${TOP}; only the Orchestrator runs on the top tier, and every stage a tier below`));
+    }
+  }
+  for (const role of ROLES) if (!models[role]) out.push(fail('state-lint', `models: has no row for ${role}`));
   return out;
 }
 
@@ -307,6 +344,31 @@ export function bashAddsWaiver(cmd, stateRel) {
   return /waived:/.test(cmd) && stateRel.some((p) => cmd.includes(p))
     ? [fail('waiver-guard', 'an agent cannot add a waived: line. Only Joel waives a check, on github.com')]
     : [];
+}
+
+// ---------------------------------------------------------------------------------------------
+// model-guard: an Agent call. While a build is live every subagent is a stage, fired by its
+// definition, squad-<role>, with the model its models: row names. A subagent fired any other way
+// inherits the Orchestrator's model, so a stage would run on the top tier unseen, and a call that
+// leaves out the model, or names another, runs the stage off the table.
+
+export function modelGuard(toolInput, states) {
+  if (!states.length) return [];
+  const type = toolInput.subagent_type ?? '';
+  const role = (type.match(/^squad-([a-z]+)$/) || [])[1];
+  if (!role || !SUBAGENT_ROLES.includes(role)) {
+    return [fail('model-guard', `a build is live, so every subagent is a stage: fire it as subagent_type "squad-<role>" (${SUBAGENT_ROLES.join(', ')}), not "${type || 'none'}", which would run off the model table`)];
+  }
+  const out = [];
+  for (const [file, text] of states) {
+    const row = parseState(text).models?.[role];
+    if (!row) {
+      out.push(fail('model-guard', `${file} has no models: row for ${role}; copy the models block from state/tasks.md`));
+    } else if (toolInput.model !== row.value) {
+      out.push(fail('model-guard', `fire squad-${role} with model "${row.value}", its row in ${file}, not ${toolInput.model ? `"${toolInput.model}"` : 'no model'}`));
+    }
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------------------------

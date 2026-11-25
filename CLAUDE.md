@@ -79,7 +79,8 @@ build (`node_modules/`, `.next/`, `.env*`, `supabase/.temp/`, `playwright-report
 | `builds/_template/` | The per-build folder, copied at the start of each build | On build start |
 | `builds/<build-name>/` | One folder per build. The audit trail | Per stage, its own file |
 | `.claude/skills/squad/SKILL.md` | The `/squad` trigger: stamps this template into another repo's `.squad/` at a pinned version and hands the Orchestrator this brief | **Never by a stage.** Invoked in the host repo, not here |
-| `checks/` | The squad checks: a Node PreToolUse hook (`hook.mjs`), the checks (`lib.mjs`) and their tests. `/squad init` copies it to `.squad/checks/` and registers the hook. See *Checks* | Every Bash, Edit, Write and MultiEdit call in the host repo. Never read by a stage |
+| `checks/` | The squad checks: a Node PreToolUse hook (`hook.mjs`), the checks (`lib.mjs`), the model table's defaults (`models.mjs`) and their tests. `/squad init` copies it to `.squad/checks/` and registers the hook. See *Checks* | Every Bash, Edit, Write, MultiEdit and Agent call in the host repo. Never read by a stage |
+| `subagents/squad-<role>.md` | One Claude Code subagent definition per stage role, carrying its default `model:`. `/squad init` copies them to the host's `.claude/agents/`. See *Models* | Every stage fire, by Claude Code. Not a stage's brief: the brief is its prompt |
 | `.claude/hooks/squad-git-guard.sh` | The git guard. `/squad init` installs it in the host repo's `.claude/`; it blocks commands that sweep, discard or rewrite work | Every Bash call in the host repo. Not wired in the template itself |
 | `/ERRORS.md` | Durable machine facts, written by Preflight. **Does not exist yet** — created on the first run that finds one | Stage 0.5 reads and appends |
 
@@ -140,9 +141,10 @@ Joel can write a waiver on github.com.
 
 ## Context loading rule
 
-**Fire every stage as a subagent**, with the Agent tool, never in your own context. This brief asks
-for subagents. Each one starts with a fresh context, so its prompt is its whole world: the files
-below, by path, the state line it owns, and where it writes. It returns a short report. The record
+**Fire every stage as a subagent**, with the Agent tool, never in your own context: its
+`subagent_type` is `squad-<role>` and its `model` is that role's row in the state file's
+`models:` block (see *Models*). This brief asks for subagents. Each one starts with a fresh
+context, so its prompt is its whole world: the files below, by path, the state line it owns, and where it writes. It returns a short report. The record
 of the stage is the file it wrote, so read that, not the report, before you decide what fires
 next. Stages 4 and 5a fire as two subagents in one turn. A stage fires no subagents of its own.
 The hooks run inside subagents, and Preflight's liveness probe, run from a subagent, proves it.
@@ -175,6 +177,57 @@ What you can do is make it intentional: the Surveyor pulls its constraints into 
 the Architect binds them in the contract, so stages obey host conventions as contract clauses
 rather than treating a second brief as instructions. The host's `CLAUDE.md` never overrides
 pipeline mechanics, caps or halt triggers.
+
+---
+
+## Models
+
+v0.4. **One tier runs on the most capable model, and it is you.** You plan the run, route every
+finding, and review each stage's file at its gate before the next stage fires, so one wrong call of
+yours costs a whole stage downstream. Every stage subagent runs a tier below. The most capable model
+is Claude Fable 5.2, alias `fable`: "for demanding reasoning and long-horizon agentic work", against
+Claude Opus 5.5 "for long-running agentic coding and knowledge work" (Claude docs, *Models
+overview*, read 2026-11-25). Tier order, most capable first: `fable`, `opus`, `sonnet`, `haiku`.
+
+| Role | Model | Why |
+|---|---|---|
+| orchestrator | fable | The top tier: plans, routes, runs the kickoff interview and the figure check, reviews every stage's file at its gate |
+| surveyor | sonnet | Reads a whole codebase into the contract's shapes. A misread there binds every stage after it, so not haiku |
+| preflight | haiku | Probes and records. Mechanical, and the checks enforce what it finds |
+| architect | opus | The binding contract. A wrong clause costs an amendment and a loop in every stage after it |
+| copywriter | sonnet | Writes to a voice with the rewrite passes embedded; every figure it marks is checked by you |
+| designer | sonnet | Draws from the deck and the contract; QA checks fidelity frame by frame |
+| engineer | opus | Long-running agentic coding is Opus 5.5's stated use (same source). The QA cap is 3, and an Engineer that burns a loop costs more per finished build than the price gap |
+| qa | sonnet | Tests derive from the contract, and a test counts only once it has been seen red |
+| security | opus | The cap is 2, a miss ships, and the review is judgment over code it did not write |
+| devops | sonnet | Follows the deploy sequence; attempts are capped at 2 and never retried blind |
+| retro | sonnet | Collates evidence already in `log.md` into entries |
+
+The defaults bind in `checks/models.mjs`. This table, the idle block in
+[state/tasks.md](state/tasks.md) and the `model:` frontmatter of each definition in `subagents/`
+repeat them, and a test fails when any disagrees.
+
+**How a stage gets its model.** Claude Code resolves a subagent's model from the call's own `model`
+first, then the definition's `model:` frontmatter, then `CLAUDE_CODE_SUBAGENT_MODEL`, then the main
+session's model (Claude Code docs, *Subagents*, "Choose a model", read 2026-11-25). So the row you
+pass binds, and the frontmatter default in `.claude/agents/squad-<role>.md`, stamped from
+`subagents/`, catches only a fire that leaves it out. `model-guard` refuses that fire anyway, and
+refuses any subagent fired other than as `squad-<role>` while a build is live: a general-purpose
+subagent inherits your model, and would put a stage on the top tier with nothing showing it.
+
+**Your own model** is the session's. `/squad init` sets `"model": "fable"` in the host's
+`.claude/settings.json` when it names none. At build start, write the model you observe yourself
+running on to `log.md`, and pass it in Preflight's brief; Preflight records it BLOCKING when it is
+not the `orchestrator` row. Preflight also records the model it observes itself running on, which
+proves a passed row reaches the subagent.
+Two settings outrank every row: `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` with
+`CLAUDE_CODE_SUBAGENT_MODEL`, and a mod's `agent.spawn` hook (same source). Preflight probes the
+first; a host that has the second is recorded in `survey.md` §8 or `preflight.md`.
+
+**Changing a row.** Only when Joel asks, for this build: edit the row, and it binds from the next
+fire. `model-guard` refuses a stage on `fable` and an Orchestrator off it. A stage Joel wants on
+the top tier for one build takes his waiver of `model-guard`, which lifts the Agent-call check with
+it, so the waiver says which row it is for.
 
 ---
 
@@ -294,18 +347,19 @@ check-ins. A ping that is not on this list is a defect in your behaviour, not di
 ## Checks
 
 v0.4. A rule a mechanism can enforce is enforced, not read. `checks/hook.mjs` runs before every
-Bash, Edit, Write and MultiEdit call in the host repo and **blocks** a call any check fails. There
+Bash, Edit, Write, MultiEdit and Agent call in the host repo and **blocks** a call any check fails. There
 is no bypass: the stage records the block in `log.md` and stops, and you escalate it under halt
 trigger 6.
 
 | Check | Refuses | Rule |
 |---|---|---|
-| `state-lint` | A state file edit with an unknown key or status, a `done` with no path, a `halted` or `skipped` with no reason, a `format:` outside the interview's six, a loop past its cap, Engineer and QA both active; and any Bash command that writes a state file | B3-13, B3-15 |
+| `state-lint` | A state file edit with an unknown key or status, a `models:` block missing a role or naming a model outside the four, a `done` with no path, a `halted` or `skipped` with no reason, a `format:` outside the interview's six, a loop past its cap, Engineer and QA both active; and any Bash command that writes a state file | B3-13, B3-15 |
 | `intake-gate` | Setting `stage-0-intake` `done` or Preflight `running` while `intake.md` leaves a row unanswered, a `[DRAFT]`, a guard row sourced `read:`, or a format the state file's `format:` does not carry; Preflight on `not-software`; and a Designer line `running` while `copy.md` uses a word `intake.md` C2 bans | Stage 0, WW-1, WS-1 |
 | `figure-gate` | Setting a Designer line `running` while its figure check is open or `copy.md` holds `[NEEDS SOURCE]` | WS-1 |
 | `consistency-gate` | Setting an Engineer line `running` while `checks/consistency.mjs` finds the contract, `copy.md` and `design.md` disagree: a flow on an unbound screen, a call to an undefined route, a bound screen with no copy section, inventory entry or frame row, a designed screen nobody bound, a string id the deck lacks, a design of record other than the one `intake.md` names | B3-21, WW-1 |
 | `amendment-gate` | `git push` to `main`, `master` or `production`, and `gh pr merge`, while any amendment set has a line not `done` | B3-2 |
 | `commit-guard` | `git commit` while Engineer or QA is active, unless that stage declares it: `SQUAD_STAGE=<its line> git commit …` | B3-15 |
+| `model-guard` | A `models:` row putting a stage on `fable` or the Orchestrator off it; and, while a build is live, an Agent call that is not `subagent_type: squad-<role>` with `model` set to that role's row | *Models* |
 | `waiver-guard` | An agent adding a `waived:` line, by any tool | — |
 
 **A check that is itself wrong** is logged `cause: test-defect` and escalated. Only Joel waives it,
@@ -548,6 +602,7 @@ is deliberately repeated for a stage that reads cold, one copy binds:
 | What counts as an iteration, and loop causes | `agents/_common.md` | — |
 | How a fact is known, MCP re-probe, test target never production | `agents/_common.md` | Stage files apply them, never restate them |
 | The question bank, guard rows and formats | `skills/kickoff-interview.md`, with the IDs, guard rows and formats bound in `checks/intake.mjs` and tested against it | This file, *Run order* and *Checks*; `builds/_template/intake.md` |
+| The model table's defaults and tier order | `checks/models.mjs`, with its tests | This file's *Models*, `state/tasks.md`'s idle block, `subagents/*.md` frontmatter |
 | Where a build runs, and how a stage fires | This file, *Where a build runs* and *Context loading rule* | `.claude/skills/squad/SKILL.md`, `README.md` |
 | The liveness probe, and why a refusal is its pass | `agents/preflight.md` *Prove the checks are live*, with its test in `checks/test/hook.test.mjs` | This file, *Where a build runs* |
 | What a fidelity check compares (v0.3) | `agents/qa.md`, coverage item 5 | `agents/engineer.md` guardrail 3a, `agents/designer.md` frame index |
