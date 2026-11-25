@@ -2,6 +2,11 @@
 
 Written by: Designer, Stage 2.
 
+Design round: <n> (<where the round's frames are: Figma file and page, or "drawn by the Designer">, indexed <YYYY-MM-DD>)
+
+The round must equal the state file's `design-round`, and every frame index row below carries the
+same number. The `design-freshness` check refuses an Engineer or QA start until both agree (WW-1).
+
 ---
 
 ## Mode
@@ -67,9 +72,16 @@ UNRESOLVED:
 **Mandatory, v0.3.** One row per surface in the contract's screen binding table, per state, per
 width. Shells first.
 
-| Surface | State | Width | Frame | As built (brownfield) |
+| Surface | State | Width | Round | Frame | As built (brownfield) |
+|---|---|---|---|---|---|
+| `<role>` shell | default | wide | `<n>` | `<node id>` | `matches` / `differs`: <what> / `not compared` |
+
+### Superseded
+
+Frames from an older round, kept for reference only. Never built or checked against.
+
+| Surface | Frame | Round | Superseded by | On |
 |---|---|---|---|---|
-| `<role>` shell | default | wide | `<node id>` | `matches` / `differs`: <what> / `not compared` |
 
 ---
 

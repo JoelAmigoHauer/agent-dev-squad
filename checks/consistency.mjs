@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // consistency-gate (v0.4, B3-21, PRIOR-ART §1): the contract, the copy deck and the design agree on
 // screens, routes and strings. Gates the Engineer's start and every amendment set's Engineer line.
-// Run by hand: node .squad/checks/consistency.mjs <build-dir>
+// design-freshness (WW-1) lives here too: design.md indexes the design round the state file names.
+// Run by hand: node .squad/checks/consistency.mjs <build-dir>, which runs both.
 
 import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
@@ -87,13 +88,51 @@ export function consistency(buildDir) {
   return out;
 }
 
+// design-freshness (WW-1): design.md indexes the design round the state file names, on its header
+// and on every frame index row. Gates an Engineer or QA line moving into running, because both
+// build or test from the frame index and neither has another design source.
+export function designFreshness(buildDir, round) {
+  const out = [];
+  const fail = (msg) => out.push({ check: 'design-freshness', msg });
+  if (round === null || round === undefined) {
+    fail('the state file names no design round. The Orchestrator sets "design-round: <n> (...)" when the Designer finishes');
+    return out;
+  }
+  const design = read(path.join(buildDir, 'design.md'));
+  if (design === null) {
+    fail('design.md is missing');
+    return out;
+  }
+  const head = design.match(/^Design round:\s*(\S+)/m);
+  const indexed = head && /^\d+$/.test(head[1]) ? Number(head[1]) : null;
+  if (indexed === null) fail(`design.md has no "Design round: <n>" line, so nothing says which round it indexes. The state file names round ${round}`);
+  else if (indexed !== round) fail(`design.md indexes design round ${indexed}; the state file names round ${round}. Re-index before building from it`);
+  const rows = tableAfter(design, /^#{2,6}\s+frame index/i).filter((r) => !placeholder(r.surface));
+  if (rows.length && !('round' in rows[0])) fail('design.md frame index has no Round column');
+  else {
+    const stale = rows.filter((r) => clean(r.round) !== String(round));
+    if (stale.length) {
+      const list = stale.slice(0, 5).map((r) => `"${clean(r.surface)}" ${clean(r.state)} ${clean(r.width)} (round ${clean(r.round) || 'blank'})`);
+      fail(`design.md frame index has ${stale.length} row(s) not on round ${round}: ${list.join(', ')}${stale.length > 5 ? ', ...' : ''}`);
+    }
+  }
+  return out;
+}
+
+// The round a build's state file names, for the CLI: <root>/state/<build-name>.md beside <root>/builds/.
+function roundFor(buildDir) {
+  const state = read(path.join(buildDir, '..', '..', 'state', `${path.basename(buildDir)}.md`));
+  const m = state && state.match(/^design-round:\s*(\d+)\b/m);
+  return m ? Number(m[1]) : null;
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const dir = process.argv[2];
   if (!dir) {
     console.error('usage: node consistency.mjs <build-dir>');
     process.exit(64);
   }
-  const fs = consistency(path.resolve(dir));
+  const fs = [...consistency(path.resolve(dir)), ...designFreshness(path.resolve(dir), roundFor(path.resolve(dir)))];
   for (const f of fs) console.log(`- ${f.msg}`);
   console.log(fs.length ? `${fs.length} mismatch(es)` : 'consistent');
   process.exit(fs.length ? 1 : 0);

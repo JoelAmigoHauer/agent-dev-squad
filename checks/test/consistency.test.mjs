@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { consistency } from '../consistency.mjs';
+import { consistency, designFreshness } from '../consistency.mjs';
 
 const BINDINGS = `# Contract: flow and screen bindings — demo
 
@@ -52,6 +52,8 @@ const COPY = `# Copy deck — demo
 
 const DESIGN = `# Design — demo
 
+Design round: 2 (Figma demo file, page "Round 2", indexed 2026-11-25)
+
 ## Screen inventory
 
 ### \`/invoices\`
@@ -62,11 +64,11 @@ const DESIGN = `# Design — demo
 
 ## Frame index
 
-| Surface | State | Width | Frame | As built (brownfield) |
-|---|---|---|---|---|
-| member shell | default | wide | 1:2 | |
-| invoice list | default | wide | 1:3 | |
-| invoice detail | default | wide | 1:4 | |
+| Surface | State | Width | Round | Frame | As built (brownfield) |
+|---|---|---|---|---|---|
+| member shell | default | wide | 2 | 1:2 | |
+| invoice list | default | wide | 2 | 1:3 | |
+| invoice detail | default | wide | 2 | 1:4 | |
 `;
 
 function build(over = {}) {
@@ -99,7 +101,7 @@ test('a bound screen with no copy section fails', () => {
 });
 
 test('a surface with no frame row fails', () => {
-  const d = DESIGN.replace('| member shell | default | wide | 1:2 | |\n', '');
+  const d = DESIGN.replace('| member shell | default | wide | 2 | 1:2 | |\n', '');
   assert.match(msgs(build({ design: d })).join('\n'), /no row for "member shell"/);
 });
 
@@ -133,11 +135,11 @@ test('the gate blocks an Engineer start in a host, and the CLI reports', () => {
   const squad = path.join(host, '.squad');
   cpSync(fileURLToPath(new URL('..', import.meta.url)), path.join(squad, 'checks'), { recursive: true });
   mkdirSync(path.join(squad, 'state'), { recursive: true });
-  const b = build({ design: DESIGN.replace('| member shell | default | wide | 1:2 | |\n', '') });
+  const b = build({ design: DESIGN.replace('| member shell | default | wide | 2 | 1:2 | |\n', '') });
   mkdirSync(path.join(squad, 'builds'), { recursive: true });
   cpSync(b, path.join(squad, 'builds', 'demo'), { recursive: true });
   const state = path.join(squad, 'state', 'demo.md');
-  writeFileSync(state, 'build: demo\nstage-3-engineer: pending\nwaived: none\n');
+  writeFileSync(state, 'build: demo\ndesign-round: 2 (Figma demo file, landed 2026-11-18)\nstage-3-engineer: pending\nwaived: none\n');
   const call = { tool_name: 'Edit', tool_input: { file_path: state, old_string: 'stage-3-engineer: pending', new_string: 'stage-3-engineer: running' } };
   const r = spawnSync('node', [path.join(squad, 'checks', 'hook.mjs')], { input: JSON.stringify(call), encoding: 'utf8' });
   assert.equal(r.status, 2);
@@ -145,4 +147,44 @@ test('the gate blocks an Engineer start in a host, and the CLI reports', () => {
   const cli = spawnSync('node', [path.join(squad, 'checks', 'consistency.mjs'), path.join(squad, 'builds', 'demo')], { encoding: 'utf8' });
   assert.equal(cli.status, 1);
   assert.match(cli.stdout, /1 mismatch/);
+});
+
+// design-freshness (WW-1): the design.md the Engineer and QA read indexes the round the state names.
+const fresh = (dir, round) => designFreshness(dir, round).map((f) => f.msg).join('\n');
+
+test('design-freshness: a design.md on the named round passes', () => assert.equal(fresh(build(), 2), ''));
+
+test('design-freshness: a design.md indexing an older round fails', () => {
+  const d = DESIGN.replace('Design round: 2', 'Design round: 1');
+  assert.match(fresh(build({ design: d }), 2), /indexes design round 1; the state file names round 2/);
+});
+
+test('design-freshness: frame rows left on the old round fail, even under a fresh header', () => {
+  const d = DESIGN.replace('| invoice list | default | wide | 2 |', '| invoice list | default | wide | 1 |');
+  assert.match(fresh(build({ design: d }), 2), /1 row\(s\) not on round 2: "invoice list" default wide \(round 1\)/);
+});
+
+test('design-freshness: no header, no Round column or no named round fails rather than passes', () => {
+  assert.match(fresh(build({ design: DESIGN.replace(/^Design round:.*\n/m, '') }), 2), /no "Design round: <n>" line/);
+  const noCol = DESIGN.replace(/\| Round \|/, '|').replace('|---|---|---|---|---|---|', '|---|---|---|---|---|').replace(/\| wide \| 2 \|/g, '| wide |');
+  assert.match(fresh(build({ design: noCol }), 2), /frame index has no Round column/);
+  assert.match(fresh(build(), null), /names no design round/);
+});
+
+test('design-freshness: the gate blocks a QA start on a stale design.md in a host', () => {
+  const host = mkdtempSync(path.join(tmpdir(), 'squad-host-'));
+  const squad = path.join(host, '.squad');
+  cpSync(fileURLToPath(new URL('..', import.meta.url)), path.join(squad, 'checks'), { recursive: true });
+  mkdirSync(path.join(squad, 'state'), { recursive: true });
+  mkdirSync(path.join(squad, 'builds'), { recursive: true });
+  cpSync(build({ design: DESIGN.replace('Design round: 2', 'Design round: 1') }), path.join(squad, 'builds', 'demo'), { recursive: true });
+  const state = path.join(squad, 'state', 'demo.md');
+  writeFileSync(state, 'build: demo\ndesign-round: 2 (Figma demo file, landed 2026-11-18)\nstage-4-qa: pending\nwaived: none\n');
+  const call = { tool_name: 'Edit', tool_input: { file_path: state, old_string: 'stage-4-qa: pending', new_string: 'stage-4-qa: running' } };
+  const r = spawnSync('node', [path.join(squad, 'checks', 'hook.mjs')], { input: JSON.stringify(call), encoding: 'utf8' });
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /\[design-freshness\] stage-4-qa cannot start: design.md indexes design round 1/);
+  const cli = spawnSync('node', [path.join(squad, 'checks', 'consistency.mjs'), path.join(squad, 'builds', 'demo')], { encoding: 'utf8' });
+  assert.equal(cli.status, 1);
+  assert.match(cli.stdout, /indexes design round 1/);
 });

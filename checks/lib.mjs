@@ -2,22 +2,24 @@
 // command, and they return a list of failures. Each failure names its check id, so a waiver can
 // name it too. Why each check exists is in LEARNINGS.md, under the ID in its comment.
 
-export const CHECKS = ['state-lint', 'figure-gate', 'consistency-gate', 'amendment-gate', 'commit-guard', 'waiver-guard'];
+export const CHECKS = ['state-lint', 'figure-gate', 'consistency-gate', 'design-freshness', 'amendment-gate', 'commit-guard', 'waiver-guard'];
 
 const STATUSES = ['idle', 'pending', 'running', 'loop', 'done', 'halted', 'skipped'];
-const TOP_KEYS = new Set(['build', 'mode', 'started', 'standing', 'escalations', 'waived']);
+const TOP_KEYS = new Set(['build', 'mode', 'started', 'design-round', 'standing', 'escalations', 'waived']);
 const FREE_TEXT = new Set(['build', 'mode', 'started', 'standing', 'escalations', 'waived']);
 const TREE_WRITERS = new Set(['stage-3-engineer', 'stage-4-qa']);
 
 // ---------------------------------------------------------------------------------------------
 // Parsing the state file
 
-// Returns { stages: [{ set, name, value, line }], waivers: [{ check, reason, line }], errors }.
+// Returns { stages: [{ set, name, value, line }], waivers: [{ check, reason, line }], round, errors }.
+// `round` is the design-round line, { value, line }, or null when the file has none.
 // `set` is null for the main block, or the amendment set's header, e.g. "amendment-set-2".
 export function parseState(text) {
   const stages = [];
   const waivers = [];
   const errors = [];
+  let round = null;
   let set = null;
   let freeKey = null; // the free-text key a continuation line belongs to
   const lines = text.split('\n');
@@ -45,6 +47,7 @@ export function parseState(text) {
       if (TOP_KEYS.has(key)) {
         if (FREE_TEXT.has(key)) freeKey = key;
         if (key === 'waived' && value && value !== 'none') waivers.push(parseWaiver(value, n));
+        if (key === 'design-round') round = { value, line: n };
         continue;
       }
       if (/^stage-[0-9.a-z]+-[a-z0-9-]+$/.test(key)) {
@@ -66,12 +69,19 @@ export function parseState(text) {
     }
     errors.push({ line: n, msg: `indented line outside an amendment set or free-text field: ${raw.trim()}` });
   }
-  return { stages, waivers, errors };
+  return { stages, waivers, round, errors };
 }
 
 function parseWaiver(text, line) {
   const [check, ...rest] = text.split(/\s+/);
   return { check, reason: rest.join(' ').trim(), line };
+}
+
+// The design round a state file names: its number, or null when the line is absent or still "—".
+export function designRound(text) {
+  const r = parseState(text || '').round;
+  const m = r && r.value.match(/^(\d+)\b/);
+  return m ? Number(m[1]) : null;
 }
 
 export function statusOf(value) {
@@ -83,8 +93,11 @@ export function statusOf(value) {
 // state-lint (B3-13, status vocabulary in state/tasks.md)
 
 export function lintState(text) {
-  const { stages, waivers, errors } = parseState(text);
+  const { stages, waivers, round, errors } = parseState(text);
   const out = errors.map((e) => fail('state-lint', `line ${e.line}: ${e.msg}`));
+  if (round && !/^(—|none|\d+(\s+\([^)]+\))?)$/.test(round.value)) {
+    out.push(fail('state-lint', `line ${round.line}: design-round is "—" or "<n> (<where the frames are>, landed <date>)"`));
+  }
   for (const s of stages) {
     const where = `line ${s.line} (${s.set ? s.set + ' ' : ''}${s.name})`;
     const st = statusOf(s.value);
@@ -146,15 +159,40 @@ export function figureGate(before, after, copyDeck) {
   return out;
 }
 
-// consistency-gate (B3-21): an Engineer line moving into running. The hook runs consistency.mjs
-// only then, so the check costs nothing on any other edit.
-export function startsEngineer(before, after) {
+// The stage lines named `stage` that this edit moves into running. The hook runs the consistency
+// and freshness checks only then, so they cost nothing on any other edit.
+export function starting(before, after, stage) {
   const prev = parseState(before || '').stages;
-  return parseState(after).stages.some((s) => {
-    if (s.name !== 'stage-3-engineer' || statusOf(s.value) !== 'running') return false;
+  return parseState(after).stages.filter((s) => {
+    if (s.name !== stage || statusOf(s.value) !== 'running') return false;
     const was = prev.find((p) => p.set === s.set && p.name === s.name);
     return !was || statusOf(was.value) !== 'running';
   });
+}
+
+// consistency-gate (B3-21): an Engineer line moving into running.
+export const startsEngineer = (before, after) => starting(before, after, 'stage-3-engineer').length > 0;
+
+// design-freshness (WW-1), the state-file half: a new design round lands only with its re-index
+// queued, and never under a stage building or testing from the old one. The design.md half is
+// designFreshness() in consistency.mjs, run when an Engineer or QA line starts.
+export function designRoundGate(before, after) {
+  const was = designRound(before);
+  const now = designRound(after);
+  if (was !== null && now === null) {
+    return [fail('design-freshness', `design-round ${was} cannot be cleared. A new round replaces it with its own number (WW-1)`)];
+  }
+  if (was === null || was === now) return [];
+  const { stages } = parseState(after);
+  const out = [];
+  const active = stages.filter((s) => TREE_WRITERS.has(s.name) && isActive(s.value));
+  if (active.length) {
+    out.push(fail('design-freshness', `design round ${now} cannot land while ${active.map((s) => (s.set ? s.set + ' ' : '') + s.name).join(' and ')} is building from round ${was}. Halt it first, "halted (design round ${now} landed)", then re-index (WW-1)`));
+  }
+  if (!stages.some((s) => s.name === 'stage-2-designer' && ['pending', 'running'].includes(statusOf(s.value)))) {
+    out.push(fail('design-freshness', `design round ${now} landed with no Designer line pending or running. Queue the re-index in the same edit: "stage-2-designer: pending (re-index round ${now})" (WW-1)`));
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------------------------
