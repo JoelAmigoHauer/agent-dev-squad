@@ -14,10 +14,12 @@ deploy record.
 `/squad` is the only way in. The template's own "Use this template" button makes a fork that records
 no version, cannot upgrade and never sends its learnings back, so it is not used.
 
-1. **New app:** create an empty private GitHub repo and open it in Claude Code. **Existing app:**
-   open its repo, with a clean working tree.
+1. **New app:** create an empty private GitHub repo and open it in a local Claude Code session: a
+   local thread in a Claude project, with Worktree on, or a terminal. **Existing app:** open its
+   repo the same way, with a clean working tree. Never a cloud thread: it runs none of the repo's
+   hooks, so the squad checks would block nothing.
 2. Run `/squad`. It stamps the pipeline into `.squad/` at the current release, installs the git
-   guard, and commits both.
+   guard and the squad checks, and commits them. Restart the session so the hooks load.
 3. **New app:** give it the sketch, the app name and the voice note in one turn. **Existing app:**
    it surveys the code first and puts what it found to you as a draft intake.
 4. It runs. It pings you only when a halt trigger fires.
@@ -61,8 +63,9 @@ loads them, so `/squad` does not stamp them.
 Every later stage is held to it, and inference is banned as a way to resolve ambiguity — an
 Engineer who is unsure asks the Architect rather than guessing.
 
-**Narrow context per stage.** Firing a stage loads that agent's file, the shared rules in
-`agents/_common.md`, the contract files that stage names and the state file. Never the whole repo. It keeps each agent sharp and cheap.
+**Narrow context per stage.** Each stage runs as its own subagent, loaded with that agent's file,
+the shared rules in `agents/_common.md`, the contract files that stage names and the state file.
+Never the whole repo. It keeps each agent sharp and cheap.
 
 **Loops are capped, and state lives in a file.** Every fix loop has an iteration limit, and hitting
 it halts with full context rather than retrying forever. Progress lives in the build's own

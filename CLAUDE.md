@@ -114,7 +114,41 @@ and removing one without reading its entry re-opens that failure. See
 
 ---
 
+## Where a build runs
+
+**On Joel's machine, in one session: a local thread in a Claude project, with Worktree on, or a
+terminal session.** Never a cloud thread. A cloud thread in a Claude project runs none of a
+repository's `.claude/settings.json` hooks and loads none of its `.claude/skills/` (Claude Code
+docs, *Claude projects*, "What threads pick up from your repositories", read 2026-11-25), so the
+squad checks and the git guard would block nothing while every stage believed they did. Preflight
+proves the hooks are live before Stage 1 and halts if they are not
+([agents/preflight.md](agents/preflight.md), *Prove the checks are live*).
+
+**One build, one thread, and that thread is the Orchestrator.** In a Claude project, the project's
+coordinator starts the thread and passes Joel's messages to it. It never holds the build's state,
+fires a stage, or treats a thread's report as progress: progress is the state file. A build split
+across threads would give each its own clone and branch, so no stage would see another's state
+until Joel merged it, and every stage boundary would become the manual checkpoint this brief rules
+out.
+
+**GitHub is version control.** The template is versioned there, and the build's branch is pushed
+there after every state commit (see *State protocol*), so the run survives a lost worktree and
+Joel can write a waiver on github.com.
+
+---
+
 ## Context loading rule
+
+**Fire every stage as a subagent**, with the Agent tool, never in your own context. This brief asks
+for subagents. Each one starts with a fresh context, so its prompt is its whole world: the files
+below, by path, the state line it owns, and where it writes. It returns a short report. The record
+of the stage is the file it wrote, so read that, not the report, before you decide what fires
+next. Stages 4 and 5a fire as two subagents in one turn. A stage fires no subagents of its own.
+The hooks run inside subagents, and Preflight's liveness probe, run from a subagent, proves it.
+The exceptions are Stage 0 (intake) and the figure check, which are yours and run in your context.
+
+A stage subagent that never reports back, because the session closed or restarted under it, is
+written `halted (container restart)` and re-fired, as *State protocol* says for a restart.
 
 When you fire a stage, load **only**:
 
@@ -311,6 +345,9 @@ Progress lives in the build's state file, `/state/<build-name>.md`. Never in the
   anchor that matches twice, and the state lint checks every change; a Bash write is refused. Commit
   only after the edit succeeded. In client-portal an edit aborted on an anchor that matched twice,
   the commit ran anyway, and the commit claims a change it does not carry.
+- **Push the build's branch after every state commit.** A state change on one machine only is lost
+  with that worktree, and a waiver Joel writes on github.com reaches the run only through the pushed
+  branch. The branch is never the host's default, and the amendment gate still refuses `main`.
 - **Every amendment set gets stage lines** (B3-2). When the Architect appends an amendment set, copy
   its `Routes to` table into the state file as one `pending` line per stage, naming the set:
   Copywriter if it adds or changes a surface, control or string, followed by a `figure-check` line
@@ -486,6 +523,8 @@ is deliberately repeated for a stage that reads cold, one copy binds:
 | Which contract files a stage loads | That stage file's *Input* | — |
 | What counts as an iteration, and loop causes | `agents/_common.md` | — |
 | How a fact is known, MCP re-probe, test target never production | `agents/_common.md` | Stage files apply them, never restate them |
+| Where a build runs, and how a stage fires | This file, *Where a build runs* and *Context loading rule* | `.claude/skills/squad/SKILL.md`, `README.md` |
+| The liveness probe, and why a refusal is its pass | `agents/preflight.md` *Prove the checks are live*, with its test in `checks/test/hook.test.mjs` | This file, *Where a build runs* |
 | What a fidelity check compares (v0.3) | `agents/qa.md`, coverage item 5 | `agents/engineer.md` guardrail 3a, `agents/designer.md` frame index |
 | What a survey must contain | `agents/surveyor.md` | `builds/_template/survey.md`, as a scaffold |
 | How `/squad` stamps and routes | `.claude/skills/squad/SKILL.md` | — it defers to this file for everything else |
