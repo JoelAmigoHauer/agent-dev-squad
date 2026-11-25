@@ -312,7 +312,7 @@ Write to `/builds/<build-name>/design.md`:
 
 ---
 
-## Design round and re-index (UN-1)
+## Design round and re-index (WW-1)
 
 `design.md` is the only design source the Engineer and QA have. They read nothing else, so a
 `design.md` that points at an older round's frames builds and tests the older round, and every
@@ -329,6 +329,8 @@ check downstream passes on it.
   the older round are stale until it does.
 - **A surface the new round does not redraw** keeps its frame, and its row still moves to round
   `<n>` with `carried from round <m>` in the As built column, so the row says it was looked at.
+- **Older frames go only under *Superseded***, a table after the frame index with the old node,
+  its round and the date it was replaced. Never leave them in the live index.
 - **A surface you cannot re-point** (the round dropped it, or added one the contract does not bind)
   is a gap you raise to the Orchestrator, not a row you leave on the old number.
 

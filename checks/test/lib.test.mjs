@@ -139,7 +139,7 @@ test('a waiver lifts its own check, never the waiver guard', () => {
   assert.deepEqual(checks(applyWaivers(fs, w)), ['waiver-guard']);
 });
 
-// design-freshness, the state-file half (UN-1).
+// design-freshness, the state-file half (WW-1).
 const R1 = IDLE.replace('started:             2026-11-25T22:00', 'started:             2026-11-25T22:00\ndesign-round:        1 (Figma demo file, landed 2026-11-05)')
   .replace('stage-2-designer:    pending', 'stage-2-designer:    done    (/builds/demo/design.md)');
 

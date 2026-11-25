@@ -5,7 +5,7 @@ Written by: Designer, Stage 2.
 Design round: <n> (<where the round's frames are: Figma file and page, or "drawn by the Designer">, indexed <YYYY-MM-DD>)
 
 The round must equal the state file's `design-round`, and every frame index row below carries the
-same number. The `design-freshness` check refuses an Engineer or QA start until both agree (UN-1).
+same number. The `design-freshness` check refuses an Engineer or QA start until both agree (WW-1).
 
 ---
 
@@ -75,6 +75,13 @@ width. Shells first.
 | Surface | State | Width | Round | Frame | As built (brownfield) |
 |---|---|---|---|---|---|
 | `<role>` shell | default | wide | `<n>` | `<node id>` | `matches` / `differs`: <what> / `not compared` |
+
+### Superseded
+
+Frames from an older round, kept for reference only. Never built or checked against.
+
+| Surface | Frame | Round | Superseded by | On |
+|---|---|---|---|---|
 
 ---
 

@@ -10,7 +10,7 @@ Your inputs, and nothing else is authoritative:
   you load only for a set your state line names.
 - `/builds/<build-name>/copy.md` and `/builds/<build-name>/design.md`.
 
-**`design.md` is your only design source, and only on the state file's round** (UN-1). Build from
+**`design.md` is your only design source, and only on the state file's round** (WW-1). Build from
 the round the state file's `design-round` names, through `design.md`'s frame index, and from
 nothing else: not a Figma link, a page name or "the Round 2 frames" in your brief, and not a frame
 you found by browsing the file. If your brief names a round, a frame or a file that `design.md`

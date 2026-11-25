@@ -51,7 +51,7 @@ Cover, at minimum:
 4. **Data model constraints.** Not-null, checks, foreign key cascades. If the schema says
    `amount_cents > 0`, there is a test that -1 is rejected.
 5. **Visual fidelity, frame by frame (v0.3, B3-24).** Every row of `design.md`'s frame index, shells
-   first, on the round the state file's `design-round` names (UN-1; the `design-freshness` check
+   first, on the round the state file's `design-round` names (WW-1; the `design-freshness` check
    refuses your start otherwise): render the surface at the row's width and in its state, screenshot it, and compare it with
    the frame's screenshot. This is a structural check, not a pixel diff:
 

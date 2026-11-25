@@ -53,7 +53,7 @@ deck fires until it reads `done` again, with the `log.md` entry that records eac
 github.com; the waiver guard refuses an agent that tries. A waiver lifts that check for this build.
 
 **`design-round:`** is `—` until the Designer's first pass is done, then `<n> (<where the round's
-frames are>, landed <YYYY-MM-DD>)`. **Only the Orchestrator writes it** (UN-1). It names the one
+frames are>, landed <YYYY-MM-DD>)`. **Only the Orchestrator writes it** (WW-1). It names the one
 design round every stage builds and tests from, and a brief names a round only by pointing at it.
 When a new round lands, the same edit raises the number, halts any running Engineer or QA line
 (`halted (design round <n> landed)`), and queues the re-index (`stage-2-designer: pending

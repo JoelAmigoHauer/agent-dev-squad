@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // consistency-gate (v0.4, B3-21, PRIOR-ART §1): the contract, the copy deck and the design agree on
 // screens, routes and strings. Gates the Engineer's start and every amendment set's Engineer line.
-// design-freshness (UN-1) lives here too: design.md indexes the design round the state file names.
+// design-freshness (WW-1) lives here too: design.md indexes the design round the state file names.
 // Run by hand: node .squad/checks/consistency.mjs <build-dir>, which runs both.
 
 import { readFileSync, existsSync } from 'node:fs';
@@ -88,7 +88,7 @@ export function consistency(buildDir) {
   return out;
 }
 
-// design-freshness (UN-1): design.md indexes the design round the state file names, on its header
+// design-freshness (WW-1): design.md indexes the design round the state file names, on its header
 // and on every frame index row. Gates an Engineer or QA line moving into running, because both
 // build or test from the frame index and neither has another design source.
 export function designFreshness(buildDir, round) {

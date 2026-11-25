@@ -173,24 +173,24 @@ export function starting(before, after, stage) {
 // consistency-gate (B3-21): an Engineer line moving into running.
 export const startsEngineer = (before, after) => starting(before, after, 'stage-3-engineer').length > 0;
 
-// design-freshness (UN-1), the state-file half: a new design round lands only with its re-index
+// design-freshness (WW-1), the state-file half: a new design round lands only with its re-index
 // queued, and never under a stage building or testing from the old one. The design.md half is
 // designFreshness() in consistency.mjs, run when an Engineer or QA line starts.
 export function designRoundGate(before, after) {
   const was = designRound(before);
   const now = designRound(after);
   if (was !== null && now === null) {
-    return [fail('design-freshness', `design-round ${was} cannot be cleared. A new round replaces it with its own number (UN-1)`)];
+    return [fail('design-freshness', `design-round ${was} cannot be cleared. A new round replaces it with its own number (WW-1)`)];
   }
   if (was === null || was === now) return [];
   const { stages } = parseState(after);
   const out = [];
   const active = stages.filter((s) => TREE_WRITERS.has(s.name) && isActive(s.value));
   if (active.length) {
-    out.push(fail('design-freshness', `design round ${now} cannot land while ${active.map((s) => (s.set ? s.set + ' ' : '') + s.name).join(' and ')} is building from round ${was}. Halt it first, "halted (design round ${now} landed)", then re-index (UN-1)`));
+    out.push(fail('design-freshness', `design round ${now} cannot land while ${active.map((s) => (s.set ? s.set + ' ' : '') + s.name).join(' and ')} is building from round ${was}. Halt it first, "halted (design round ${now} landed)", then re-index (WW-1)`));
   }
   if (!stages.some((s) => s.name === 'stage-2-designer' && ['pending', 'running'].includes(statusOf(s.value)))) {
-    out.push(fail('design-freshness', `design round ${now} landed with no Designer line pending or running. Queue the re-index in the same edit: "stage-2-designer: pending (re-index round ${now})" (UN-1)`));
+    out.push(fail('design-freshness', `design round ${now} landed with no Designer line pending or running. Queue the re-index in the same edit: "stage-2-designer: pending (re-index round ${now})" (WW-1)`));
   }
   return out;
 }

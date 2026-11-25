@@ -249,7 +249,7 @@ trigger 6.
 | `state-lint` | A state file edit with an unknown key or status, a `done` with no path, a `halted` or `skipped` with no reason, a loop past its cap, Engineer and QA both active; and any Bash command that writes a state file | B3-13, B3-15 |
 | `figure-gate` | Setting a Designer line `running` while its figure check is open or `copy.md` holds `[NEEDS SOURCE]` | WS-1 |
 | `consistency-gate` | Setting an Engineer line `running` while `checks/consistency.mjs` finds the contract, `copy.md` and `design.md` disagree: a flow on an unbound screen, a call to an undefined route, a bound screen with no copy section, inventory entry or frame row, a designed screen nobody bound, a string id the deck lacks | B3-21 |
-| `design-freshness` | Setting an Engineer or QA line `running` while `design.md` indexes a design round other than the state file's `design-round`, on its header or any frame index row; and a state edit that raises `design-round` under a running Engineer or QA line, without queuing a Designer re-index, or that clears it | UN-1 |
+| `design-freshness` | Setting an Engineer or QA line `running` while `design.md` indexes a design round other than the state file's `design-round`, on its header or any frame index row; and a state edit that raises `design-round` under a running Engineer or QA line, without queuing a Designer re-index, or that clears it | WW-1 |
 | `amendment-gate` | `git push` to `main`, `master` or `production`, and `gh pr merge`, while any amendment set has a line not `done` | B3-2 |
 | `commit-guard` | `git commit` while Engineer or QA is active, unless that stage declares it: `SQUAD_STAGE=<its line> git commit …` | B3-15 |
 | `waiver-guard` | An agent adding a `waived:` line, by any tool | — |
@@ -321,7 +321,7 @@ Progress lives in the build's state file, `/state/<build-name>.md`. Never in the
   for one. client-portal's amendment set 6 had no lines, nothing showed it unbuilt, and v1 reached
   `main` without it. The amendment gate now refuses a push to `main` and `gh pr merge` while any
   set has a line that is not `done`.
-- **A new design round lands in the state file, never in a brief** (UN-1). When Joel or the Designer
+- **A new design round lands in the state file, never in a brief** (WW-1). When Joel or the Designer
   delivers a new round of frames, record it at once in one edit: raise `design-round` to the new
   number with where its frames are, halt any running Engineer or QA line `halted (design round <n>
   landed)`, and queue `stage-2-designer: pending (re-index round <n>)`. Fire the Designer's re-index

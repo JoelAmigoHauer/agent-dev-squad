@@ -23,6 +23,12 @@ no version, cannot upgrade and never sends its learnings back, so it is not used
 4. It runs. It pings you only when a halt trigger fires.
 5. After the build, `/squad port` sends that repo's new learnings back here.
 
+**Briefing a build that has a design** (WW-1). Tell the Orchestrator where the frames are, once.
+It records that as the state file's `design-round`, and every brief points there. When you draw a
+new round, say so: the Orchestrator raises the round, stops any running Engineer or QA, and has the
+Designer re-index `design.md` before any screen is built. Don't send an addendum naming a
+different page; the `design-freshness` check holds the build until `design.md` matches the round.
+
 ```
 your-app/                      the host repo
 ├── .squad/                    the pipeline, stamped at a pinned version

@@ -149,7 +149,7 @@ test('the gate blocks an Engineer start in a host, and the CLI reports', () => {
   assert.match(cli.stdout, /1 mismatch/);
 });
 
-// design-freshness (UN-1): the design.md the Engineer and QA read indexes the round the state names.
+// design-freshness (WW-1): the design.md the Engineer and QA read indexes the round the state names.
 const fresh = (dir, round) => designFreshness(dir, round).map((f) => f.msg).join('\n');
 
 test('design-freshness: a design.md on the named round passes', () => assert.equal(fresh(build(), 2), ''));
