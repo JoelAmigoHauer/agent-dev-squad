@@ -142,6 +142,17 @@ A rule a mid-build retro marked `BINDS THIS BUILD`, carried in every later brief
 names until the build closes.
 _Avoid_: hotfix, override
 
+**Model table**:
+The `models:` block of a build's state file: one row per role, naming the Claude Code model alias
+that role runs on. Starts at the defaults in `checks/models.mjs`; a row changes only when Joel
+asks, for that build (v0.4).
+_Avoid_: model config, routing table
+
+**Tier**:
+One model in the order `fable`, `opus`, `sonnet`, `haiku`, most capable first. The **top tier** is
+`fable`, and only the Orchestrator runs on it.
+_Avoid_: layer (a layer is one of Security's review steps), level
+
 ## The contract
 
 **Contract**:

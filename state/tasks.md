@@ -27,6 +27,18 @@ stage-5a-security:   idle
 stage-6-deploy:      idle
 stage-5b-security:   idle
 stage-7-retro:       idle
+models:
+  orchestrator: fable
+  surveyor:     sonnet
+  preflight:    haiku
+  architect:    opus
+  copywriter:   sonnet
+  designer:     sonnet
+  engineer:     opus
+  qa:           sonnet
+  security:     opus
+  devops:       sonnet
+  retro:        sonnet
 standing:            none
 waived:              none
 escalations:         none
@@ -64,6 +76,15 @@ github.com; the waiver guard refuses an agent that tries. A waiver lifts that ch
 
 **`standing:`** carries any learning a mid-build Stage 7 marked `BINDS THIS BUILD`, one line per
 entry, naming the stages it binds, until the build closes (B3-4).
+
+**`models:`** is the build's model table: one line per role, naming the Claude Code model alias
+that role runs on (`fable`, `opus`, `sonnet` or `haiku`). It is copied with the block at build
+start, so every build starts on the defaults, which bind in `../checks/models.mjs`. A row changes
+only when Joel asks for it, for this build only, and the change binds from the next fire; the
+worked example below runs its Engineer on `sonnet`. The state lint refuses a row for an unknown
+role, a model outside the four, an Orchestrator off `fable`, and any other role on `fable`: one
+tier runs on the most capable model, and it is the Orchestrator. `model-guard` refuses a stage
+fired with any model but its row. *Models* in `../CLAUDE.md` says why each default is what it is.
 
 **Tooling blockers do not live here.** Preflight records them at Stage 0.5 in
 `/builds/<build-name>/preflight.md`, as `BLOCKING` or `DEGRADED`, and durable machine facts go to
@@ -114,6 +135,18 @@ stage-5a-security:   done    (/builds/invoice-chaser/security-review.md — loca
 stage-6-deploy:      pending
 stage-5b-security:   pending
 stage-7-retro:       pending
+models:
+  orchestrator: fable
+  surveyor:     sonnet
+  preflight:    haiku
+  architect:    opus
+  copywriter:   sonnet
+  designer:     sonnet
+  engineer:     sonnet
+  qa:           sonnet
+  security:     opus
+  devops:       sonnet
+  retro:        sonnet
 standing:            none
 waived:              none
 escalations:         none

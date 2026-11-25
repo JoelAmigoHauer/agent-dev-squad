@@ -66,6 +66,7 @@ your-app/                      the host repo
 │   ├── state/                 tasks.md template; <build-name>.md while a build runs
 │   └── builds/<build-name>/   One folder per build — the audit trail
 ├── .claude/hooks/             the git guard
+├── .claude/agents/            squad-<role>.md: one subagent per stage, each with its default model
 ├── docs/adr/                  decisions the Architect records
 └── …                          the app itself
 ```
@@ -83,7 +84,10 @@ Engineer who is unsure asks the Architect rather than guessing.
 
 **Narrow context per stage.** Each stage runs as its own subagent, loaded with that agent's file,
 the shared rules in `agents/_common.md`, the contract files that stage names and the state file.
-Never the whole repo. It keeps each agent sharp and cheap.
+Never the whole repo. It keeps each agent sharp and cheap. One tier runs on the most capable
+model, and it is the Orchestrator, which plans and reviews every stage's output at its gate. Every
+stage runs a tier below it, on the model its row in the build's model table names (*Models* in
+`CLAUDE.md`), and a check refuses a stage fired any other way.
 
 **Loops are capped, and state lives in a file.** Every fix loop has an iteration limit, and hitting
 it halts with full context rather than retrying forever. Progress lives in the build's own

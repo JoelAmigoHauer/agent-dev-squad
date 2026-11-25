@@ -6,6 +6,7 @@ import { spawnSync, execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { modelsBlock } from '../models.mjs';
 
 const CHECKS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let host, squad, stateFile;
@@ -16,6 +17,7 @@ started:             2026-11-25T22:00
 stage-1.5-figure-check: pending
 stage-2-designer:    pending
 stage-3-engineer:    running
+${modelsBlock()}
 standing:            none
 waived:              none
 escalations:         none
@@ -76,6 +78,29 @@ test('a waiver Joel wrote lifts its check', () => {
   writeFileSync(stateFile, STATE.replace('waived:              none', 'waived: figure-gate the deck regex misreads a table'));
   const r = hook({ tool_name: 'Edit', tool_input: { file_path: stateFile, old_string: 'stage-2-designer:    pending', new_string: 'stage-2-designer: running' } });
   assert.equal(r.code, 0, r.err);
+  writeFileSync(stateFile, STATE);
+});
+
+// model-guard, as Claude Code calls it: the subagent tool, named Agent or, in older builds, Task.
+test('a stage fired off its models: row is blocked, on its row it passes', () => {
+  const fire = (input) => hook({ tool_name: 'Agent', tool_input: { description: 'Stage 4', prompt: 'brief', ...input } });
+  let r = fire({ subagent_type: 'squad-qa' });
+  assert.equal(r.code, 2);
+  assert.match(r.err, /\[model-guard\] fire squad-qa with model "sonnet"/);
+  assert.equal(fire({ subagent_type: 'squad-qa', model: 'sonnet' }).code, 0);
+  r = hook({ tool_name: 'Task', tool_input: { subagent_type: 'general-purpose', prompt: 'brief' } });
+  assert.equal(r.code, 2);
+  assert.match(r.err, /\[model-guard\] a build is live/);
+});
+
+test('a row change putting a stage on the top tier is blocked, unless Joel waived model-guard', () => {
+  const top = { tool_name: 'Edit', tool_input: { file_path: stateFile, old_string: '  qa:           sonnet', new_string: '  qa:           fable' } };
+  let r = hook(top);
+  assert.equal(r.code, 2);
+  assert.match(r.err, /\[model-guard\] line \d+: qa cannot run on fable/);
+  writeFileSync(stateFile, STATE.replace('waived:              none', 'waived: model-guard qa on fable for this build, Joel 2026-11-25'));
+  assert.equal(hook(top).code, 0);
+  assert.equal(hook({ tool_name: 'Agent', tool_input: { subagent_type: 'squad-qa', model: 'fable' } }).code, 0);
   writeFileSync(stateFile, STATE);
 });
 

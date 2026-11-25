@@ -73,6 +73,11 @@ for p in CLAUDE.md LEARNINGS.md agents skills state builds checks; do
   rm -rf ".squad/$p" && cp -R "$TMP/$p" ".squad/$p"
 done
 rm -f .squad/builds/_template/README.md    # describes the template, not a build
+# One subagent definition per stage role, each with its default model (v0.4). Claude Code reads
+# project subagents from .claude/agents/; the build's models: rows outrank these defaults.
+if [ -d "$TMP/subagents" ]; then
+  mkdir -p .claude/agents && cp "$TMP"/subagents/squad-*.md .claude/agents/
+fi
 printf 'template: %s\nref: %s\ncommit: %s\nstamped: %s\n' \
   "$SRC" "$REF" "$SHA" "$(date -u +%Y-%m-%dT%H:%MZ)" > .squad/VERSION
 
@@ -90,17 +95,25 @@ if [ -f "$TMP/$GUARD" ]; then
     const checks = "node \"$CLAUDE_PROJECT_DIR\"/.squad/checks/hook.mjs";
     const hasChecks = s.hooks.PreToolUse.some(e => (e.hooks || []).some(h => h.command === checks));
     if (fs.existsSync(".squad/checks/hook.mjs") && !hasChecks)
-      s.hooks.PreToolUse.push({ matcher: "Bash|Edit|Write|MultiEdit", hooks: [{ type: "command", command: checks }] });
+      s.hooks.PreToolUse.push({ matcher: "Bash|Edit|Write|MultiEdit|Agent|Task", hooks: [{ type: "command", command: checks }] });
+    // A stamp from before model-guard registered the checks without the Agent matcher.
+    for (const e of s.hooks.PreToolUse)
+      if ((e.hooks || []).some(h => h.command === checks) && e.matcher === "Bash|Edit|Write|MultiEdit")
+        e.matcher = "Bash|Edit|Write|MultiEdit|Agent|Task";
+    // The Orchestrator is the one top tier (CLAUDE.md, *Models*). Never replace a model the host set.
+    if (fs.existsSync(".squad/checks/models.mjs")) s.model ??= "fable";
     fs.writeFileSync(p, JSON.stringify(s, null, 2) + "\n");'
 fi
 rm -rf "$TMP"
 git add .squad .claude/settings.json "$GUARD" 2>/dev/null || git add .squad
+[ -d .claude/agents ] && git add .claude/agents/squad-*.md
 git commit --quiet -m "Stamp the agent development squad at $SHA"
 echo "squad stamped at $SHA"
 ```
 
-Not copied, on purpose: `README.md`, `BLUEPRINT.md`, `PRIOR-ART.md`, `GLOSSARY.md` and this skill.
-None of them is loaded by any stage, and `BLUEPRINT.md` is excluded from stage context by design.
+`subagents/` is copied to `.claude/agents/`, not `.squad/`, because that is where Claude Code
+looks for a project's subagents. Not copied, on purpose: `README.md`, `BLUEPRINT.md`,
+`PRIOR-ART.md`, `GLOSSARY.md` and this skill. None of them is loaded by any stage, and `BLUEPRINT.md` is excluded from stage context by design.
 
 **The script refuses a folder that is not a git repository, and a dirty working tree.** The
 Surveyor would refuse a dirty tree anyway, and a stamp on top of uncommitted work confuses whose
@@ -117,11 +130,18 @@ bypass: the stage records it in the build's `log.md` and halts, and Joel runs it
 Adapted from mattpocock/skills `git-guardrails-claude-code`, read 2026-10-31. A template version
 older than the guard (`v0.3`) stamps without it.
 
-**The squad checks** (`.squad/checks/hook.mjs`, v0.4) run on every Bash, Edit, Write and MultiEdit
-call: the state-file lint, the figure gate, the amendment gate, the commit guard and the waiver
-guard. A failing check blocks, with no bypass; only Joel waives one, per build, by adding
-`waived: <check> <reason>` to the state file on github.com. What each check refuses is in *Checks*
-in `.squad/CLAUDE.md`. A template version older than v0.4 stamps without them.
+**The squad checks** (`.squad/checks/hook.mjs`, v0.4) run on every Bash, Edit, Write, MultiEdit
+and Agent call: the state-file lint, the figure gate, the amendment gate, the commit guard, the
+model guard and the waiver guard. A failing check blocks, with no bypass; only Joel waives one,
+per build, by adding `waived: <check> <reason>` to the state file on github.com. What each check
+refuses is in *Checks* in `.squad/CLAUDE.md`. A template version older than v0.4 stamps without them.
+
+**The stage subagents** (`.claude/agents/squad-<role>.md`, v0.4) are one definition per stage
+role, each carrying its default model. The Orchestrator fires every stage by its definition, with
+the model the build's `models:` block names, and `model-guard` refuses any other fire. `init` also
+sets `"model": "fable"` in `.claude/settings.json` when the host names no model, because the
+Orchestrator is the session and the one top tier. Which role runs on which model, and why, is
+*Models* in `.squad/CLAUDE.md`.
 
 ## Three rules the brief cannot state for itself
 

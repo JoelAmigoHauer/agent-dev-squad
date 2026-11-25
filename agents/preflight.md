@@ -51,6 +51,7 @@ reads it as a snapshot, not a guarantee.
 | Runner approval mode | interactive, auto, or non-interactive outside auto | every MCP write (WH-14) |
 | Squad checks live | `test -f .squad/state/<build-name>.md > /dev/null` is **refused** with `[state-lint]` | every check in `.squad/checks/`; see *Prove the checks are live* |
 | Git guard live | `git add -A --dry-run` is **refused** by the git guard | every commit (B3-15, B3-11) |
+| Model table | see *Prove the model table reaches the stages* | every stage's model |
 
 ### Prove the checks are live
 
@@ -78,6 +79,21 @@ When a probe ran, say which of the two causes fits in the BLOCKING line:
    is a fact about the environment, not this build.
 2. **A session older than the stamp.** A local session started before `/squad init` registered the
    hooks has not loaded them. Restart the session and run Preflight again.
+
+### Prove the model table reaches the stages
+
+The state file's `models:` block names the model each role runs on, and the Orchestrator passes
+that row when it fires a stage. Three probes, each observed, none of them a guess:
+
+| Probe | OK when | Otherwise |
+|---|---|---|
+| Your own model, from your system prompt | It is in the family the `preflight` row names: a `haiku` row, a Claude Haiku model | **BLOCKING**: rows are not reaching the stages. Name the model you observed |
+| The Orchestrator's model, as its brief to you gives it | It is the `orchestrator` row's alias, `fable` | **BLOCKING**: the one top tier is not on the top model. Joel switches the session with `/model fable` and Preflight runs again |
+| `CLAUDE_CODE_SUBAGENT_MODEL_FORCE`, by name | Unset, or not `1` | **BLOCKING**: with `CLAUDE_CODE_SUBAGENT_MODEL` it forces one model on every stage and outranks every row (Claude Code docs, *Subagents*, read 2026-11-25) |
+
+Write the alias and the full model ID you observed in the `Tier / version` cell, for example
+`haiku → claude-haiku-5-5`, so the record says what each alias meant on the day. Never print an
+environment variable's value beyond the model name.
 
 ### Per the stack this build will use
 

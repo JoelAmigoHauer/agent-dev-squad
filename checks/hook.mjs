@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// squad checks: a Claude Code PreToolUse hook for Bash, Edit, Write and MultiEdit (v0.4).
+// squad checks: a Claude Code PreToolUse hook for Bash, Edit, Write, MultiEdit and Agent (v0.4).
 // /squad init registers it in the host's .claude/settings.json. It reads the tool call on stdin,
 // runs the checks in lib.mjs, and exits 2 with the reasons on stderr to block the call.
 // A failing check blocks, with no bypass. Only Joel can waive one, per build, by adding
@@ -11,7 +11,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   lintState, figureGate, waiverGuard, amendmentGate, commitGuard,
-  bashWritesState, bashAddsWaiver, applyWaivers, startsEngineer, intakeGate, bannedWordGate,
+  bashWritesState, bashAddsWaiver, applyWaivers, startsEngineer, intakeGate, bannedWordGate, modelGuard,
 } from './lib.mjs';
 import { consistency } from './consistency.mjs';
 
@@ -101,6 +101,10 @@ export function run(call) {
       ...amendmentGate(cmd, states, currentBranch(call.cwd || process.cwd())),
       ...commitGuard(cmd, states),
     ];
+    waiverText = allWaivers;
+  } else if (tool === 'Agent' || tool === 'Task') {
+    // Task is the subagent tool's older name; a hook matcher may still see either.
+    failures = modelGuard(input, states);
     waiverText = allWaivers;
   }
   return applyWaivers(failures, waiverText);
