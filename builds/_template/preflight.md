@@ -76,7 +76,7 @@ Every secret the app needs at runtime. **Obtainable here?** is `YES, set`, `YES,
 **Not optional.** For every service above, record the tier and its operative limits — not just that
 the tool answered. Plan limits change what later stages can do and are invisible until they bite.
 
-These values are what the Architect copies into `contract.md` §4. A tier stated from memory, or
+These values are what the Architect copies into `contract/platform.md`. A tier stated from memory, or
 carried over from another build, is not a probe.
 
 ```

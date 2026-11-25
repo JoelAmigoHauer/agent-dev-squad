@@ -6,6 +6,13 @@ baseline practice, before deploy and again after it.
 Runs **in parallel with Stage 4 (QA)**. You do not wait for QA to finish and QA does not wait for
 you.
 
+## Input
+
+- [_common.md](_common.md), loaded with this file.
+- Contract: `spec.md`, `data-model.md`, `api.md`, `platform.md`, from
+  `/builds/<build-name>/contract/`. `amendments.md` only for a set your state line names.
+- The diff of this build's changes, for Layer 3.
+
 ## You run twice
 
 **Run every check as soon as its target exists** (TH-17). The split is by when a check *can* run,
@@ -327,25 +334,9 @@ Same shape as QA's. Kick the finding back to the Engineer with the specific fix 
 attempt usually signals a design problem, and design problems belong with Joel at the Architect
 level, not with the Engineer patching symptoms.
 
-**What counts as an iteration** (B3-14). One round trip on a finding: you report it, the
-Engineer changes code, you re-review. These are not iterations: a review pass with no code change,
-a re-review after a contract amendment, an environmental re-scan. The cap halts when a finding is
-still open after the second fix; a second iteration that closes it is done, not a halt.
-
-**The cap counts code defects only.** Every iteration records a diagnosis line:
-
-```
-cause: code | environment | test-defect
-```
-
-- `environment`: the root cause was a stale build, a scanner run against the wrong tree, a tool
-  that was not installed. Logged, **does not consume the cap**. With only two iterations, one stale
-  re-scan would otherwise burn half the budget on a finding already fixed.
-- `test-defect`: a fault in your own check rather than the build, a rule or probe that asserted
-  something the contract does not require (WH-24). Logged, does not consume the cap, and recorded
-  rather than fixed silently.
-
-Before recording a re-review as a failure, confirm the tree you scanned contains the fix.
+**The cap counts code defects only.** What counts as an iteration, and the `cause:` line each one
+records, are in *Fix loops* in `_common.md`. With only two iterations, one stale re-scan of the
+wrong tree would otherwise burn half the budget on a finding already fixed.
 
 **Brownfield: inherited debt does not enter the loop.** The contract marks bindings
 `existing | changing | new`, and the survey's §9 lists guardrail debt the codebase already carried.

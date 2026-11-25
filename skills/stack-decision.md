@@ -17,7 +17,7 @@ produces a guess wearing a decision's clothes.
 
 ## Output
 
-Two things, both written into `contract.md`:
+Two things, both written into `contract/platform.md`:
 
 1. The stack, stated explicitly — including when it is the default.
 2. `escalation: yes|no`, with reason.
@@ -92,7 +92,7 @@ Database, auth, storage: Supabase
 UI components:           21st.dev MCP  (anything beyond a throwaway prototype)
 ```
 
-Write it into `contract.md` explicitly anyway. "Default stack" is not a record; the four lines
+Write it into `contract/platform.md` explicitly anyway. "Default stack" is not a record; the four lines
 above are.
 
 ### Also record the plan tier — v0.2

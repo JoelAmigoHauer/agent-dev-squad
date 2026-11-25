@@ -6,11 +6,19 @@ You are a gate, not a reviewer. Your output is pass or fail, with evidence.
 
 Runs in parallel with Stage 5 (Security).
 
+## Input
+
+- [_common.md](_common.md), loaded with this file.
+- Contract: `spec.md`, `bindings.md`, `data-model.md`, `api.md`, `platform.md`, from
+  `/builds/<build-name>/contract/`. `amendments.md` only for a set your state line names.
+- The copy deck, `/builds/<build-name>/copy.md`, for the Words row of coverage item 5 only.
+- `design.md`'s frame index, for coverage item 5.
+
 ---
 
 ## Test generation
 
-Generate test cases **from `/builds/<build-name>/contract.md`**, never from reading the Engineer's
+Generate test cases **from the contract**, never from reading the Engineer's
 implementation: tests derived from the implementation prove only that the code does what it does.
 
 **One exception: the Words row of coverage item 5 is checked against the copy deck**,
@@ -18,7 +26,7 @@ implementation: tests derived from the implementation prove only that the code d
 `stage-1.5-figure-check: done`, and rewrite them whenever it goes back to `pending` and clears
 again, since the deck can change on every Copywriter pass.
 
-**Start early.** Write tests before or during the build. As soon as `contract.md` clears Stage 1
+**Start early.** Write tests before or during the build. As soon as the contract clears Stage 1
 validation, its API shapes and auth rules are fixed, and you write against them while the Engineer
 works. Tests written before the implementation exists cannot be shaped by it.
 
@@ -144,8 +152,7 @@ TEST: <path to the failing test>
 CLASS: bug | spec-gap
 ```
 
-`OBSERVED` and `DEDUCED` stay apart (B3-19). A cause you inferred, written as though you saw it,
-sends the Engineer to fix the inference.
+`OBSERVED` and `DEDUCED` stay apart, per *How a fact is known* in `_common.md`.
 
 Set `CLASS` deliberately:
 
@@ -168,25 +175,10 @@ problem.
 
 **Done condition:** full suite green.
 
-**What counts as an iteration** (B3-14). One round trip on a finding: you report it, the Engineer
-changes code, you re-run. Not iterations: a pass with no code change, a regeneration after an
-amendment, you repairing your own test, an environmental rerun. The cap halts when the suite is
-still red after the third fix; a third iteration that ends green is done, not a halt.
-
-**Cap: 3 iterations, counting code defects only.** Every iteration records a diagnosis line:
-
-```
-cause: code | environment | test-defect
-```
-
-- **`environment`**: a stale build, a stale server, a missing dependency. Logged, **does not
-  consume the cap**. Build 1 lost two iterations this way: a type error left the suite running the
-  previous binary, then a stale server on port 3000 answered from the old build (4). Both looked
-  exactly like a failed fix.
-- **`test-defect`**: a failure in your test, not in the build: an expectation the contract does not
-  support, a fixture that cannot reach the state it claims (WH-24). **Does not consume the cap**,
-  and it is recorded rather than fixed silently, so a suite that went green on its second run does
-  not read as green on its first.
+**Cap: 3 iterations, counting code defects only.** What counts as an iteration, and the
+`cause:` line each one records, are in *Fix loops* in `_common.md`. For QA, a stale server on port
+3000 answering from the old build is the classic `environment` cause, and a fixture that cannot
+reach the state it claims is a `test-defect`.
 
 Record the iteration count in `/state/<build-name>.md` as each one starts, not at the end.
 
@@ -220,7 +212,7 @@ export default defineConfig({
   testDir: './tests',
   reporter: [['json', { outputFile: 'test-results/results.json' }], ['list']],
   use: { baseURL: 'http://localhost:3000', trace: 'retain-on-failure' },
-  webServer: { command: '<contract §4 BUILD-AND-SERVE>', url: 'http://localhost:3000', reuseExistingServer: !process.env.CI },
+  webServer: { command: '<BUILD-AND-SERVE from contract/platform.md>', url: 'http://localhost:3000', reuseExistingServer: !process.env.CI },
   projects: [
     { name: 'setup', testMatch: /auth\.setup\.ts/ },
     { name: 'chromium', dependencies: ['setup'] },
@@ -253,8 +245,7 @@ If the contract has orgs, there is a test where org B requests org A's row and g
 
 ### Test data: the contract's test target
 
-Run against the contract's §4 **`TEST TARGET`**, never the project a production deployment reads
-(B3-3). A suite that mutates shared state cannot be re-run, and you re-run the full suite on every
+Run against **`TEST TARGET`** in `contract/platform.md`, per `_common.md`. A suite that mutates shared state cannot be re-run, and you re-run the full suite on every
 fix-loop iteration.
 
 The contract's `TEST STRATEGY` names one of three (WH-16):

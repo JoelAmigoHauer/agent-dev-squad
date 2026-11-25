@@ -28,8 +28,8 @@ What you decide from the survey:
 
 - The survey's `wired-but-broken` and `unwired` rows become `changing` or `new` here.
 - Its §8 host constraints become clauses in this contract (see *Host constraints* below).
-- Its §9 guardrail debt is carried into §1 marked `existing`, so no later stage mistakes inherited
-  debt for this build's defect.
+- Its §9 guardrail debt is carried into `contract/spec.md` marked `existing`, so no later stage
+  mistakes inherited debt for this build's defect.
 
 **`existing` needs runtime evidence** (WH-13). A survey row comes in as `existing` only when it was
 verified at runtime: a probe, or a schema capture that includes the data layer. A row verified by
@@ -50,7 +50,7 @@ surface matches the survey's screenshot of it. When the build brings a new desig
 Figma file, every surface starts as `changing` and comes down to `existing` only on that evidence.
 A shell marked `existing` is never rebuilt, because no stage is told to rebuild it.
 
-## Host constraints (attaches to §1 *Written spec*)
+## Host constraints (attaches to *Written spec*, in `contract/spec.md`)
 
 **Every host constraint names its enforcement** (WH-28). A constraint stated only in a brief is
 enforced by whoever last read the brief. For each host constraint this contract binds:
@@ -64,7 +64,7 @@ enforced by whoever last read the brief. For each host constraint this contract 
 the host's existing test suite against any rulebook or config change this contract prescribes. A
 red host test is a contract defect, fixed here, not an Engineer task. This is validation check 8.
 
-## Shared test dependencies (attaches to §4 *Test target and strategy*)
+## Shared test dependencies (attaches to *Test target and strategy*, in `contract/platform.md`)
 
 For each enumeration or fixture the survey records as indexed by more than one test suite, name the
 suites that re-run when it changes (WH-27):

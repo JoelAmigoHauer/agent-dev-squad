@@ -1,20 +1,9 @@
 # Pipeline state — template
 
 **This file is the template, never a build's live state** (B3-13). At build start the Orchestrator
-copies the block below to `/state/<build-name>.md`, and that file is the build's state from then
-on. One build per state file: a second build gets its own file, never a block in another's.
-client-portal's single state file absorbed two more builds, grew to 1,029
-lines, and stopped being safe to edit.
-
-The Orchestrator owns each build's state file. Every stage writes its status and output location
-there on completion; the Orchestrator writes loop counters as each iteration starts.
-
-Progress lives in the state file, never in the conversation. On a fresh session mid-run, read it
-first and resume from the first stage not marked `done`. A state file that exists is a build in
-progress.
-
-When a build finishes, copy its block into `/builds/<build-name>/run-record.md` and delete
-`/state/<build-name>.md`.
+copies the block below to `/state/<build-name>.md`, one file per build. How the file is written,
+resumed from and retired is *State protocol* in `../CLAUDE.md`, the binding copy. This file binds
+the block's shape and the status vocabulary.
 
 ---
 
@@ -40,12 +29,9 @@ standing:            none
 escalations:         none
 ```
 
-**The state file holds this block and nothing else.** Notes, validation results and loop detail go
-to the append-only `/builds/<build-name>/log.md`, dated. Edit the state file by a unique anchor and
-chain the commit to the edit, so a failed edit never ships a commit message.
+**The state file holds this block and nothing else.** Notes go to `/builds/<build-name>/log.md`.
 
-**Amendment sets get their own lines**, one `pending` line per stage the set's `Routes to` table
-names, added when the set is appended (B3-2):
+**Amendment sets get their own lines**, added as *State protocol* in `../CLAUDE.md` says. The shape:
 
 ```
 amendment-set-2 (A14–A20):
@@ -101,13 +87,13 @@ mode: greenfield
 started: 2026-08-15T14:02
 stage-0.25-surveyor: skipped (greenfield)
 stage-0.5-preflight: done    (/builds/invoice-chaser/preflight.md — Figma degraded, Stage 2 carries it)
-stage-1-architect:   done    (/builds/invoice-chaser/contract.md — class B, escalation no)
+stage-1-architect:   done    (/builds/invoice-chaser/contract/ — class B, escalation no)
 stage-1.5-copywriter: done   (/builds/invoice-chaser/copy.md — 0 NEEDS SOURCE)
 stage-1.5-figure-check: done (/builds/invoice-chaser/log.md — 4 verified, 0 corrected, 0 removed)
-stage-2-designer:    done    (mode B, tokens derived, 21st.dev components logged)
+stage-2-designer:    done    (/builds/invoice-chaser/design.md — mode B, 21st.dev components logged)
 stage-3-engineer:    done    (/builds/invoice-chaser/build-notes.md)
 stage-4-qa:          loop 2/3 (2 failing tests, detail in log.md)
-stage-5a-security:   done    (local test target, checks clean; advisors have no target until 5b)
+stage-5a-security:   done    (/builds/invoice-chaser/security-review.md — local test target, advisors wait for 5b)
 stage-6-deploy:      pending
 stage-5b-security:   pending
 stage-7-retro:       pending

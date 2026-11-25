@@ -13,6 +13,7 @@ every rule that applies only when the contract's MODE is brownfield.
 
 ## Input
 
+- [_common.md](_common.md), loaded with this file.
 - The sketch (read directly, vision).
 - The app name.
 - The transcribed and interpreted voice note.
@@ -27,8 +28,22 @@ If the intake is genuinely ambiguous about what the app *does*, escalate rather 
 
 ## Output contract
 
-Write to `/builds/<build-name>/contract.md`. All five fields are mandatory. An output missing any
-field is rejected by the validation pass and does not move downstream.
+Write the contract as section files in `/builds/<build-name>/contract/`, copied from the build
+folder's scaffold. Each stage file names the sections it loads, so a stage never reads a section it
+does not use, and no stage extracts by heading at run time (B3-6). All five parts below are
+mandatory. An output missing any is rejected by the validation pass and does not move downstream.
+
+| Part below | File |
+|---|---|
+| 1. Written spec, up to *Flow bindings* | `contract/spec.md` |
+| Flow bindings and screen bindings | `contract/bindings.md` |
+| 2. Data model | `contract/data-model.md` |
+| 3. API contract | `contract/api.md` |
+| 4. Stack decision, *Platform settings*, and 5. Escalation flag | `contract/platform.md` |
+| Every amendment's reasoning and `Routes to` table | `contract/amendments.md` |
+
+A rule that belongs to a part goes in that part's file, never in another, so a stage's load list
+stays true. Each file is edited in place for its whole life; none grows by appending.
 
 ### 1. Written spec
 
@@ -184,7 +199,7 @@ writer sits outside this build is flagged here, at Stage 1.
 
 #### Self-consistency pass
 
-§2 holds three languages that constrain the same rows (DDL, triggers, RLS policies), and nothing
+`data-model.md` holds three languages that constrain the same rows (DDL, triggers, RLS policies), and nothing
 downstream reconciles them with each other (TH-15). For every table carrying a trigger or a policy,
 state what each foreign key does on delete and confirm no trigger or policy refuses that action. A
 cascade into an append-only table is the canonical failure. Check defaults against checks, and
@@ -370,13 +385,14 @@ Format adapted from mattpocock/skills `domain-modeling`, read 2026-10-31.
 The Engineer is banned from resolving contract ambiguity by inference. When a request comes back to
 you:
 
-1. Answer it as an **amendment to `contract.md`**, not as a chat reply. Amend the file, date the
-   amendment, and tell the Orchestrator the contract changed.
+1. Answer it as an **amendment**, not as a chat reply. Edit the section file, append the dated
+   entry to `contract/amendments.md`, and tell the Orchestrator the contract changed.
 2. If the answer changes the data model or the API shape, say so explicitly so QA can regenerate
    the affected tests.
-3. **Edit what it supersedes, in place.** Strike the old clause or table row through and point at
-   the amendment (`~~old text~~ superseded by A<n>`). The appended amendment keeps the reasoning;
-   the body stays current (B3-6).
+3. **Edit what it supersedes, in place**, in its section file. Strike the old clause or table row
+   through and point at the amendment (`~~old text~~ superseded by A<n>`). `amendments.md` keeps
+   the reasoning; the section files stay current, so a stage that loads them never needs the
+   history (B3-6). A part the amendment adds goes in the file that owns that part.
 4. **Every amendment set carries a summary table with a `Routes to` column** (B3-2). The
    Orchestrator copies it into `/state/<build-name>.md` as one `pending` line per stage, rather than
    inferring it:

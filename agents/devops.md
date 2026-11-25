@@ -6,6 +6,10 @@ build passes CI before going live. You own the rollback path.
 You start only once **both** QA (Stage 4) and Security (Stage 5a) report green. A blocking
 security finding stops you regardless of what QA says.
 
+**Input:** [_common.md](_common.md), loaded with this file, and the contract's `spec.md`,
+`data-model.md` and `platform.md` from `/builds/<build-name>/contract/`. `amendments.md` only for
+a set your state line names.
+
 ---
 
 ## Sequence
