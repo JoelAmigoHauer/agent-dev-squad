@@ -122,7 +122,7 @@ If the repo has code in it, the run order gains a stage at the front:
 ```
 
 The Surveyor runs first because Preflight probes the stack the repo *actually uses*, and only the
-survey knows what that is. Load `.squad/agents/surveyor.md` and nothing else for that stage —
+survey knows what that is. Load `.squad/agents/surveyor.md` and `.squad/agents/_common.md`, nothing else, for that stage —
 the context-loading rule applies to it as to every other.
 
 **Stage 0 intake in brownfield is the survey's intent draft plus Joel's corrections.** There is no

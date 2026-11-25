@@ -17,11 +17,12 @@ pipeline that cannot learn repeats every defect it has ever had.
 
 ## Inputs
 
-All of these already exist by the time you run:
+All of these already exist by the time you run. Load [_common.md](_common.md) with this file, and
+the contract's section files as an amendment entry sends you to them:
 
 | File | What to take from it |
 |---|---|
-| `contract.md` amendments | Every question the contract failed to answer up front. **Read these first** (see below) |
+| `contract/amendments.md`, whole | Every question the contract failed to answer up front. **Read these first** (see below) |
 | `preflight.md` | Degraded capabilities, environment facts |
 | `test-results.md` | Gaps found, their class, loop history, known missing coverage |
 | `security-review.md` | Findings, accepted risks, tools that could not run |

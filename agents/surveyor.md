@@ -44,7 +44,7 @@ at the end, clearly labelled as a draft.
 
 | Read | Produce |
 |---|---|
-| Manifests, lockfile, framework config, hosting config | The stack table in `contract.md` §4's shape, with versions |
+| Manifests, lockfile, framework config, hosting config | The stack table in `contract/platform.md` shape, with versions |
 | Same, against [../skills/stack-decision.md](../skills/stack-decision.md)'s default | A diff: what matches the default, what deviates, whether the deviation is reasoned anywhere |
 | Hosting and database config | Plan tiers where detectable. Preflight probes the rest |
 
@@ -70,7 +70,7 @@ reconcile. Build the schema from the catalogue and the files, never from handler
 
 ### 3. API surface as built
 
-Every route handler, in `contract.md` §3's shape. Where request and response types exist in code,
+Every route handler, in `contract/api.md` shape. Where request and response types exist in code,
 copy them. Where they do not, write `untyped`; never infer a shape from usage.
 
 ### 4. Screens as built

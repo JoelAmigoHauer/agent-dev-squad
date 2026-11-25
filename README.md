@@ -29,7 +29,7 @@ your-app/                      the host repo
 │   ├── CLAUDE.md              Orchestrator brief — run order, halt triggers, caps
 │   ├── LEARNINGS.md           Why each version differs from the last
 │   ├── VERSION                template, ref, commit and stamp time
-│   ├── agents/                One file per role — each is that agent's entire world
+│   ├── agents/                One file per role, plus _common.md, which every stage loads
 │   │   ├── surveyor.md        0.25 · brownfield audit
 │   │   ├── preflight.md       0.5  · tooling probe
 │   │   ├── architect.md       1    · the binding contract
@@ -60,8 +60,8 @@ loads them, so `/squad` does not stamp them.
 Every later stage is held to it, and inference is banned as a way to resolve ambiguity — an
 Engineer who is unsure asks the Architect rather than guessing.
 
-**Narrow context per stage.** Firing a stage loads that agent's file, the contract and the state
-file. Never the whole repo. It keeps each agent sharp and cheap.
+**Narrow context per stage.** Firing a stage loads that agent's file, the shared rules in
+`agents/_common.md`, the contract files that stage names and the state file. Never the whole repo. It keeps each agent sharp and cheap.
 
 **Loops are capped, and state lives in a file.** Every fix loop has an iteration limit, and hitting
 it halts with full context rather than retrying forever. Progress lives in the build's own

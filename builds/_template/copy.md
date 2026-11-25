@@ -14,7 +14,7 @@ SURFACES: <n>   STRINGS: <n>   FIGURES: <n> sourced, <n> bound, <n> NEEDS SOURCE
 ```
 
 Every figure is marked where it is written: `[source: <path or URL>, <date read>]`,
-`[bound: contract §<n>]` or `[NEEDS SOURCE]`. The Orchestrator verifies each `source` mark before
+`[bound: contract/<file>]` or `[NEEDS SOURCE]`. The Orchestrator verifies each `source` mark before
 Stage 2 and records it in `log.md`. A `NEEDS SOURCE` figure does not ship.
 
 ---

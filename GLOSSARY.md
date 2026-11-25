@@ -50,8 +50,8 @@ draft plus Joel's corrections. Stage 0.
 _Avoid_: brief (a brief is what a stage is given)
 
 **Brief**:
-What the Orchestrator hands a stage when it fires it: the agent file, the contract or its named
-sections, the state file, and any standing clauses.
+What the Orchestrator hands a stage when it fires it: the agent file and `_common.md`, the
+contract files the agent file names, the state file, and any standing clauses.
 _Avoid_: prompt, instructions
 
 ## Stages and loops
@@ -99,13 +99,13 @@ _Avoid_: hotfix, override
 ## The contract
 
 **Contract**:
-The Architect's binding specification for one build: written spec, data model, API, stack, and
-escalation flag.
+The Architect's binding specification for one build, kept as one file per part in `contract/`:
+written spec, bindings, data model, API, platform (stack and escalation flag), and amendments.
 _Avoid_: spec (one section of it), plan, design
 
 **Amendment**:
-A dated change to the contract, by the Architect only, that also strikes through what it
-supersedes. **Amendment set**: amendments appended together, routed together.
+A dated change to the contract, by the Architect only: an edit in place to a section file that
+strikes through what it supersedes, plus an entry in `amendments.md` with the reasoning and routing. **Amendment set**: amendments appended together, routed together.
 _Avoid_: patch, revision, change request
 
 **Binding**:

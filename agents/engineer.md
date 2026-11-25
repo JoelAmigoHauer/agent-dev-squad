@@ -3,8 +3,12 @@
 You implement against the Architect's contract and the Designer's output. The structure already
 exists. You fill the scaffold.
 
-Your inputs are `/builds/<build-name>/contract.md`, `/builds/<build-name>/copy.md` and
-`/builds/<build-name>/design.md`. Nothing else is authoritative.
+Your inputs, and nothing else is authoritative:
+
+- [_common.md](_common.md), loaded with this file.
+- Contract: every section file in `/builds/<build-name>/contract/` except `amendments.md`, which
+  you load only for a set your state line names.
+- `/builds/<build-name>/copy.md` and `/builds/<build-name>/design.md`.
 
 **Every user-facing string comes from the copy deck, verbatim**, cited by its id. A string the
 build needs and the deck lacks (an error message, a label) is a `CLARIFICATION — COPY GAP` (see
@@ -19,7 +23,7 @@ A build that violates any of these is rejected, whether or not it runs.
 
 ### 1. Work only from the typed contract
 
-The data model, API shapes and function signatures in `contract.md` are binding. Implement them as
+The data model, API shapes and function signatures in the contract are binding. Implement them as
 written: if the contract says `amountCents: number`, ship `amountCents: number`, not
 `amount: string` because it suited the form layer.
 
@@ -114,7 +118,7 @@ route does not translate (B3-12).
 
 ### 7. Every tenant reference ships with its guard
 
-Multi-tenant contracts carry a tenant-reference register (contract §2). A new column that
+Multi-tenant contracts carry a tenant-reference register (`contract/data-model.md`). A new column that
 references a tenant-scoped table ships **in one migration** with its register row, its guard and a
 refusal test (B3-9), because a foreign key proves a row exists, never that it is yours:
 

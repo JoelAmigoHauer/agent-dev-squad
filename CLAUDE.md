@@ -60,6 +60,7 @@ no dependency manifest here — the code lives in the repos generated *from* thi
 | `LEARNINGS.md` | Every build's defect list, by app, with the fix for each. IDs are `<app code>-<n>` | Before changing any rule; written by Stage 7 |
 | `PRIOR-ART.md` | External projects worth mining, what to take from each and what not to | **Never by a stage.** Mode 2 only |
 | `GLOSSARY.md` | The pipeline's own terms, one word per idea | **Never by a stage.** Mode 2 only |
+| `agents/_common.md` | Rules every stage follows: the contract's files, how a fact is known, MCP re-probe, test target, fix loops, writing to the tree | With every stage |
 | `agents/surveyor.md` | 0.25 · brownfield codebase audit, in the contract's shapes | Stage 0.25 only, brownfield builds |
 | `agents/preflight.md` | 0.5 · tooling and plan-tier probe | Stage 0.5 only |
 | `agents/architect.md` | 1 · the binding contract | Stage 1 only |
@@ -115,12 +116,14 @@ and removing one without reading its entry re-opens that failure. See
 
 When you fire a stage, load **only**:
 
-1. That agent's file from `/agents/`, **plus its companion `<stage>.brownfield.md`** when the
-   contract's `MODE` is `brownfield` and the companion exists. The companion adds rules that apply
-   only to brownfield builds; the agent file names it near its top.
-2. The current build's contract (`/builds/<build-name>/contract.md`). **Past 1,500 lines**, load the
-   sections the stage's brief names, extracted by heading, with every amendment that supersedes
-   them (B3-6). client-portal's contract reached 5,342 lines, and an Engineer told to read it whole
+1. That agent's file from `/agents/` and [agents/_common.md](agents/_common.md), **plus its
+   companion `<stage>.brownfield.md`** when the contract's `MODE` is `brownfield` and the companion
+   exists. The companion adds rules that apply only to brownfield builds; the agent file names it
+   near its top.
+2. The contract section files **the stage file's *Input* names**, from
+   `/builds/<build-name>/contract/`, and `amendments.md` only when the stage's state line names an
+   amendment set (B3-6). The list is fixed in the stage file, never chosen at run time.
+   client-portal's single contract file reached 5,342 lines, and an Engineer told to read it whole
    stalled for 69 minutes with no output.
 3. The build's state file, `/state/<build-name>.md`.
 
@@ -199,11 +202,6 @@ current iteration, then stop it. Do not start a further iteration. Both stages' 
 the same escalation — a build halted on a security finding usually has QA findings too, and Joel
 should see them together rather than discovering the second set after deciding on the first.
 
-**One build per state file** (B3-13). A build's state lives in `/state/<build-name>.md` and nowhere
-else, so a second build gets its own file and never a block in another's. Two builds never share a
-working tree. client-portal's state file absorbed a second and then a third build, grew to 1,029
-lines, and stopped being safe to edit.
-
 ---
 
 ## Halt triggers
@@ -249,24 +247,12 @@ usually signals a design problem, and design problems belong with Joel at the Ar
 Uncapped loops are where agents burn hours re-fixing the same function. Count every iteration in
 the state file as it happens, not retrospectively.
 
-**Caps count code defects only — v0.2.** Every loop iteration records
-`cause: code | environment | test-defect`. An iteration whose root cause was environmental — a
-stale build, a stale server, a missing dependency — is logged but does not consume the cap. Build 1
-hit two such failures in a single fix loop; under a naive cap they would have burned two of three
-iterations and escalated a build that was working. Before diagnosing any post-fix failure, confirm
-the binary under test contains the fix.
+**Caps count code defects only.** What counts as an iteration (B3-14) and the
+`cause: code | environment | test-defect` line every iteration records are defined once, in *Fix
+loops* in [agents/_common.md](agents/_common.md). Only `code` consumes a cap.
 
-Nor does a `test-defect` consume the cap: a fault in the checking stage's own test or rule rather
-than in the build. It is recorded, never fixed silently (WH-24).
-
-A red CI on a **preview** deploy does not consume a DevOps attempt either — nothing was promoted.
+A red CI on a **preview** deploy does not consume a DevOps attempt: nothing was promoted.
 Fix and re-preview.
-
-**What counts as an iteration** (B3-14). One round trip on a finding: the stage reports it, the
-Engineer changes code, the stage re-checks. Not an iteration: a review pass with no code change, a
-regeneration after an amendment, QA repairing its own test, an environmental rerun. A cap halts when
-the finding is still open after the Nth fix; an Nth iteration that ends green is done. client-portal
-had to rule on this three times mid-run.
 
 ---
 
@@ -276,6 +262,9 @@ Progress lives in the build's state file, `/state/<build-name>.md`. Never in the
 
 - **At build start**, copy the idle block from [state/tasks.md](state/tasks.md) to
   `/state/<build-name>.md`. `state/tasks.md` itself is never written during a build.
+- **One build per state file** (B3-13). A second build gets its own file, never a block in
+  another's, and two builds never share a working tree. client-portal's state file absorbed two more
+  builds, grew to 1,029 lines, and stopped being safe to edit.
 - Every stage writes its status and output location to the state file on completion.
 - You update the loop counter on every iteration, before firing the retry.
 - On a fresh session, mid-run: read the state file first and resume from the first stage not
@@ -302,8 +291,8 @@ Progress lives in the build's state file, `/state/<build-name>.md`. Never in the
 This is what lets a long run survive a dropped session, a model swap, or a restart without
 drifting. It is also the per-build audit trail.
 
-**Status vocabulary** — `idle`, `pending`, `running`, `loop n/N`, `done`, `halted` — is defined in
-[state/tasks.md](state/tasks.md) itself and that definition binds. Two rules from it are worth
+**Status vocabulary** — `idle`, `pending`, `running`, `loop n/N`, `done`, `halted`, `skipped` — is
+defined in [state/tasks.md](state/tasks.md) itself and that definition binds. Two rules from it are worth
 repeating because they are the ones that get skipped: a `done` without an output path in brackets
 is not done, and a `halted` without a reason is not a status.
 
@@ -340,18 +329,11 @@ No recap of the whole build. No options you are not genuinely blocked between.
 
 ### Briefs and escalations say how each fact is known
 
-Each figure or environment fact in a brief, an escalation or a finding says how and when it was
-obtained: **observed, counted, classified or deduced** (B3-19). A time is given in Joel's zone,
-Australia/Sydney, by computation from the clock, never read off a container's UTC. A stage
-re-verifies an environment fact before relying on it. client-portal's Orchestrator read the
-container's UTC as Sydney time, sized an audit by a grep count, and sent four briefs carrying wrong
-environment facts; each stage caught the error only because its brief told it to check.
-
-**Re-probe an MCP write before relying on it** (WH-14). Preflight's answer was true when it
-probed. A stage that depends on an MCP write probes again immediately before it, and a refusal is
-recorded `cause: environment` rather than halting the build. workshop-hub's MCP servers answered
-at 10:52, were refused at 11:00 when the session left auto mode, and came back under new names at
-21:30.
+Your briefs and escalations follow *How a fact is known* in
+[agents/_common.md](agents/_common.md), as every stage's findings do: each figure or environment
+fact says whether it was observed, counted, classified or deduced, and a time is Australia/Sydney,
+computed (B3-19). client-portal's Orchestrator read the container's UTC as Sydney time and sent four
+briefs carrying wrong environment facts. *Re-probe an MCP write* (WH-14) is in the same file.
 
 Two other fixed shapes exist and are owned by their stages, not by you: the Engineer's
 `CLARIFICATION` block ([agents/engineer.md](agents/engineer.md)) and QA's `GAP` block
@@ -371,14 +353,14 @@ When two agents' outputs disagree:
    override in the build's log and let Design re-solve within the constraint.
 3. **Anything left after 1 and 2 is a genuine conflict.** Escalate under halt trigger 2.
 
-Contract changes are amendments, made to `contract.md` by the Architect only, dated, appended at
-the bottom. Nobody else edits the contract — not the Designer to add a field, not the Engineer to
+Contract changes are amendments, made by the Architect only: an edit in place in the section file,
+and a dated entry appended to `contract/amendments.md`. Nobody else edits the contract — not the Designer to add a field, not the Engineer to
 resolve an ambiguity, not QA to make a test pass. An amendment that changes the data model or the
 API shape means QA regenerates the affected tests, and it is your job to fire that.
 
-**An amendment also edits what it supersedes, in place** (B3-6): the old clause or table row struck
-through, with `superseded by A<n>`. The appended amendment keeps the reasoning; the body stays
-current. Route each set by its `Routes to` table, per *State protocol*.
+**An amendment edits what it supersedes, in place** (B3-6): the old clause or table row struck
+through in its section file, with `superseded by A<n>`. `amendments.md` keeps the reasoning; the
+section files stay current, so a stage never needs the history to know what binds. Route each set by its `Routes to` table, per *State protocol*.
 
 **A change requested directly is still an amendment** (B3-16). A request, from Joel or anyone,
 that alters a response shape, a status or a string the contract binds goes to the Architect as an
@@ -435,7 +417,7 @@ conversation exports.
 |---|---|---|
 | `survey.md` | Surveyor | 0.25 — brownfield only |
 | `preflight.md` | Preflight | 0.5 |
-| `contract.md` | Architect | 1 |
+| `contract/` | Architect | 1 — one file per part, listed in [agents/_common.md](agents/_common.md) |
 | `copy.md` | Copywriter | 1.5 — the copy deck |
 | `design.md` | Designer | 2 |
 | `build-notes.md` | Engineer | 3 |
@@ -446,7 +428,7 @@ conversation exports.
 | `log.md` | Orchestrator, and any stage | append-only, dated notes for the whole run (B3-13) |
 | `run-record.md` | Orchestrator | on completion — copy of the final state block |
 
-`contract.md` is binding on every stage after 1.
+The contract is binding on every stage after 1.
 
 **Delete `builds/_template/README.md` when you copy the folder.** It describes the template, not
 the build.
@@ -463,7 +445,10 @@ is deliberately repeated for a stage that reads cold, one copy binds:
 | Loop cap numbers | This file | Stage files, as reminders |
 | Status vocabulary | `state/tasks.md` | — copied into each `state/<build-name>.md` with the block |
 | Escalation triggers, current narrowed form | `skills/stack-decision.md` | `agents/architect.md` |
-| What a contract must contain | `agents/architect.md`, plus `agents/architect.brownfield.md` on brownfield builds | `builds/_template/contract.md`, as a scaffold |
+| What a contract must contain | `agents/architect.md`, plus `agents/architect.brownfield.md` on brownfield builds | `builds/_template/contract/`, as a scaffold |
+| Which contract files a stage loads | That stage file's *Input* | — |
+| What counts as an iteration, and loop causes | `agents/_common.md` | — |
+| How a fact is known, MCP re-probe, test target never production | `agents/_common.md` | Stage files apply them, never restate them |
 | What a fidelity check compares (v0.3) | `agents/qa.md`, coverage item 5 | `agents/engineer.md` guardrail 3a, `agents/designer.md` frame index |
 | What a survey must contain | `agents/surveyor.md` | `builds/_template/survey.md`, as a scaffold |
 | How `/squad` stamps and routes | `.claude/skills/squad/SKILL.md` | — it defers to this file for everything else |

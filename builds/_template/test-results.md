@@ -1,6 +1,6 @@
 # Test results — <build-name>
 
-Written by: QA, Stage 4. Tests generated from `contract.md`, never from the implementation.
+Written by: QA, Stage 4. Tests generated from the contract, never from the implementation.
 
 ---
 
@@ -11,7 +11,7 @@ SUITE: green | red
 ITERATION: <n>/3
 E2E (Playwright): passed | failed | NOT RUN — a suite that skipped this layer is not green
 TRACES ON FAILURE: <paths, for the Engineer>
-TEST TARGET: <from contract §4, never production> — strategy: <from contract §4>
+TEST TARGET: <from contract/platform.md, never production> — strategy: <from contract/platform.md>
 RESET BETWEEN ITERATIONS: yes | no
 BLOCKED FLOWS: none | <flow rows skipped for a missing credential; each blocks Stage 6>
 ```

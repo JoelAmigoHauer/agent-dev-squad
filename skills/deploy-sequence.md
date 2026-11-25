@@ -65,7 +65,7 @@ A missing variable that only surfaces on first user request is a failed deploy, 
 - Confirm the deployed environment points at the intended Supabase project, by project ref.
 - Confirm it is **not** pointing at a local instance, a branch database or the test target.
 - Apply any pending migrations, and record whether each is reversible.
-- **Apply them in the order the contract's §2 *Migration ordering* table sets** (WH-25). "Additive"
+- **Apply them in the order `contract/data-model.md`'s *Migration ordering* table sets** (WH-25). "Additive"
   answers only whether the migration breaks the deployed code; whether the new code fails against
   the old schema is a separate answer, and it decides whether the migration *must* go first.
   Carry both answers into the deploy record.
