@@ -131,6 +131,15 @@ a contract clause.
 Host tests that guard a structural rule are rows too, one per test, with the test's path as the
 source.
 
+### Copy and voice
+
+Voice and tone guides, content style guides, messaging docs, and the files that hold user-facing
+strings. The Copywriter reads this list. `none found` if there are none.
+
+| Document or string file | Path | What it governs |
+|---|---|---|
+| | | |
+
 ---
 
 ## 9. Guardrail debt

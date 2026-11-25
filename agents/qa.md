@@ -13,6 +13,11 @@ Runs in parallel with Stage 5 (Security).
 Generate test cases **from `/builds/<build-name>/contract.md`**, never from reading the Engineer's
 implementation: tests derived from the implementation prove only that the code does what it does.
 
+**One exception: the Words row of coverage item 5 is checked against the copy deck**,
+`/builds/<build-name>/copy.md`. Write those assertions only once the state file shows
+`stage-1.5-figure-check: done`, and rewrite them whenever it goes back to `pending` and clears
+again, since the deck can change on every Copywriter pass.
+
 **Start early.** Write tests before or during the build. As soon as `contract.md` clears Stage 1
 validation, its API shapes and auth rules are fixed, and you write against them while the Engineer
 works. Tests written before the implementation exists cannot be shaped by it.

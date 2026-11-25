@@ -127,9 +127,14 @@ screen is drawn and shipped verbatim.
 _Avoid_: copy doc, content, microcopy file
 
 **Figure**:
-Any number, percentage, price, date, count, ranking, quote, named client, named source or claimed
-result in copy. Always marked `source`, `bound` or `NEEDS SOURCE`.
+Any number, percentage, price, date, duration, count, ranking, quote, named client, named source or
+claimed result in copy. Always marked `source`, `bound` or `NEEDS SOURCE`.
 _Avoid_: stat, data point
+
+**Figure check**:
+The Orchestrator's check of every figure in the copy deck against its cited source, recorded in
+`log.md` and on its own state line, `stage-1.5-figure-check`. Reopened by every Copywriter pass.
+_Avoid_: source check, fact check, verification
 
 **Writer**:
 Whatever creates, changes or ends a row or column: a flow, a trigger, a seed or an external owner.

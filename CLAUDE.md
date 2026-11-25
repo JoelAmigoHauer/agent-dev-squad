@@ -144,8 +144,8 @@ pipeline mechanics, caps or halt triggers.
 | 0.25 | **Surveyor** | [agents/surveyor.md](agents/surveyor.md) | **Brownfield only.** Before Preflight. Reads the existing codebase into the contract's shapes; drafts the intake. `skipped` on greenfield |
 | 0.5 | **Preflight** | [agents/preflight.md](agents/preflight.md) | **v0.2.** Before Stage 1. Probes tooling, records plan tiers, halts cheaply |
 | 1 | Architect | [agents/architect.md](agents/architect.md) | Sequential. Gate. |
-| 2 | Designer | [agents/designer.md](agents/designer.md) | Sequential, after Stage 1.5 and its figure check |
 | 1.5 | **Copywriter** | [agents/copywriter.md](agents/copywriter.md) | **Revived 2026-10-31.** After Stage 1 clears, before the Designer, so screens are designed with real words. Writes `copy.md`. **You verify every figure it marks** against its primary source before firing Stage 2 (WS-1) |
+| 2 | Designer | [agents/designer.md](agents/designer.md) | Sequential, after `stage-1.5-figure-check` is `done` |
 | 3 | Engineer | [agents/engineer.md](agents/engineer.md) | Sequential, after Stage 2 |
 | 4 | QA | [agents/qa.md](agents/qa.md) | Parallel with Stage 5a |
 | 5a | Security (pre-deploy) | [agents/security.md](agents/security.md) | Parallel with Stage 4 |
@@ -159,11 +159,21 @@ first time at deploy and found seven issues, two of them caused by a grant writt
 So Security runs each check as soon as its target exists (TH-17): 5a covers everything that exists
 before deploy, including a hosted test target's advisors, and 5b covers what only production has.
 
-**The figure check is yours, not the Copywriter's** (WS-1). Before firing Stage 2, check every
-figure the copy deck marks `[source: …]` against the source it names, and remove every
-`[NEEDS SOURCE]` figure or have the sentence rewritten without it. Record each in the build's
-`log.md` as verified, corrected or removed. Ask Joel for a missing figure only if the copy cannot
-stand without it, and only alongside a halt you already have; a missing figure is not a halt.
+**The figure check is yours, not the Copywriter's** (WS-1). It has its own line in the state
+file, `stage-1.5-figure-check`, and only you write it. Check every figure the copy deck marks
+`[source: …]` against the source it names, and remove every `[NEEDS SOURCE]` claim or have the
+sentence rewritten without it. Record each in the build's `log.md` as verified, corrected or
+removed, then set the line `done`, pointing at that log entry. The Copywriter marking its own stage
+`done` never clears it, so a session resumed between the two fires the check, not the Designer.
+
+**Every Copywriter pass reopens the check.** That is Stage 1.5 itself, an amendment set's
+Copywriter line, a `COPY GAP` clarification from the Engineer, and a Designer's length request. Set
+the figure-check line back to `pending` (for an amendment set, its own `figure-check` line) when
+you fire the pass, and fire no downstream stage on the revised deck until it is `done` again. A
+figure added on the third pass ships through the same check as one added on the first.
+
+Ask Joel for a missing figure only if the copy cannot stand without it, and only alongside a halt
+you already have; a missing figure is not a halt.
 
 Stage 0 has no separate parsing agent. Transcribe and interpret the voice note and read the sketch
 in the same turn that kicks off the Architect.
@@ -278,7 +288,8 @@ Progress lives in the build's state file, `/state/<build-name>.md`. Never in the
   matched twice, the commit ran anyway, and the commit claims a change it does not carry.
 - **Every amendment set gets stage lines** (B3-2). When the Architect appends an amendment set, copy
   its `Routes to` table into the state file as one `pending` line per stage, naming the set:
-  Copywriter if it adds or changes a surface, control or string, Designer if it adds or changes a
+  Copywriter if it adds or changes a surface, control or string, followed by a `figure-check` line
+  whenever it has a Copywriter line, Designer if it adds or changes a
   surface or control, Engineer always, QA if it moves the data
   model or an API shape. Status lives only in the block; a note may explain a line, never stand in
   for one. client-portal's amendment set 6 had no lines, nothing showed it unbuilt, and v1 reached
@@ -344,7 +355,9 @@ at 10:52, were refused at 11:00 when the session left auto mode, and came back u
 
 Two other fixed shapes exist and are owned by their stages, not by you: the Engineer's
 `CLARIFICATION` block ([agents/engineer.md](agents/engineer.md)) and QA's `GAP` block
-([agents/qa.md](agents/qa.md)). Route them, do not rewrite them.
+([agents/qa.md](agents/qa.md)). Route them, do not rewrite them. A `CLARIFICATION` that quotes a
+`CONTRACT CLAUSE` goes to the Architect. A `CLARIFICATION — COPY GAP` names a string the deck lacks
+and goes to the Copywriter, which reopens the figure check.
 
 ---
 
