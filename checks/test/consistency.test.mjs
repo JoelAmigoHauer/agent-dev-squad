@@ -76,6 +76,7 @@ function build(over = {}) {
   writeFileSync(path.join(dir, 'contract', 'api.md'), over.api ?? API);
   if (over.copy !== null) writeFileSync(path.join(dir, 'copy.md'), over.copy ?? COPY);
   writeFileSync(path.join(dir, 'design.md'), over.design ?? DESIGN);
+  if (over.intake) writeFileSync(path.join(dir, 'intake.md'), over.intake);
   return dir;
 }
 
@@ -118,6 +119,26 @@ test('a string id the deck does not define fails', () => {
 test('missing files fail rather than pass', () => {
   assert.match(msgs(build({ copy: null })).join('\n'), /copy.md is missing/);
   assert.match(msgs(build({ bindings: '# empty\n' })).join('\n'), /no screen bindings rows/);
+});
+
+// C8 (WW-1): the design of record the kickoff interview settled is the one design.md indexes.
+const INTAKE = (dor) => `# Intake: demo\n\n**Start:** design\n**Design of record:** ${dor}\n`;
+const ROUND2 = 'Figma abc123XYZ, page "Round 2" (2026-11-12), plus route pages 40:1.';
+const DESIGNED = (line) => DESIGN.replace('# Design — demo\n', `# Design — demo\n\n**Design of record:** ${line}\n`);
+
+test('C8: design.md must index the design of record intake.md names', () => {
+  const same = DESIGNED('Figma file `abc123XYZ`, page "Round 2", plus route pages `40:1`.');
+  assert.deepEqual(msgs(build({ intake: INTAKE(ROUND2), design: same })), []);
+  const stale = DESIGNED('Figma file `abc123XYZ`, page "Round 1", plus route pages `25:2`.');
+  assert.match(msgs(build({ intake: INTAKE(ROUND2), design: stale })).join('\n'), /indexes .*Round 1.*but intake.md names .*Round 2.* \(WW-1\)/);
+  const other = DESIGNED('Figma file `zzz999ZZZ`, page "Round 2".');
+  assert.match(msgs(build({ intake: INTAKE(ROUND2), design: other })).join('\n'), /as the design of record/);
+  assert.match(msgs(build({ intake: INTAKE(ROUND2) })).join('\n'), /design.md has no Design of record line/);
+});
+
+test('C8: no design of record, or no intake, checks nothing', () => {
+  assert.deepEqual(msgs(build({ intake: INTAKE('none (the Designer draws from the copy deck and the contract)') })), []);
+  assert.deepEqual(msgs(build({ intake: INTAKE('<Figma key, page>') })), []);
 });
 
 test('the build folder templates parse: placeholders are skipped, not matched', () => {

@@ -160,5 +160,5 @@ the last twenty commit messages.
 
 <two or three paragraphs: what this repository appears to have been in the middle of becoming>
 
-**Joel's corrections:** <appended by the Orchestrator after Joel replies. Together with this file,
-they are the Stage 0 intake>
+**Joel's corrections:** recorded in `intake.md` by the kickoff interview, which reads this section
+first. Not appended here.

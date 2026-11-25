@@ -3,7 +3,9 @@
 A template repository. Point `/squad` at a repo, give it a sketch, and a seven-role agent pipeline
 turns it into a deployed application.
 
-Intake is a hand-drawn sketch, an app name and a voice note. Output is a running app with a
+Intake is whatever you have: a repo, a design, a brief, a sketch and a voice note, or one line
+naming an idea. A kickoff interview reads it, then asks you the rest one question at a time, each
+on a card with a recommended answer. Output is a running app with a
 binding technical contract, a test suite generated from that contract, a security review and a
 deploy record.
 
@@ -20,8 +22,12 @@ no version, cannot upgrade and never sends its learnings back, so it is not used
    hooks, so the squad checks would block nothing.
 2. Run `/squad`. It stamps the pipeline into `.squad/` at the current release, installs the git
    guard and the squad checks, and commits them. Restart the session so the hooks load.
-3. **New app:** give it the sketch, the app name and the voice note in one turn. **Existing app:**
-   it surveys the code first and puts what it found to you as a draft intake.
+3. **New app:** give it whatever you have, down to a single line naming the idea. **Existing app:**
+   it surveys the code first. Either way the kickoff interview reads what exists, then asks only
+   what it cannot answer, one card at a time. Scope, out of scope, whether this needs to be software
+   at all, its format, the design round, voice, banned words and figure sources are asked every
+   time. From a bare idea it starts with the problem, the user and the one number that should move,
+   and drafts every answer for you to confirm.
 4. It runs. It pings you only when a halt trigger fires.
 5. After the build, `/squad port` sends that repo's new learnings back here.
 

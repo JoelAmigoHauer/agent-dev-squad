@@ -56,7 +56,7 @@ delivery on the default stack; functions run to 300s, packages to 5GB, request b
 | # | Trigger | Question to answer |
 |---|---|---|
 | 3 | Non-relational or graph-shaped data at meaningful scale | Does the data model fight against tables — deep hierarchies, arbitrary traversal, schemaless documents at volume? |
-| 4 | Named third-party integration that conflicts with the default stack | Does the spec name a service that requires infrastructure the default stack does not provide? |
+| 4 | Named third-party integration that conflicts with the default stack | Does the spec name a service, or does its `FORMAT` (`iphone`, `integration`) name a platform, that requires infrastructure the default stack does not provide? |
 | 5 | Low confidence about which category applies | Are you unsure whether any of 1–4 fires? |
 
 **Any one `yes` → escalate.** Halt the pipeline. Output goes to Joel before Design or Engineering

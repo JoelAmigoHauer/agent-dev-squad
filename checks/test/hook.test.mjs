@@ -1,7 +1,7 @@
 // End to end: the hook as Claude Code runs it, in a stamped host layout (.squad/checks, .squad/state).
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, cpSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, cpSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { spawnSync, execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -85,4 +85,22 @@ test('the Preflight liveness probe is refused', () => {
   const r = hook({ tool_name: 'Bash', tool_input: { command: 'test -f .squad/state/demo.md > /dev/null' } });
   assert.equal(r.code, 2);
   assert.match(r.err, /\[state-lint\]/);
+});
+
+// Stage 0: the kickoff interview's gate, end to end, in its own build.
+test('Preflight cannot start in a host until the intake is finished', () => {
+  const kick = path.join(squad, 'state', 'kick.md');
+  mkdirSync(path.join(squad, 'builds', 'kick'), { recursive: true });
+  const state = 'build: kick\nmode: greenfield\nformat: —\nstage-0-intake: running\nstage-0.5-preflight: pending\nwaived: none\n';
+  writeFileSync(kick, state);
+  const done = { tool_name: 'Edit', tool_input: { file_path: kick, old_string: 'stage-0-intake: running', new_string: 'stage-0-intake: done (/builds/kick/intake.md, 28 asked, 0 read, 0 drafted)' } };
+  let r = hook(done);
+  assert.equal(r.code, 2);
+  assert.match(r.err, /\[intake-gate\] stage-0-intake cannot be done: intake.md is missing/);
+  writeFileSync(path.join(squad, 'builds', 'kick', 'intake.md'), readFileSync(path.join(CHECKS, '..', 'builds', '_template', 'intake.md'), 'utf8'));
+  r = hook({ tool_name: 'Edit', tool_input: { file_path: kick, old_string: 'stage-0.5-preflight: pending', new_string: 'stage-0.5-preflight: running' } });
+  assert.equal(r.code, 2);
+  assert.match(r.err, /\[intake-gate\] stage-0.5-preflight cannot start: .*P1 is not answered/s);
+  assert.match(r.err, /stage-0-intake is "running", not done/);
+  rmSync(kick);
 });

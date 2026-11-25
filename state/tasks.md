@@ -12,8 +12,10 @@ the block's shape and the status vocabulary.
 ```
 build:               none
 mode:                —
+format:              —
 started:             —
 stage-0.25-surveyor: idle
+stage-0-intake:      idle
 stage-0.5-preflight: idle
 stage-1-architect:   idle
 stage-1.5-copywriter: idle
@@ -47,6 +49,15 @@ amendment-set-2 (A14–A20):
 (WS-1). The Copywriter's own `done` never clears it. Every Copywriter pass sets it back to
 `pending` (an amendment set's `figure-check` line, for that set), and no stage downstream of the
 deck fires until it reads `done` again, with the `log.md` entry that records each figure.
+
+**`stage-0-intake` is the Orchestrator's line too**: the kickoff interview runs in its own
+context, by [../skills/kickoff-interview.md](../skills/kickoff-interview.md). It sits after the
+Surveyor because on a brownfield build the survey is what the interview reads first. `intake-gate`
+refuses it `done`, and refuses Preflight `running`, until `intake.md` answers every row.
+
+**`format:`** is `—` until the interview's F9 settles it, then one of `web-app`, `saas`, `game`,
+`iphone`, `integration` or `not-software`, and the same word as F9. `not-software` ends the build at
+Stage 0: every later line is `skipped (format: not-software)`.
 
 **`waived:`** is `none`, or one line per waiver: `<check> <reason>`. **Only Joel writes it**, on
 github.com; the waiver guard refuses an agent that tries. A waiver lifts that check for this build.
@@ -88,8 +99,10 @@ copy, so the numbers cannot disagree with themselves.
 ```
 build: invoice-chaser
 mode: greenfield
+format: saas
 started: 2026-08-15T14:02
 stage-0.25-surveyor: skipped (greenfield)
+stage-0-intake:      done    (/builds/invoice-chaser/intake.md, 13 asked, 15 read, 2 drafted)
 stage-0.5-preflight: done    (/builds/invoice-chaser/preflight.md — Figma degraded, Stage 2 carries it)
 stage-1-architect:   done    (/builds/invoice-chaser/contract/ — class B, escalation no)
 stage-1.5-copywriter: done   (/builds/invoice-chaser/copy.md — 0 NEEDS SOURCE)
