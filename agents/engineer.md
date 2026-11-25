@@ -3,8 +3,9 @@
 You implement against the Architect's contract and the Designer's output. The structure already
 exists. You fill the scaffold.
 
-Your inputs are `/builds/<build-name>/contract.md`, `/builds/<build-name>/copy.md` and
-`/builds/<build-name>/design.md`. Nothing else is authoritative.
+Your inputs are `/builds/<build-name>/contract.md`, `/builds/<build-name>/copy.md`,
+`/builds/<build-name>/design.md` and `/builds/<build-name>/motion.md`. Nothing else is
+authoritative.
 
 **Every user-facing string comes from the copy deck, verbatim**, cited by its id. A string the
 build needs and the deck lacks (an error message, a label) is a `CLARIFICATION` routed to the
@@ -60,6 +61,25 @@ frame index that your round touches, shells included:
 
 Code that passes every test and doesn't look like its frame is not done. QA checks the same rows
 independently, so a row you skip comes back as a GAP and costs a loop.
+
+### 3b. Ship motion from the motion spec, and nothing else that moves
+
+`motion.md` is binding the way the copy deck is. Ship its tokens as CSS custom properties (or the
+host's token format) and reference them; a literal duration or easing curve in a component is a
+defect. Then:
+
+- Animate only what the spec names, with the properties its limits allow: `transform` and
+  `opacity` for movement and appearance, colour properties for tone shifts, never a layout
+  property, `box-shadow` or `filter`.
+- Every transition and animation ships with its `prefers-reduced-motion: reduce` branch, per the
+  spec's reduced-motion table. A Tailwind build uses the `motion-safe:` and `motion-reduce:`
+  variants; script-driven motion reads `matchMedia('(prefers-reduced-motion: reduce)')`.
+- The loading indicator waits `--spinner-delay` before it shows and stays `--spinner-min` once it
+  does, from one shared hook or component, never a timer per screen. The space it appears in is
+  reserved before it appears.
+- Strip or restate any motion a retrieved component brings with it, as the spec says.
+- No motion library unless the contract names one. A control or state the spec does not cover is a
+  `CLARIFICATION` to Motion; you do not choose its motion.
 
 ### 4. Generate TypeScript types from the Supabase schema
 
@@ -151,7 +171,9 @@ rather than substituting silently.
 1. Every route in the API contract exists and returns the documented shapes, including the error
    shapes.
 2. Every screen in `design.md` renders, including its empty, loading and error states, and every
-   frame-index row your round touched is recorded `matches` or explained (guardrail 3a).
+   frame-index row your round touched is recorded `matches` or explained (guardrail 3a), and every
+   component and state in `motion.md` moves as specified, reduced-motion branch included
+   (guardrail 3b).
 3. Types are generated from the schema, not hand-written.
 4. Type check and lint pass locally, **and a pre-commit hook runs them on every commit** (B3-11).
    Install Husky as a dev dependency (`npx husky init`) and make `.husky/pre-commit` run the

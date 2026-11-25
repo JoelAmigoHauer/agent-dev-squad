@@ -133,6 +133,8 @@ stage-1.5-copywriter: done  (/builds/<build-name>/copy.md — <n> NEEDS SOURCE)
   the Orchestrator. You revise and keep the id. Beyond one round, the layout adapts to the words.
 - **The Engineer** ships deck strings verbatim. A string the build needs and the deck lacks comes
   back to you as a `CLARIFICATION`; the Engineer does not write it.
+- **Motion** (Stage 2.5) cites each loading state's string as its indicator's accessible name. A
+  loading state with no string comes back to you as a `CLARIFICATION`.
 - **An amendment** that adds or changes a surface, control or string routes to you before the
   Designer (`Routes to` in the contract).
 

@@ -64,6 +64,7 @@ no dependency manifest here — the code lives in the repos generated *from* thi
 | `agents/preflight.md` | 0.5 · tooling and plan-tier probe | Stage 0.5 only |
 | `agents/architect.md` | 1 · the binding contract | Stage 1 only |
 | `agents/designer.md` | 2 · fidelity modes, 21st.dev, Figma | Stage 2 only |
+| `agents/motion.md` | 2.5 · the motion spec: hover tone shifts, the loading indicator, entrances, within fixed limits | Stage 2.5 only |
 | `agents/copywriter.md` | 1.5 · the copy deck: every string, rewrite passes embedded, every figure marked | Stage 1.5 only |
 | `agents/engineer.md` | 3 · guardrails, type generation, ambiguity ban | Stage 3 only |
 | `agents/qa.md` | 4 · contract-derived tests, Playwright harness | Stage 4 only |
@@ -146,7 +147,8 @@ pipeline mechanics, caps or halt triggers.
 | 1 | Architect | [agents/architect.md](agents/architect.md) | Sequential. Gate. |
 | 2 | Designer | [agents/designer.md](agents/designer.md) | Sequential, after Stage 1.5 and its figure check |
 | 1.5 | **Copywriter** | [agents/copywriter.md](agents/copywriter.md) | **Revived 2026-10-31.** After Stage 1 clears, before the Designer, so screens are designed with real words. Writes `copy.md`. **You verify every figure it marks** against its primary source before firing Stage 2 (WS-1) |
-| 3 | Engineer | [agents/engineer.md](agents/engineer.md) | Sequential, after Stage 2 |
+| 2.5 | **Motion** | [agents/motion.md](agents/motion.md) | **Added 2026-11-25.** After Stage 2, before the Engineer. Writes `motion.md`: hover and press tone shifts, a delayed loading indicator, quick entrances, all inside the file's limits (150 to 250ms, `transform` and `opacity` for movement, reduced motion honoured) |
+| 3 | Engineer | [agents/engineer.md](agents/engineer.md) | Sequential, after Stage 2.5 |
 | 4 | QA | [agents/qa.md](agents/qa.md) | Parallel with Stage 5a |
 | 5a | Security (pre-deploy) | [agents/security.md](agents/security.md) | Parallel with Stage 4 |
 | 6 | DevOps | [agents/devops.md](agents/devops.md) | After 4 and 5a are green |
@@ -279,9 +281,9 @@ Progress lives in the build's state file, `/state/<build-name>.md`. Never in the
 - **Every amendment set gets stage lines** (B3-2). When the Architect appends an amendment set, copy
   its `Routes to` table into the state file as one `pending` line per stage, naming the set:
   Copywriter if it adds or changes a surface, control or string, Designer if it adds or changes a
-  surface or control, Engineer always, QA if it moves the data
-  model or an API shape. Status lives only in the block; a note may explain a line, never stand in
-  for one. client-portal's amendment set 6 had no lines, nothing showed it unbuilt, and v1 reached
+  surface or control, Motion if it adds or changes a surface or control, Engineer always, QA if it
+  moves the data model or an API shape. Status lives only in the block; a note may explain a line,
+  never stand in for one. client-portal's amendment set 6 had no lines, nothing showed it unbuilt, and v1 reached
   `main` without it.
 - **A stage killed by a container restart** is written `halted (container restart)` at once and
   re-fired before other work (B3-2). client-portal's Stage 6 was `running` only in a prose note;
@@ -425,6 +427,7 @@ conversation exports.
 | `contract.md` | Architect | 1 |
 | `copy.md` | Copywriter | 1.5 — the copy deck |
 | `design.md` | Designer | 2 |
+| `motion.md` | Motion | 2.5, the motion spec |
 | `build-notes.md` | Engineer | 3 |
 | `tests/` | QA | 4 |
 | `test-results.md` | QA | 4 |
@@ -451,6 +454,7 @@ is deliberately repeated for a stage that reads cold, one copy binds:
 | Status vocabulary | `state/tasks.md` | — copied into each `state/<build-name>.md` with the block |
 | Escalation triggers, current narrowed form | `skills/stack-decision.md` | `agents/architect.md` |
 | What a contract must contain | `agents/architect.md`, plus `agents/architect.brownfield.md` on brownfield builds | `builds/_template/contract.md`, as a scaffold |
+| Motion limits and tokens | `agents/motion.md` | `agents/engineer.md` guardrail 3b, `agents/qa.md` coverage item 6, `builds/_template/motion.md` as a scaffold |
 | What a fidelity check compares (v0.3) | `agents/qa.md`, coverage item 5 | `agents/engineer.md` guardrail 3a, `agents/designer.md` frame index |
 | What a survey must contain | `agents/surveyor.md` | `builds/_template/survey.md`, as a scaffold |
 | How `/squad` stamps and routes | `.claude/skills/squad/SKILL.md` | — it defers to this file for everything else |

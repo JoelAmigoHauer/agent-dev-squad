@@ -131,6 +131,16 @@ Any number, percentage, price, date, count, ranking, quote, named client, named 
 result in copy. Always marked `source`, `bound` or `NEEDS SOURCE`.
 _Avoid_: stat, data point
 
+**Motion spec**:
+The Motion stage's `motion.md`: the motion tokens, every component's hover, press and focus
+states, every loading indicator and every entrance, within the limits in `agents/motion.md`.
+_Avoid_: animation doc, motion guidelines, transitions file
+
+**State layer**:
+A pseudo-element over a control whose opacity rises on hover and press, so a tone shift animates
+on the compositor rather than repainting the control.
+_Avoid_: overlay, hover tint
+
 **Writer**:
 Whatever creates, changes or ends a row or column: a flow, a trigger, a seed or an external owner.
 _Avoid_: producer, source

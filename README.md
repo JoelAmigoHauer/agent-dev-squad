@@ -36,6 +36,7 @@ your-app/                      the host repo
 │   │   ├── architect.brownfield.md   brownfield-only Architect rules
 │   │   ├── copywriter.md      1.5  · every string, figures marked
 │   │   ├── designer.md        2    · UI, tokens, components
+│   │   ├── motion.md          2.5  · hover, loading, entrances
 │   │   ├── engineer.md        3    · implementation
 │   │   ├── qa.md              4    · tests generated from the contract
 │   │   ├── security.md        5a/5b · pre- and post-deploy

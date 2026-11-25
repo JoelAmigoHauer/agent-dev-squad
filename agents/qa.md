@@ -55,6 +55,22 @@ Cover, at minimum:
    Save both images per row under `tests/fidelity/`, and report the count of rows checked, so a
    fidelity pass that looked at nothing cannot read as a clean one. A suite that never looked at a
    screen has not tested it.
+6. **Motion, against `motion.md` and its limits** (added 2026-11-25). Measured, never judged by
+   eye:
+
+   | Check | How | Fails when |
+   |---|---|---|
+   | Properties | Parse the built stylesheets for every `transition` and `animation` declaration, and read each animated element's computed `transition-property` | Any property outside `transform`, `opacity` and the colour properties the spec allows, or `all` |
+   | Durations | The same declarations, and computed `transition-duration` and `animation-duration` | Outside 150 to 250ms, except the spinner's rotation; or a literal value where a token belongs |
+   | Reduced motion | `page.emulateMedia({ reducedMotion: 'reduce' })`, then the same reads | Any `transform` still animated, or a spinner still rotating |
+   | Spinner delay | Delay the route with `page.route` to under `--spinner-delay`, then to well over it | The indicator appears on the short wait, never appears on the long one, or leaves before `--spinner-min` |
+   | No layout shift | Record layout shifts across each entrance and each loading state | Any shift caused by the indicator or an entering element |
+   | Input not delayed | Click a control during its entrance | The click does nothing until the animation ends |
+   | Touch | Emulate a touch device and tap a control | Its hover tone stays on after the tap |
+
+   The properties and durations checks derive their subjects from the stylesheets, not from a list
+   (*A guard derives its subjects*), so a transition added later is checked too. A breach is a GAP,
+   `CLASS: bug` when the spec is right, `spec-gap` when the spec itself breaks a limit.
 
 ### A test counts once it has been seen to fail
 

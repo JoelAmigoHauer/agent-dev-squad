@@ -125,7 +125,10 @@ Write to `/builds/<build-name>/design.md`:
    `extracted` (pulled from Figma as data) or `derived` (your own, from the sketch). The Engineer is
    bound by `extracted` and free to adjust `derived`, so a token with no status is treated as
    `derived` and may be changed underneath you.
-5. **States**: empty, loading, error and success for every screen that fetches or submits. A screen
+5. **States**: empty, loading, error and success for every screen that fetches or submits. Draw
+   the states; do not specify their motion. Hover tones, the loading indicator's timing and every
+   entrance belong to Stage 2.5, which works from this inventory, so name every interactive
+   component and every element that arrives after first paint. A screen
    without its empty and error states is not designed, and QA will find it.
    **Every route in the contract's flow bindings gets a control reachable from the navigation**, on
    the path the contract's `Reached from` column names (B3-17). A control that sits only inside an

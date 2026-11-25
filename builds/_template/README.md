@@ -13,6 +13,7 @@ conversation exports.
 | `contract.md` | Architect | 1 |
 | `copy.md` | Copywriter | 1.5 |
 | `design.md` | Designer | 2 |
+| `motion.md` | Motion | 2.5 |
 | `build-notes.md` | Engineer | 3 |
 | `test-results.md` | QA | 4 |
 | `tests/` | QA | 4 |
