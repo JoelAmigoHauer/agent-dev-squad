@@ -20,6 +20,7 @@ bare numbers 1–12; nothing else is unprefixed.
 | `TH` | `thelma` | 2026-08-24 to 08-25 | greenfield, halted at Stage 6 | TH-13 to TH-20 | 13–20, "build 2" | branch `claude/thelma-portfolio-agent-ba057f`, archived as tag `archive/thelma-2026-08-25` |
 | `WH` | `workshop-hub` | 2026-09-07 to 09-09 | brownfield via `/squad` | WH-13 to WH-29 | 13–29, "builds 2, 3, 5, 6" | branch `claude/claude-md-docs-3l7ior` |
 | `B2`, `B3` | `client-portal` | 2026-09-11 to 10-26 | brownfield via `/squad` | B2-1 to B2-3, B3-1 to B3-24 | unchanged | branch `claude/screen-fidelity-check` |
+| `UN` | not named | to 2026-11-25 | via `/squad` | UN-1 | unnumbered: reported by Joel on 2026-11-25, app left unnamed | Joel's report in the Agent Squad project |
 | `WS` | `website` | to 2026-09-20 | via `/squad` | WS-1 | unnumbered: the record in `agents/RETIRED-copywriter.md` | that file, removed on 2026-10-31 when the Copywriter was revived |
 
 `TH` and `WH` keep their original numbers after the prefix, so a citation in an old run record
@@ -1671,3 +1672,41 @@ starts; a figure that fails does not ship. The rewrite passes are an embedded co
 `full-rewrite`, so there is one voice system, re-synced whenever his skill changes.
 
 SEVERITY: high
+
+---
+
+# UN: an unnamed app (to 2026-11-25), via `/squad`
+
+Reported by Joel on 2026-11-25 without the app's name, so its code stands for the report, not the
+app. A later port of that app's own learnings renumbers this entry under its code and leaves a
+pointer here.
+
+## UN-1. The Engineer built from a design.md frozen on the previous design round (HIGH)
+
+WHAT HAPPENED: The build's design was redrawn as a second round of frames. `design.md` was last
+written on 2026-11-05 and still pointed every frame index row at Round 1. The Engineer's brief named
+Round 2, but its addendum told the Engineer to read `design.md` first, and the Engineer treats
+`design.md` as its only design source. The re-index that should have followed the new round never
+ran, so the Engineer built Round 1. [O] from Joel's account; the build's own log was not read.
+
+WHY IT IS SYSTEMIC: Nothing in the pipeline knew a design could have more than one round. The
+Designer wrote `design.md` once, nothing recorded which round it indexed, and no stage or check
+compared it with the round in use. A brief and an index that disagreed had no rule for which binds,
+and every downstream check (guardrail 3a, QA's fidelity item, the consistency gate) compares the
+build with `design.md`, so all of them pass on a stale one. Any build whose design is revised after
+Stage 2 hits this, and the fidelity check makes it look verified.
+
+THE CHANGE:
+
+| File | Change |
+|---|---|
+| `checks/lib.mjs`, `checks/consistency.mjs`, `checks/hook.mjs` | A new check, `design-freshness`: refuses an Engineer or QA start while `design.md`'s header or any frame row names a round other than the state file's `design-round`; refuses an edit that raises the round under a running Engineer or QA line, without a Designer re-index queued, or that clears it. Tests in `checks/test/`, each seen red |
+| `state/tasks.md` | A `design-round` key, written only by the Orchestrator |
+| `CLAUDE.md` *State protocol*, *Checks* | A new round lands in the state file in one edit, never in a brief; a brief never redirects a stage's design source |
+| `agents/designer.md` | *Design round and re-index*: the header line, a `Round` column on the frame index, and the re-index pass |
+| `agents/engineer.md` | `design.md` on the named round is the only design source; a brief that disagrees with it is a `CLARIFICATION` |
+| `agents/qa.md` item 5 | Fidelity checks run on the named round |
+| `builds/_template/design.md`, `GLOSSARY.md` | The header, the column, and the terms *design round* and *re-index* |
+
+SEVERITY: high
+

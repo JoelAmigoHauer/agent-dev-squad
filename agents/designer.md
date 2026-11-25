@@ -285,6 +285,7 @@ strip it, and say which.
 
 Write to `/builds/<build-name>/design.md`:
 
+0. **Design round**: the header line, `Design round: <n> (...)`. See *Design round and re-index*.
 1. **Mode**: A or B, with one line on why.
 2. **Screen inventory**: one entry per screen from the contract, **named by its path**, with its
    layout and component list. Refer to a screen by its path everywhere in `design.md`; a number is
@@ -311,16 +312,41 @@ Write to `/builds/<build-name>/design.md`:
 
 ---
 
+## Design round and re-index (UN-1)
+
+`design.md` is the only design source the Engineer and QA have. They read nothing else, so a
+`design.md` that points at an older round's frames builds and tests the older round, and every
+check downstream passes on it.
+
+- **Write the round on the header line**, `Design round: <n> (<where its frames are>, indexed
+  <date>)`, and on every frame index row in the `Round` column. Your first pass is round 1 unless the
+  state file's `design-round` says otherwise.
+- **A new round is a re-index, never an addendum.** When the state line reads `stage-2-designer:
+  pending (re-index round <n>)`, open that round's frames and rewrite `design.md` from them: every
+  frame index row re-pointed to round `<n>`'s node, the screen inventory, tokens and Motion section
+  updated where the round changed them, and the header raised. Re-run
+  [../skills/figma-pull.md](../skills/figma-pull.md) for the round's values; tokens extracted from
+  the older round are stale until it does.
+- **A surface the new round does not redraw** keeps its frame, and its row still moves to round
+  `<n>` with `carried from round <m>` in the As built column, so the row says it was looked at.
+- **A surface you cannot re-point** (the round dropped it, or added one the contract does not bind)
+  is a gap you raise to the Orchestrator, not a row you leave on the old number.
+
+The `design-freshness` check refuses an Engineer or QA start while the header or any row names
+another round. There is no partial re-index.
+
+---
+
 ## Frame index (mandatory, v0.3)
 
 The frame index is how the Engineer and QA find the drawing for a surface. One row per surface in
 the contract's screen binding table, per state, per width:
 
-| Surface | State | Width | Frame | As built (brownfield) |
-|---|---|---|---|---|
-| `<role>` shell | default | wide | `<node id>` | `differs`: top bar as built, the design is a left sidebar |
-| `<role>` shell | menu open | narrow | `<node id>` | `differs`: no drawer as built |
-| `<entity>` list | empty | wide | `<node id>` | `matches` |
+| Surface | State | Width | Round | Frame | As built (brownfield) |
+|---|---|---|---|---|---|
+| `<role>` shell | default | wide | 2 | `<node id>` | `differs`: top bar as built, the design is a left sidebar |
+| `<role>` shell | menu open | narrow | 2 | `<node id>` | `differs`: no drawer as built |
+| `<entity>` list | empty | wide | 2 | `<node id>` | `matches` |
 
 Rules:
 

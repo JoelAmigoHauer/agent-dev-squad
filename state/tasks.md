@@ -13,6 +13,7 @@ the block's shape and the status vocabulary.
 build:               none
 mode:                —
 started:             —
+design-round:        —
 stage-0.25-surveyor: idle
 stage-0.5-preflight: idle
 stage-1-architect:   idle
@@ -50,6 +51,14 @@ deck fires until it reads `done` again, with the `log.md` entry that records eac
 
 **`waived:`** is `none`, or one line per waiver: `<check> <reason>`. **Only Joel writes it**, on
 github.com; the waiver guard refuses an agent that tries. A waiver lifts that check for this build.
+
+**`design-round:`** is `—` until the Designer's first pass is done, then `<n> (<where the round's
+frames are>, landed <YYYY-MM-DD>)`. **Only the Orchestrator writes it** (UN-1). It names the one
+design round every stage builds and tests from, and a brief names a round only by pointing at it.
+When a new round lands, the same edit raises the number, halts any running Engineer or QA line
+(`halted (design round <n> landed)`), and queues the re-index (`stage-2-designer: pending
+(re-index round <n>)`). The `design-freshness` check refuses an edit that does one without the
+others, and refuses an Engineer or QA start until `design.md` indexes this round.
 
 **`standing:`** carries any learning a mid-build Stage 7 marked `BINDS THIS BUILD`, one line per
 entry, naming the stages it binds, until the build closes (B3-4).
@@ -89,6 +98,7 @@ copy, so the numbers cannot disagree with themselves.
 build: invoice-chaser
 mode: greenfield
 started: 2026-08-15T14:02
+design-round: 1 (drawn by the Designer, landed 2026-08-15)
 stage-0.25-surveyor: skipped (greenfield)
 stage-0.5-preflight: done    (/builds/invoice-chaser/preflight.md — Figma degraded, Stage 2 carries it)
 stage-1-architect:   done    (/builds/invoice-chaser/contract/ — class B, escalation no)

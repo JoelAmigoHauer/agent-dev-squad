@@ -11,9 +11,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   lintState, figureGate, waiverGuard, amendmentGate, commitGuard,
-  bashWritesState, bashAddsWaiver, applyWaivers, startsEngineer,
+  bashWritesState, bashAddsWaiver, applyWaivers, startsEngineer, starting, designRound, designRoundGate,
 } from './lib.mjs';
-import { consistency } from './consistency.mjs';
+import { consistency, designFreshness } from './consistency.mjs';
 
 // The pipeline root: .squad/ in a host repo, the repo root in the template.
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -78,11 +78,17 @@ export function run(call) {
       ...waiverGuard(before, after),
       ...lintState(after),
       ...figureGate(before, after, copyDeckFor(after)),
+      ...designRoundGate(before, after),
     ];
+    const dir = buildDirFor(after);
     if (startsEngineer(before, after)) {
-      const dir = buildDirFor(after);
       const found = dir ? consistency(dir) : [{ check: 'consistency-gate', msg: 'the state file names no build' }];
       failures.push(...found.map((f) => ({ ...f, msg: `stage-3-engineer cannot start: ${f.msg}` })));
+    }
+    for (const stage of ['stage-3-engineer', 'stage-4-qa']) {
+      if (!starting(before, after, stage).length) continue;
+      const found = dir ? designFreshness(dir, designRound(after)) : [{ check: 'design-freshness', msg: 'the state file names no build' }];
+      failures.push(...found.map((f) => ({ ...f, msg: `${stage} cannot start: ${f.msg}` })));
     }
     waiverText = before ?? '';
   } else if (tool === 'Bash' && typeof input.command === 'string') {

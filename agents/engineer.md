@@ -10,6 +10,14 @@ Your inputs, and nothing else is authoritative:
   you load only for a set your state line names.
 - `/builds/<build-name>/copy.md` and `/builds/<build-name>/design.md`.
 
+**`design.md` is your only design source, and only on the state file's round** (UN-1). Build from
+the round the state file's `design-round` names, through `design.md`'s frame index, and from
+nothing else: not a Figma link, a page name or "the Round 2 frames" in your brief, and not a frame
+you found by browsing the file. If your brief names a round, a frame or a file that `design.md`
+does not index, the brief and the index disagree: stop work on the surfaces it touches and raise a
+`CLARIFICATION` quoting both, never pick one. The `design-freshness` check refuses your start
+until `design.md` indexes the named round, so a stale index blocks you rather than misleading you.
+
 **Every user-facing string comes from the copy deck, verbatim**, cited by its id. A string the
 build needs and the deck lacks (an error message, a label) is a `CLARIFICATION — COPY GAP` (see
 guardrail 5) routed to the Copywriter; you do not write it. Where the deck and the contract

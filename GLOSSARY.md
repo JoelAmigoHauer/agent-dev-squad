@@ -105,6 +105,16 @@ name the same screens, routes and string ids. A failing run blocks the Engineer'
 (`consistency-gate`).
 _Avoid_: analyze, cross-check, reconciliation
 
+**Design round**:
+One complete set of frames for a build, numbered from 1. A new round arrives when the frames are
+redrawn. The state file's `design-round` names the current one, and `design.md` must index it.
+_Avoid_: version, iteration, round on its own (a stage's run is a pass)
+
+**Re-index**:
+The Designer pass that rewrites `design.md` from a new design round: every frame row re-pointed,
+the header raised. Queued as `stage-2-designer: pending (re-index round <n>)`.
+_Avoid_: refresh, resync, update
+
 **Waiver**:
 A `waived: <check> <reason>` line in a build's state file, written by Joel only, that lifts one
 check for that build because the check itself is wrong.

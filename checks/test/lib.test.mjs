@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
   lintState, figureGate, waiverGuard, amendmentGate, commitGuard,
-  bashWritesState, bashAddsWaiver, applyWaivers,
+  bashWritesState, bashAddsWaiver, applyWaivers, designRoundGate, designRound,
 } from '../lib.mjs';
 
 const checks = (fs) => fs.map((f) => f.check);
@@ -137,4 +137,39 @@ test('a waiver lifts its own check, never the waiver guard', () => {
   const fs = [{ check: 'figure-gate', msg: '' }, { check: 'waiver-guard', msg: '' }];
   const w = IDLE.replace('waived:              none', 'waived: figure-gate reason\n  waiver-guard also');
   assert.deepEqual(checks(applyWaivers(fs, w)), ['waiver-guard']);
+});
+
+// design-freshness, the state-file half (UN-1).
+const R1 = IDLE.replace('started:             2026-11-25T22:00', 'started:             2026-11-25T22:00\ndesign-round:        1 (Figma demo file, landed 2026-11-05)')
+  .replace('stage-2-designer:    pending', 'stage-2-designer:    done    (/builds/demo/design.md)');
+
+test('state-lint: design-round is "—" or a number with its source', () => {
+  assert.deepEqual(lintState(R1), []);
+  assert.deepEqual(lintState(R1.replace(/design-round: .*/, 'design-round: —')), []);
+  assert.deepEqual(checks(lintState(R1.replace(/design-round: .*/, 'design-round: Round 2'))), ['state-lint']);
+  assert.equal(designRound(R1), 1);
+});
+
+test('design-freshness: a new round lands only with its re-index queued', () => {
+  const bare = R1.replace('1 (Figma demo file, landed 2026-11-05)', '2 (Figma demo file, landed 2026-11-18)');
+  assert.deepEqual(checks(designRoundGate(R1, bare)), ['design-freshness']);
+  const queued = bare.replace('stage-2-designer:    done    (/builds/demo/design.md)', 'stage-2-designer: pending (re-index round 2)');
+  assert.deepEqual(designRoundGate(R1, queued), []);
+});
+
+test('design-freshness: a new round cannot land under a running Engineer, and cannot be cleared', () => {
+  const running = R1.replace('stage-3-engineer:    pending', 'stage-3-engineer: running');
+  const bumped = running.replace('1 (Figma demo file, landed 2026-11-05)', '2 (Figma demo file, landed 2026-11-18)')
+    .replace('stage-2-designer:    done    (/builds/demo/design.md)', 'stage-2-designer: pending (re-index round 2)');
+  assert.deepEqual(checks(designRoundGate(running, bumped)), ['design-freshness']);
+  const halted = bumped.replace('stage-3-engineer: running', 'stage-3-engineer: halted (design round 2 landed)');
+  assert.deepEqual(designRoundGate(running, halted), []);
+  // With a Designer queued, only the clearing rule can refuse this edit.
+  const queued = R1.replace('stage-2-designer:    done    (/builds/demo/design.md)', 'stage-2-designer: pending (re-index)');
+  assert.match(designRoundGate(queued, queued.replace(/design-round: .*/, 'design-round: —')).map((f) => f.msg).join(''), /cannot be cleared/);
+});
+
+test('design-freshness: the first round, and edits that leave the round alone, pass', () => {
+  assert.deepEqual(designRoundGate(R1.replace(/design-round: .*/, 'design-round: —'), R1), []);
+  assert.deepEqual(designRoundGate(R1, R1.replace('stage-4-qa:          pending', 'stage-4-qa: running')), []);
 });
